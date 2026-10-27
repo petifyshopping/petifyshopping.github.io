@@ -29,20 +29,20 @@ export async function requestAccess() {
   if (error) throw error;
 }
 
-export async function approveAccessRequest(requestId, role) {
+export async function approveAccessRequest(requestId) {
   const { error } = await requireSupabase().rpc("approve_access_request", {
     p_request_id: requestId,
-    p_role: role,
+    p_role: "admin",
   });
   if (error) throw error;
 }
 
-export async function approveAccessByEmail(email, role) {
+export async function approveAccessByEmail(email) {
   const normalizedEmail = email.trim().toLowerCase();
   if (!normalizedEmail) throw new Error("Enter an email address.");
   const { error } = await requireSupabase().rpc("approve_access_by_email", {
     p_email: normalizedEmail,
-    p_role: role,
+    p_role: "admin",
   });
   if (error) throw error;
 }

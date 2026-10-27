@@ -1,0 +1,1439 @@
+@media (max-width: 760px) {
+  .admin-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    min-height: 58px;
+    justify-content: space-between;
+    padding: 0 0.75rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+  }
+
+  .admin-mobile-back {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: white;
+    font-size: 2rem;
+    line-height: 1;
+    text-decoration: none;
+  }
+
+  .admin-mobile-page-title {
+    position: absolute;
+    left: 50%;
+    display: block;
+    max-width: 45%;
+    overflow: hidden;
+    color: white;
+    font-size: 1rem;
+    font-weight: 750;
+    text-overflow: ellipsis;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  .admin-topbar .admin-brand {
+    display: none;
+  }
+
+  .admin-topbar .admin-account-menu {
+    margin-left: auto;
+  }
+
+  .admin-content,
+  .admin-content:has(.workspace-nav.is-collapsed),
+  .admin-content:has(.workspace-nav:not(.is-collapsed)) {
+    width: calc(100% - 2rem);
+    display: block;
+    margin: 0 auto;
+    padding: 1rem 0 calc(6.5rem + env(safe-area-inset-bottom));
+  }
+
+  .admin-content > .workspace-nav {
+    display: none;
+  }
+
+  .admin-page-panel {
+    width: 100%;
+  }
+
+  .admin-settings-section-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr));
+  }
+  .admin-bottom-nav {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 110;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 0.35rem 0.5rem max(0.35rem, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--admin-border);
+    background: var(--card-bg);
+    box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.08);
+  }
+
+  .admin-bottom-nav:has(> :only-child) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-bottom-nav-item {
+    min-width: 0;
+    min-height: 52px;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 0.1rem;
+    padding: 0.3rem;
+    border: 0;
+    border-radius: var(--admin-radius-md);
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 0.76rem;
+    font-weight: 650;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .admin-bottom-nav-item.active {
+    background: color-mix(in srgb, var(--primary) 10%, transparent);
+    color: var(--primary-dark);
+  }
+
+  .admin-bottom-nav-icon {
+    font-size: 1.1rem;
+    line-height: 1.15;
+  }
+
+  .admin-product-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+
+  .admin-product-search {
+    grid-column: 1 / -1;
+  }
+
+  .admin-product-search input {
+    min-height: 48px;
+    font-size: 16px;
+  }
+
+  .admin-product-result-count {
+    justify-self: end;
+  }
+
+  .admin-table-wrap {
+    display: none;
+  }
+
+  .admin-product-list {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .admin-product-card-controls > .admin-primary-button,
+  .admin-product-card-controls > .admin-secondary-button,
+  .admin-product-card-controls > .admin-delete-button {
+    min-height: 44px;
+  }
+
+  .admin-product-card-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-product-card-controls > .admin-inline-switch {
+    grid-column: 1 / -1;
+  }
+
+  .admin-product-card-controls > button {
+    width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.6rem 0.7rem;
+    line-height: 1.2;
+  }
+
+  .admin-product-delete-direct {
+    white-space: nowrap;
+  }
+
+  .admin-product-overflow {
+    display: none;
+  }
+
+  .admin-fab-add {
+    min-height: 48px;
+    padding-inline: 1.1rem;
+  }
+
+  .admin-create-fab {
+    right: 1rem;
+    bottom: calc(5.3rem + env(safe-area-inset-bottom));
+  }
+
+  .admin-editor-backdrop {
+    padding: 0;
+    place-items: stretch;
+  }
+
+  .admin-editor-dialog {
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .admin-editor-dialog .admin-editor {
+    height: 100%;
+    max-height: 100dvh;
+    padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
+    border-radius: 0;
+  }
+
+  .admin-editor-dialog .admin-editor-heading {
+    top: -1rem;
+    margin: -1rem -1rem 1rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .admin-editor-dialog .admin-form-actions {
+    bottom: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 1rem -1rem calc(-1rem - env(safe-area-inset-bottom));
+    padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+  }
+
+  .admin-editor-dialog .admin-form-actions > button {
+    min-height: 44px;
+  }
+
+  .admin-editor-dialog .admin-form-actions > button:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .admin-product-card .admin-inline-switch {
+    min-height: 44px;
+  }
+
+  .admin-account-trigger {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+    padding: 0.35rem;
+  }
+
+  .admin-account-trigger > span:first-child {
+    display: none;
+  }
+
+  .admin-mobile-page-title {
+    max-width: calc(100vw - 132px);
+  }
+
+  .admin-undo-notice {
+    position: fixed;
+    inset: auto 0 calc(4.7rem + env(safe-area-inset-bottom));
+    z-index: 108;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 0 0.75rem;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-md);
+    background: var(--text-dark);
+    color: white;
+    box-shadow: 0 6px 24px rgba(15, 23, 42, 0.25);
+  }
+
+  .admin-undo-notice > button {
+    flex: 0 0 auto;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: start;
+    align-items: stretch;
+    gap: 0.65rem;
+  }
+
+  .product-tile {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    align-items: start;
+    gap: 0.55rem;
+    height: 100%;
+    padding: 0 !important;
+  }
+
+  .product-tile-image-button {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    border: 0;
+    border-radius: 0;
+    background: color-mix(in srgb, var(--bg-light) 82%, white);
+  }
+
+  .product-tile-image {
+    object-fit: contain;
+    padding: 0.35rem;
+  }
+
+  .product-tile-content {
+    align-content: start;
+    gap: 0.55rem;
+    padding: 0 0.65rem 0.7rem !important;
+  }
+
+  .product-tile-heading {
+    min-height: 2.5rem;
+    gap: 0.25rem;
+  }
+
+  .product-tile-details {
+    font-size: 0.68rem;
+  }
+
+  .product-tile-title-group h3 {
+    font-size: 0.86rem;
+  }
+
+  .product-summary-badge {
+    font-size: 0.58rem;
+  }
+
+  .product-tile-variant {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.35rem;
+    font-size: 0.66rem;
+  }
+
+  .product-tile-variant select {
+    min-height: 40px;
+    padding-inline: 0.4rem;
+    font-size: 0.68rem;
+  }
+
+  .product-tile-price strong {
+    font-size: 0.88rem;
+  }
+
+  .product-tile-actions {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.35rem;
+  }
+
+  .product-tile-actions .btn {
+    min-height: 40px;
+    padding-inline: 0.45rem;
+    font-size: 0.72rem;
+  }
+
+  .product-tile-actions .btn-direct-order {
+    font-size: 0.7rem;
+  }
+
+  .product-details-overlay {
+    align-items: end;
+    padding: 0;
+  }
+
+  .product-details-dialog {
+    width: 100%;
+    max-height: 94dvh;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 20px 20px 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .product-details-header {
+    padding: 0.65rem 1rem;
+  }
+
+  .product-details-content {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.85rem;
+    padding: 0.85rem 1rem 1rem;
+  }
+
+  .product-details-gallery,
+  .product-details-copy,
+  .product-details-dialog .price-box,
+  .product-details-dialog .card-actions {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .product-details-gallery .carousel-images {
+    max-height: 34dvh;
+    aspect-ratio: 4 / 3;
+  }
+
+  .product-details-copy .save-tag {
+    position: static;
+    display: inline-flex;
+    margin: 0 0 0.5rem;
+  }
+
+  .product-details-copy .specs {
+    margin-bottom: 0;
+  }
+
+  .product-details-dialog .card-actions {
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-gate {
+    min-height: 100svh;
+    padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .admin-login {
+    width: min(100%, 28rem);
+    margin: 0 auto;
+    padding: clamp(1.25rem, 6vw, 1.75rem);
+    border-radius: var(--admin-radius-lg);
+  }
+
+  .admin-login h1 {
+    font-size: clamp(1.55rem, 6vw, 1.8rem);
+  }
+
+  .admin-login label {
+    margin-top: 0.85rem;
+  }
+
+  .admin-login input {
+    min-height: 48px;
+    font-size: 16px;
+  }
+
+  .admin-login .admin-primary-button,
+  .admin-back-link {
+    min-height: 48px;
+  }
+
+  .admin-login .admin-primary-button {
+    margin-top: 0.75rem;
+  }
+
+  .admin-back-link {
+    display: inline-flex;
+    align-items: center;
+    margin-top: 0.65rem;
+  }
+
+  .admin-topbar {
+    min-height: calc(58px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) 0.75rem 0;
+  }
+
+  .admin-content,
+  .admin-content:has(.workspace-nav.is-collapsed),
+  .admin-content:has(.workspace-nav:not(.is-collapsed)) {
+    width: calc(100% - 1.25rem);
+    padding-top: 0.85rem;
+  }
+
+  .admin-page-heading {
+    margin-bottom: 1rem;
+  }
+
+  .admin-page-heading h1 {
+    margin: 0.15rem 0 0.4rem;
+    font-size: clamp(1.75rem, 7vw, 2.15rem);
+    line-height: 1.12;
+    letter-spacing: -0.035em;
+  }
+
+  .admin-page-heading .admin-muted {
+    max-width: 58ch;
+    font-size: 0.9rem;
+  }
+
+  .admin-site-settings {
+    gap: 0.75rem;
+  }
+
+  .admin-settings-group-content {
+    padding: 0 0.75rem 0.75rem;
+  }
+
+  .admin-settings-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .admin-product-toolbar > button {
+    min-height: 48px;
+  }
+
+  .admin-filter-sheet {
+    padding-top: max(1.1rem, env(safe-area-inset-top));
+  }
+
+  .admin-confirm-dialog {
+    padding: 1.1rem;
+  }
+
+  .admin-confirm-actions > button {
+    min-height: 48px;
+  }
+
+  .admin-form-grid input:not([type="checkbox"]),
+  .admin-form-grid select,
+  .admin-form-grid textarea,
+  .admin-section-form input,
+  .admin-section-form select,
+  .admin-section-rename input,
+  .admin-parent-section-select select,
+  .admin-hero-pill-row input,
+  .admin-hero-pill-row select,
+  .admin-image-upload-field input[type="file"] {
+    min-height: 48px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 420px) {
+  .admin-content,
+  .admin-content:has(.workspace-nav.is-collapsed),
+  .admin-content:has(.workspace-nav:not(.is-collapsed)) {
+    width: calc(100% - 1rem);
+  }
+
+  .admin-product-card {
+    padding: 0.8rem;
+  }
+
+  .admin-product-card-controls {
+    gap: 0.45rem;
+  }
+
+  .admin-product-card-controls > button {
+    padding-inline: 0.45rem;
+    font-size: 0.86rem;
+  }
+
+  .admin-bottom-nav-item {
+    min-height: 48px;
+    font-size: 0.72rem;
+  }
+}
+
+.admin-password-change,
+.team-access-approve-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-password-change label,
+.team-access-approve-form label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.86rem;
+  font-weight: 650;
+}
+
+.admin-password-change input,
+.team-access-approve-form input,
+.team-access-approve-form select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  background: var(--card-bg);
+  color: var(--text-dark);
+  font: inherit;
+  font-size: 16px;
+}
+
+.admin-password-input {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin-password-input input {
+  min-width: 0;
+  flex: 1;
+}
+
+.admin-password-input button,
+.admin-login-links button {
+  min-height: 44px;
+  padding: 0.5rem 0.7rem;
+  border: 0;
+  border-radius: var(--admin-radius-sm);
+  background: transparent;
+  color: var(--primary-dark);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.admin-login-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+
+.team-access {
+  display: grid;
+  gap: 1rem;
+}
+
+.team-access-approve-form {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  padding: 1rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  background: var(--card-bg);
+}
+
+.team-access > section {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.team-access > section h3 {
+  color: var(--text-dark);
+  font-size: 1rem;
+}
+
+.team-access-list {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.team-access-card {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  background: var(--card-bg);
+}
+
+.team-access-card > div:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.team-access-card strong {
+  overflow-wrap: anywhere;
+  color: var(--text-dark);
+}
+
+.team-access-card small {
+  color: var(--text-muted);
+}
+
+.team-access-admin-actions {
+  display: grid;
+  justify-items: end;
+  gap: 0.25rem;
+  text-align: right;
+}
+
+.team-access-admin-actions small {
+  max-width: 20rem;
+}
+
+@media (max-width: 760px) {
+  .admin-shell button,
+  .admin-shell a,
+  .admin-login button,
+  .admin-login a {
+    min-height: 44px;
+  }
+
+  .admin-shell input:not([type="checkbox"]):not([type="range"]),
+  .admin-shell select,
+  .admin-shell textarea,
+  .admin-login input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .admin-shell,
+  .admin-gate {
+    min-height: 100svh;
+    min-height: 100dvh;
+  }
+
+  .admin-shell,
+  .admin-content,
+  .admin-page-panel {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  body:has(.admin-shell),
+  body:has(.admin-gate) {
+    overflow-x: hidden;
+  }
+
+  .admin-gate {
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .admin-gate > div {
+    width: min(100%, 38rem);
+    padding: 1.25rem;
+    border-left-width: 3px;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-gate-actions {
+    flex-wrap: wrap;
+  }
+
+  .admin-gate-actions > button,
+  .admin-password-change > button,
+  .team-access-approve-form > button,
+  .team-access-card > button,
+  .team-access-card .admin-form-actions > button {
+    min-height: 44px;
+  }
+
+  .admin-password-change input,
+  .team-access-approve-form input,
+  .team-access-approve-form select {
+    font-size: 16px;
+  }
+
+  .admin-account-dropdown {
+    position: fixed;
+    top: calc(58px + env(safe-area-inset-top));
+    right: 0.5rem;
+    width: min(25rem, calc(100vw - 1rem));
+    max-height: calc(100dvh - 70px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .admin-account-signout {
+    min-height: 44px;
+  }
+
+  .team-access-approve-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .team-access-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .team-access-card .admin-form-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .team-access-card .admin-form-actions > button {
+    min-width: 0;
+    padding-inline: 0.45rem;
+    white-space: normal;
+  }
+}
+
+@media (min-width: 761px) {
+  .admin-bottom-nav {
+    display: none;
+  }
+}
+
+.admin-catalog-organization {
+  margin: 0 0 1rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  background: var(--card-bg);
+}
+
+.admin-catalog-organization > summary {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 1rem;
+  color: var(--text-dark);
+  cursor: pointer;
+  list-style: none;
+}
+
+.admin-catalog-organization > summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-catalog-organization > summary::after {
+  content: "+";
+  color: var(--primary);
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.admin-catalog-organization[open] > summary {
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-catalog-organization[open] > summary::after {
+  content: "−";
+}
+
+.admin-catalog-organization > summary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -3px;
+}
+
+.admin-catalog-organization-summary {
+  min-width: 0;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.admin-catalog-organization-summary > small {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.admin-catalog-organization > .admin-section-order {
+  margin: 1rem;
+}
+
+.admin-product-quick-filters {
+  display: flex;
+  gap: 0.45rem;
+  margin: -0.25rem 0 1rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.admin-product-quick-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.admin-product-quick-filter {
+  min-height: 38px;
+  flex: 0 0 auto;
+  padding: 0.4rem 0.8rem;
+  border: 1px solid var(--admin-border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.admin-product-quick-filter:hover {
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--admin-border));
+}
+
+.admin-product-quick-filter.active {
+  border-color: color-mix(in srgb, var(--primary) 25%, white);
+  background: color-mix(in srgb, var(--primary) 10%, white);
+  color: var(--primary-dark);
+}
+
+.admin-product-quick-filter:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .admin-product-toolbar {
+    gap: 0.55rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .admin-product-toolbar > button {
+    min-width: 6.5rem;
+  }
+
+  .admin-product-result-count {
+    align-self: center;
+    padding: 0.4rem 0;
+  }
+
+  .admin-product-quick-filters {
+    margin-bottom: 0.8rem;
+  }
+
+  .admin-catalog-organization {
+    margin-bottom: 0.8rem;
+  }
+
+  .admin-catalog-organization > summary {
+    min-height: 54px;
+    padding-inline: 0.8rem;
+  }
+
+  .admin-catalog-organization > .admin-section-order {
+    margin: 0.8rem;
+  }
+
+  .admin-product-card {
+    gap: 0.7rem;
+    border-radius: 14px;
+    box-shadow: 0 4px 14px rgb(15 23 42 / 4%);
+  }
+
+  .admin-product-card-main {
+    align-items: flex-start;
+    gap: 0.7rem;
+  }
+
+  .admin-product-card-main > img,
+  .admin-product-card-main > .admin-product-placeholder {
+    width: 68px;
+    height: 68px;
+    flex-basis: 68px;
+    border-radius: 10px;
+  }
+
+  .admin-product-card-copy {
+    gap: 0.2rem;
+  }
+
+  .admin-product-card-copy > strong {
+    font-size: 0.98rem;
+    line-height: 1.3;
+  }
+
+  .admin-product-card-copy > span {
+    font-size: 0.82rem;
+  }
+
+  .admin-product-card-copy > .admin-product-card-price {
+    margin-top: 0.1rem;
+    font-size: 0.93rem;
+  }
+
+  .admin-product-card-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid #edf1f5;
+  }
+
+  .admin-product-card-controls > .admin-inline-switch {
+    min-height: 40px;
+    grid-column: 1 / -1;
+  }
+
+  .admin-product-overflow {
+    width: 100%;
+    display: block;
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+
+  .admin-product-overflow > summary {
+    min-height: 44px;
+    border-radius: 10px;
+    background: #f8fafc;
+    font-weight: 700;
+  }
+
+  .admin-product-overflow[open] > summary {
+    border-color: var(--primary);
+    color: var(--primary-dark);
+  }
+
+  .admin-product-overflow > div {
+    position: static;
+    min-width: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 0.45rem;
+    padding: 0.5rem;
+    border-radius: 10px;
+    box-shadow: none;
+  }
+
+  .admin-product-overflow > div > button {
+    min-height: 44px;
+    padding-inline: 0.45rem;
+    font-size: 0.84rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .admin-product-card-main > img,
+  .admin-product-card-main > .admin-product-placeholder {
+    width: 60px;
+    height: 60px;
+    flex-basis: 60px;
+  }
+
+  .admin-product-card-controls > .admin-primary-button,
+  .admin-product-card-controls > .admin-delete-button {
+    font-size: 0.85rem;
+  }
+
+  .admin-product-overflow > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-shell .admin-inline-switch,
+  .admin-shell .admin-product-quick-filter {
+    min-height: 44px;
+  }
+
+  .admin-shell .admin-section-order-actions .admin-order-arrow {
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    flex-basis: 44px;
+  }
+}
+
+#root:has(.admin-login-page) {
+  width: 100%;
+  max-width: none;
+  border: 0;
+  text-align: left;
+}
+
+.admin-login-page {
+  width: min(100%, 1280px);
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.1fr);
+  background: #fff;
+  color: var(--text-dark);
+}
+
+.admin-login-story {
+  min-height: 100%;
+  padding: clamp(2rem, 5vw, 4.5rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 3rem;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 12% 88%, rgb(245 158 11 / 20%), transparent 40%),
+    linear-gradient(145deg, #102a43 0%, #173f64 58%, #1d4ed8 130%);
+  color: #fff;
+}
+
+.admin-login-story-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.admin-login-story-brand img {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  object-fit: contain;
+  padding: 0.25rem;
+  border: 1px solid rgb(255 255 255 / 35%);
+  border-radius: 15px;
+  background: #fff;
+}
+
+.admin-login-story-brand span,
+.admin-login-story-brand small {
+  display: block;
+}
+
+.admin-login-story-brand small {
+  margin-top: 0.1rem;
+  color: rgb(255 255 255 / 68%);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-login-story-copy {
+  max-width: 30rem;
+  margin: auto 0;
+}
+
+.admin-login-story-kicker,
+.admin-login-kicker {
+  margin: 0 0 0.9rem;
+  color: #fbbf24;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.admin-login-story-copy h2 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(2.3rem, 4vw, 4rem);
+  font-weight: 750;
+  letter-spacing: -0.055em;
+  line-height: 1.04;
+}
+
+.admin-login-story-copy > p:last-child {
+  max-width: 26rem;
+  margin: 1.2rem 0 0;
+  color: rgb(255 255 255 / 76%);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.admin-login-story-note {
+  margin: 0;
+  color: rgb(255 255 255 / 62%);
+  font-size: 0.82rem;
+}
+
+.admin-login-panel {
+  min-width: 0;
+  padding: clamp(1.25rem, 5vw, 4rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse at 100% 0%, rgb(29 78 216 / 5%), transparent 35%),
+    #f8fafc;
+}
+
+.admin-login-page .admin-login {
+  width: min(100%, 440px);
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-login-tabs {
+  margin-bottom: 2.5rem;
+  padding: 0.25rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #edf2f7;
+}
+
+.admin-login-tabs button {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.65rem 0.8rem;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #64748b;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-login-tabs button.active {
+  background: #fff;
+  color: #173f64;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 12%);
+}
+
+.admin-login-tabs button:focus-visible,
+.admin-login-page button:focus-visible,
+.admin-login-store-link:focus-visible {
+  outline: 3px solid rgb(29 78 216 / 35%);
+  outline-offset: 2px;
+}
+
+.admin-login-heading {
+  margin-bottom: 1.75rem;
+}
+
+.admin-login-page .admin-login-kicker {
+  margin-bottom: 0.55rem;
+  color: #1d4ed8;
+}
+
+.admin-login-page .admin-login-heading h1 {
+  margin: 0;
+  color: #102a43;
+  font-size: clamp(1.8rem, 3vw, 2.25rem);
+  font-weight: 750;
+  letter-spacing: -0.045em;
+  line-height: 1.15;
+}
+
+.admin-login-heading > p:last-child {
+  margin: 0.7rem 0 0;
+  color: #64748b;
+  font-size: 0.96rem;
+  line-height: 1.55;
+}
+
+.admin-login-fields {
+  display: grid;
+  gap: 1.15rem;
+}
+
+.admin-login-page .admin-login-fields label {
+  min-width: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.45rem;
+  color: #334155;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.admin-login-page .admin-login-fields input {
+  width: 100%;
+  min-width: 0;
+  min-height: 52px;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  color: #0f172a;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 450;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 3%);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.admin-login-page .admin-login-fields input::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+.admin-login-page .admin-login-fields input:focus {
+  border-color: #2563eb;
+  outline: 0;
+  box-shadow: 0 0 0 4px rgb(37 99 235 / 12%);
+}
+
+.admin-login-page .admin-password-input {
+  min-width: 0;
+  gap: 0.4rem;
+}
+
+.admin-login-page .admin-password-input input {
+  flex: 1 1 auto;
+}
+
+.admin-login-page .admin-password-input button {
+  min-width: 54px;
+  min-height: 52px;
+  padding: 0.5rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  color: #334155;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-login-hint {
+  margin: -0.7rem 0 0;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.admin-login-page .admin-login-forgot,
+.admin-login-page .admin-login-back {
+  min-height: 44px;
+  align-self: flex-end;
+  margin: 0.2rem 0 0;
+  padding: 0.4rem 0;
+  border: 0;
+  background: transparent;
+  color: #1d4ed8;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-login-page .admin-login-submit {
+  width: 100%;
+  min-height: 52px;
+  margin-top: 1rem;
+  border: 0;
+  border-radius: 10px;
+  background: #1d4ed8;
+  box-shadow: 0 5px 12px rgb(29 78 216 / 18%);
+  font-size: 0.96rem;
+  transition: transform 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.admin-login-page .admin-login-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #1e40af;
+  box-shadow: 0 7px 16px rgb(29 78 216 / 24%);
+}
+
+.admin-login-page .admin-login-submit:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.admin-login-store-link {
+  min-height: 44px;
+  margin-top: 1.2rem;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  color: #64748b;
+  font-size: 0.86rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.admin-login-store-link:hover {
+  color: #1d4ed8;
+}
+
+.admin-login-panel-footnote {
+  margin: 2rem 0 0;
+  color: #94a3b8;
+  font-size: 0.76rem;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .admin-login-page {
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    background: #f8fafc;
+  }
+
+  .admin-login-story {
+    min-height: 0;
+    padding: max(1.15rem, env(safe-area-inset-top)) clamp(1.1rem, 5vw, 1.75rem) 1.15rem;
+    gap: 0.75rem;
+    background:
+      radial-gradient(ellipse at 100% 0%, rgb(245 158 11 / 18%), transparent 42%),
+      linear-gradient(115deg, #102a43, #173f64);
+  }
+
+  .admin-login-story-brand {
+    gap: 0.65rem;
+    font-size: 1.05rem;
+  }
+
+  .admin-login-story-brand img {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+    border-radius: 12px;
+  }
+
+  .admin-login-story-brand small {
+    font-size: 0.64rem;
+  }
+
+  .admin-login-story-copy {
+    display: none;
+  }
+
+  .admin-login-story-note {
+    display: none;
+  }
+
+  .admin-login-panel {
+    width: 100%;
+    min-width: 0;
+    padding: clamp(1.2rem, 6vw, 2rem) clamp(1rem, 6vw, 1.75rem) max(1rem, env(safe-area-inset-bottom));
+    justify-content: flex-start;
+    background: #f8fafc;
+  }
+
+  .admin-login-page .admin-login {
+    width: min(100%, 440px);
+  }
+
+  .admin-login-tabs {
+    margin-bottom: 1.75rem;
+  }
+
+  .admin-login-heading {
+    margin-bottom: 1.35rem;
+  }
+
+  .admin-login-page .admin-login-heading h1 {
+    font-size: clamp(1.75rem, 7vw, 2.1rem);
+  }
+
+  .admin-login-fields {
+    gap: 1rem;
+  }
+
+  .admin-login-page .admin-login-fields input,
+  .admin-login-page .admin-password-input button {
+    min-height: 50px;
+  }
+
+  .admin-login-page .admin-login-submit {
+    min-height: 52px;
+    margin-top: 0.75rem;
+  }
+
+  .admin-login-panel-footnote {
+    margin-top: 1.5rem;
+  }
+}
+

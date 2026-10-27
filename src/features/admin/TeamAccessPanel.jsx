@@ -6,19 +6,19 @@ import {
   getPendingAccessRequests,
   rejectAccessRequest,
   revokeAdmin,
-  revokeSalesAccess,
 } from "../../services/access.js";
 import useConfirmDialog from "../../hooks/useConfirmDialog.js";
 import ConfirmDialog from "./components/ConfirmDialog.jsx";
 import AdminButton from "./components/AdminButton.jsx";
 import AdminNotice from "./components/AdminNotice.jsx";
 import AdminState from "./components/AdminState.jsx";
+import useWorkspaceAccess from "../../hooks/useWorkspaceAccess.js";
 
 export default function TeamAccessPanel() {
+  const { session } = useWorkspaceAccess();
   const [requests, setRequests] = useState([]);
   const [team, setTeam] = useState({ admins: [], sales: [] });
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("admin");
   const [busyId, setBusyId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -69,13 +69,13 @@ export default function TeamAccessPanel() {
   async function submitApproval(event) {
     event.preventDefault();
     await perform(async () => {
-      await approveAccessByEmail(email, role);
+      await approveAccessByEmail(email);
       setEmail("");
-    }, `Approved ${email.trim()} for ${role} access.`);
+    }, `Approved ${email.trim()} for admin access.`);
   }
 
   async function approveRequest(request) {
-    await perform(() => approveAccessRequest(request.id, role), `${request.email} approved for ${role} access.`, request.id);
+    await perform(() => approveAccessRequest(request.id), `${request.email} approved for admin access.`, request.id);
   }
 
   async function rejectRequest(request) {
@@ -88,16 +88,20 @@ export default function TeamAccessPanel() {
   }
 
   async function removeTeamMember(member, memberRole) {
+    if (memberRole === "admin" && member.user_id === session?.user?.id) {
+      setError("You cannot revoke your own admin access.");
+      return;
+    }
+    if (memberRole === "admin" && team.admins.length <= 1) {
+      setError("The last remaining admin cannot be revoked.");
+      return;
+    }
     if (!await confirm({
       title: `Revoke ${memberRole} access?`,
       description: `${member.email} will lose ${memberRole} access immediately.`,
       confirmLabel: "Revoke access",
     })) return;
-    await perform(
-      () => memberRole === "admin" ? revokeAdmin(member.user_id) : revokeSalesAccess(member.user_id),
-      `${memberRole} access revoked.`,
-      member.user_id,
-    );
+    await perform(() => revokeAdmin(member.user_id), "Admin access revoked.", member.user_id);
   }
 
   if (loading) return <AdminState kind="loading" description="Loading pending requests and team access..." />;
@@ -128,13 +132,6 @@ export default function TeamAccessPanel() {
             required
           />
         </label>
-        <label>
-          Access role
-          <select value={role} onChange={(event) => setRole(event.target.value)}>
-            <option value="admin">Admin</option>
-            <option value="sales">Sales</option>
-          </select>
-        </label>
         <AdminButton variant="primary" type="submit" disabled={busyId !== ""}>
           {busyId === "form" ? "Approving..." : "Approve by email"}
         </AdminButton>
@@ -149,7 +146,7 @@ export default function TeamAccessPanel() {
                 <div><strong>{request.email}</strong><small>Requested {new Date(request.requested_at).toLocaleString()}</small></div>
                 <div className="admin-form-actions">
                   <AdminButton variant="primary" disabled={busyId !== ""} onClick={() => approveRequest(request)}>
-                    {busyId === request.id ? "Working..." : `Approve as ${role}`}
+                    {busyId === request.id ? "Working..." : "Approve as admin"}
                   </AdminButton>
                   <AdminButton variant="danger" disabled={busyId !== ""} onClick={() => rejectRequest(request)}>Reject</AdminButton>
                 </div>
@@ -159,30 +156,45 @@ export default function TeamAccessPanel() {
         ) : <AdminState title="No pending requests" description="New sign-up requests will appear here." />}
       </section>
 
-      {[
-        ["admins", "Current admins", "admin"],
-        ["sales", "Sales users", "sales"],
-      ].map(([key, title, memberRole]) => (
-        <section key={key} aria-labelledby={`team-${key}-title`}>
-          <h3 id={`team-${key}-title`}>{title}</h3>
-          {team[key].length ? (
-            <ul className="team-access-list">
-              {team[key].map((member) => (
-                <li key={member.user_id} className="team-access-card">
-                  <strong>{member.email}</strong>
+      <section aria-labelledby="team-admins-title">
+        <h3 id="team-admins-title">Current admins</h3>
+        {team.admins.length ? (
+          <ul className="team-access-list">
+            {team.admins.map((member) => (
+              <li key={member.user_id} className="team-access-card">
+                <strong>{member.email}</strong>
+                <div className="team-access-admin-actions">
                   <AdminButton
                     variant="danger"
-                    disabled={busyId !== ""}
-                    onClick={() => removeTeamMember(member, memberRole)}
+                    disabled={busyId !== "" || member.user_id === session?.user?.id || team.admins.length <= 1}
+                    title={
+                      member.user_id === session?.user?.id && team.admins.length <= 1
+                        ? "You cannot revoke your own access, and at least one admin must remain."
+                        : member.user_id === session?.user?.id
+                          ? "You cannot revoke your own admin access."
+                        : team.admins.length <= 1
+                          ? "At least one admin must remain."
+                          : undefined
+                    }
+                    onClick={() => removeTeamMember(member, "admin")}
                   >
-                    Revoke {memberRole}
+                    Revoke admin
                   </AdminButton>
-                </li>
-              ))}
-            </ul>
-          ) : <AdminState title={`No ${memberRole} users`} />}
-        </section>
-      ))}
+                  {member.user_id === session?.user?.id && team.admins.length <= 1 && (
+                    <small>You cannot revoke your own access, and at least one admin must remain.</small>
+                  )}
+                  {member.user_id === session?.user?.id && team.admins.length > 1 && (
+                    <small>You cannot revoke your own access.</small>
+                  )}
+                  {team.admins.length <= 1 && member.user_id !== session?.user?.id && (
+                    <small>At least one admin must remain.</small>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : <AdminState title="No admin users" />}
+      </section>
     </section>
   );
 }

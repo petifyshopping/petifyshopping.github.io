@@ -25,6 +25,18 @@ const PasswordReset = lazy(() => import("./features/admin/auth/PasswordReset.jsx
 const CART_STORAGE_KEY = "petify-store-cart";
 const DEFAULT_DOCUMENT_TITLE = "Pëtify | Pure love, premium care";
 
+function isPasswordResetLocation(search, hash) {
+  const queryParams = new URLSearchParams(search);
+  const hashParams = new URLSearchParams(hash.replace(/^#/, ""));
+  return queryParams.get("password-reset") === "1"
+    || queryParams.get("view") === "reset-password"
+    || queryParams.get("type") === "recovery"
+    || queryParams.get("error_code") === "otp_expired"
+    || hash === "#reset-password"
+    || hashParams.get("type") === "recovery"
+    || hashParams.get("error_code") === "otp_expired";
+}
+
 function readStoredCart() {
   try {
     const rawCart = window.localStorage.getItem(CART_STORAGE_KEY);
@@ -72,9 +84,7 @@ export default function App() {
   const isAboutRoute = routeHash === "#about";
   const isSalesPortalRoute = routePath === "/petify-dashboard"
     || (routePath === "/" && (routeHash === "#sales-dashb" || routeHash.startsWith("#petify-dashboard")));
-  const isPasswordResetRoute = new URLSearchParams(window.location.search).get("view") === "reset-password"
-    || routeHash === "#reset-password"
-    || new URLSearchParams(routeHash.slice(1)).get("type") === "recovery";
+  const isPasswordResetRoute = isPasswordResetLocation(window.location.search, routeHash);
   const [showScrollTop, setShowScrollTop] = useState(window.scrollY > 320);
   const [storedCart] = useState(readStoredCart);
   const [cart, setCart] = useState(storedCart.items);
@@ -403,7 +413,11 @@ export default function App() {
   if (isSalesPortalRoute) return (
     <WorkspaceAccessProvider>
       <Suspense fallback={<div className="admin-gate"><p className="admin-muted">Loading Sales portal...</p></div>}>
-        <SalesPortal products={products} adminBrand={settings?.adminBrand} />
+      <SalesPortal products={products} adminBrand={settings?.adminBrand} storefrontBrand={{
+        brandTitle: settings?.brandTitle,
+        tagline: settings?.tagline,
+        logoUrl: settings?.logoUrl,
+      }} />
       </Suspense>
     </WorkspaceAccessProvider>
   );
@@ -413,6 +427,11 @@ export default function App() {
       <Suspense fallback={<div className="admin-gate"><p className="admin-muted">Loading admin...</p></div>}>
         <AdminDashboard
           adminBrand={settings?.adminBrand}
+          storefrontBrand={{
+            brandTitle: settings?.brandTitle,
+            tagline: settings?.tagline,
+            logoUrl: settings?.logoUrl,
+          }}
           initialView={
             routeHash === "#admin-settings"
               ? "site-settings"

@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import WorkspaceSidebar from "./WorkspaceSidebar.jsx";
 import { createAdminNavigationItems, isSiteSettingsView, normalizeAdminView, SITE_SETTINGS_VIEWS } from "./adminNavigation.js";
 import AccountMenu from "./AccountMenu.jsx";
+import AdminProfile from "./AdminProfile.jsx";
 import { deleteWorkspaceDraft, getWorkspaceDrafts } from "../../services/workspaceDrafts.js";
 import useWorkspaceAccess from "../../hooks/useWorkspaceAccess.js";
 import useConfirmDialog from "../../hooks/useConfirmDialog.js";
@@ -51,8 +52,17 @@ function loadSiteSettingsManager() {
 const SiteSettingsManager = lazy(loadSiteSettingsManager);
 const ProductEditor = lazy(() => import("./products/ProductEditor.jsx"));
 
-export default function ProductManager({ session, adminBrand, onAdminBrandChange, initialView }) {
+export default function ProductManager({
+  session,
+  adminBrand,
+  storefrontBrand,
+  onAdminBrandChange,
+  initialView,
+}) {
   const { signOut } = useWorkspaceAccess();
+  const [profileName, setProfileName] = useState(
+    () => session.user.user_metadata?.full_name ?? session.user.user_metadata?.name ?? session.user.email?.split("@")[0] ?? "Admin",
+  );
   const [products, setProducts] = useState([]);
   const [sections, setSections] = useState([]);
   const [mainSections, setMainSections] = useState([]);
@@ -545,9 +555,13 @@ export default function ProductManager({ session, adminBrand, onAdminBrandChange
       <ConfirmDialog {...dialogProps} />
       <AdminTopbar
         brand={adminBrand}
-        pageTitle={editorProduct ? (editorProduct.id ? "Edit product" : "Add product") : SITE_SETTINGS_VIEWS.find(({ id }) => id === activeView)?.label ?? (isSettingsView ? "Site settings" : "Products")}
+        storefrontBrand={storefrontBrand}
+        pageTitle={editorProduct ? (editorProduct.id ? "Edit product" : "Add product") : SITE_SETTINGS_VIEWS.find(({ id }) => id === activeView)?.label ?? (isSettingsView ? "Site settings" : activeView === "profile" ? "Profile" : "Products")}
+        searchValue={productSearch}
+        onSearchChange={setProductSearch}
+        showSearch={activeView === "products" && !editorProduct}
       >
-        <AccountMenu email={session.user.email} onSignOut={signOut} />
+        <AccountMenu displayName={profileName} onOpenProfile={() => selectWorkspaceView("profile")} />
       </AdminTopbar>
       <main className="admin-content">
         <WorkspaceSidebar items={createAdminNavigationItems(activeView, selectWorkspaceView)} />
@@ -599,6 +613,13 @@ export default function ProductManager({ session, adminBrand, onAdminBrandChange
               </>
             )}
           </div>
+          {activeView === "profile" && (
+            <AdminProfile
+              user={session.user}
+              onSignOut={signOut}
+              onDisplayNameChange={setProfileName}
+            />
+          )}
           <div hidden={activeView !== "products"}>
             {editorProduct ? (
               <Suspense fallback={<p className="admin-muted">Loading product editor...</p>}>
@@ -698,15 +719,6 @@ export default function ProductManager({ session, adminBrand, onAdminBrandChange
                 )}
               </div>
               <div className="admin-product-toolbar">
-                <label className="admin-product-search">
-                  <span>Search products</span>
-                  <input
-                    type="search"
-                    value={productSearch}
-                    onChange={(event) => setProductSearch(event.target.value)}
-                    placeholder="Search by name or product ID"
-                  />
-                </label>
                 <AdminButton onClick={() => setFiltersOpen(true)}>
                   Filters{(productStatusFilter !== "all" || productSectionFilter !== "all" || productSort !== "display") ? " · active" : ""}
                 </AdminButton>
@@ -961,6 +973,7 @@ export default function ProductManager({ session, adminBrand, onAdminBrandChange
       <AdminBottomNav items={[
         { id: "products", label: "Products", icon: "▦", active: activeView === "products", onClick: () => selectWorkspaceView("products") },
         { id: "settings", label: "Settings", icon: "⚙", active: isSettingsView, onClick: () => selectWorkspaceView("site-settings") },
+        { id: "profile", label: "Profile", icon: "☺", active: activeView === "profile", onClick: () => selectWorkspaceView("profile") },
       ]} />
     </div>
   );

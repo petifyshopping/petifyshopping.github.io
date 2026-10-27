@@ -7,6 +7,8 @@ import AdminNotice from "../components/AdminNotice.jsx";
 export default function PasswordReset({ adminBrand: initialAdminBrand }) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -89,11 +91,29 @@ export default function PasswordReset({ adminBrand: initialAdminBrand }) {
           <div className="admin-login-fields">
             <label>
               New password
-              <input type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+              <span className="admin-password-input">
+                <input type={showPassword ? "text" : "password"} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+                <button
+                  type="button"
+                  aria-label={showPassword ? "Hide new password" : "Show new password"}
+                  onClick={() => setShowPassword((shown) => !shown)}
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </span>
             </label>
             <label>
               Confirm new password
-              <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required />
+              <span className="admin-password-input">
+                <input type={showConfirmPassword ? "text" : "password"} autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required />
+                <button
+                  type="button"
+                  aria-label={showConfirmPassword ? "Hide confirmation password" : "Show confirmation password"}
+                  onClick={() => setShowConfirmPassword((shown) => !shown)}
+                >
+                  {showConfirmPassword ? "Hide" : "Show"}
+                </button>
+              </span>
             </label>
           </div>
           {error && <AdminNotice kind="error">{error}</AdminNotice>}

@@ -22,6 +22,7 @@ Petify's product catalog is a React + Vite web app. Products, sections, and all 
    8. `08-product-seed.sql` inserts or updates the current product details. Seeded products start without photos; upload their photos from the admin page.
 
    Run each complete file in the Supabase SQL Editor, top to bottom. The schema modules are safe to rerun in this dependency order and preserve existing `admin_users` and `sales_users` rows.
+   For an existing project, apply `09-admin-only-access.sql` to update `get_my_access()` so admin verification uses `admin_users` and access requests only; it no longer reads `sales_users`.
 3. In Supabase Authentication, enable email/password sign-in and email confirmation. Enable sign-ups so staff can request accounts; unapproved accounts cannot access the workspace, and RLS remains the security boundary.
 4. Create the first admin once, using the account's email, in the Supabase SQL Editor. This is a privileged bootstrap operation and must not be exposed as a client RPC:
 
@@ -36,7 +37,7 @@ Petify's product catalog is a React + Vite web app. Products, sections, and all 
    Run this once for the initial owner only. There is no public/admin-client bootstrap RPC. Add later admins through **Site settings → Team & Access**.
 5. Configure Supabase Auth settings before launch:
    - Require email confirmation and choose the password minimum in Supabase Auth to match your preference. The app does not impose an additional password length rule.
-   - Keep **Confirm email** enabled. Add the production site URL and `http://localhost:5173` to **Authentication → URL Configuration → Redirect URLs**, including the reset destination `https://your-production-host/?view=reset-password` and `http://localhost:5173/?view=reset-password`. Keep the site URL set to the canonical production origin.
+   - Keep **Confirm email** enabled. Add the production site URL and `http://localhost:5173` to **Authentication → URL Configuration → Redirect URLs**, including the reset destination `https://your-production-host/?view=reset-password` and `http://localhost:5173/?view=reset-password`. Keep the site URL set to the canonical production origin. In the **Reset Password** email template, use Supabase's `{{ .ConfirmationURL }}` link so verification follows the requested redirect; do not link directly to `{{ .SiteURL }}`, which opens the storefront instead of the password form.
    - Keep built-in email/password rate limits enabled, configure CAPTCHA for sign-up and password-reset endpoints, and set appropriate email delivery limits for the project.
    - Set the Auth session time-box to 10 hours. The app also enforces a 10-hour limit in open and reopened workspace tabs.
 6. Copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from the project's API settings. Restart Vite.

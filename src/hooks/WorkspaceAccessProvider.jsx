@@ -17,7 +17,7 @@ function readCachedAccess(userId) {
       stored
       && stored.expiresAt > Date.now()
       && typeof stored.access?.is_admin === "boolean"
-      && typeof stored.access?.has_sales_access === "boolean"
+      && typeof stored.access?.status === "string"
     ) return stored.access;
   } catch (error) {
     console.warn("Cached workspace access could not be read.", error);
@@ -90,7 +90,6 @@ export function WorkspaceAccessProvider({ children }) {
         if (
           !data
           || typeof data.is_admin !== "boolean"
-          || typeof data.has_sales_access !== "boolean"
           || typeof data.status !== "string"
         ) throw new Error("Workspace access returned an invalid response.");
         writeCachedAccess(userId, data);

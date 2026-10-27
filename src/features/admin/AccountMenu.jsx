@@ -3,7 +3,7 @@ import { supabase } from "../../lib/supabase.js";
 import AdminButton from "./components/AdminButton.jsx";
 import AdminNotice from "./components/AdminNotice.jsx";
 
-export default function AccountMenu({ email, onSignOut }) {
+export default function AccountMenu({ displayName, onOpenProfile, email, onSignOut }) {
   const [open, setOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -16,23 +16,21 @@ export default function AccountMenu({ email, onSignOut }) {
   const menuRef = useRef(null);
 
   useEffect(() => {
+    if (onOpenProfile) return undefined;
     function closeMenu(event) {
       if (event.type === "keydown" && event.key === "Escape") {
         setOpen(false);
         return;
       }
-      if (event.type === "pointerdown" && !menuRef.current?.contains(event.target)) {
-        setOpen(false);
-      }
+      if (event.type === "pointerdown" && !menuRef.current?.contains(event.target)) setOpen(false);
     }
-
     document.addEventListener("pointerdown", closeMenu);
     document.addEventListener("keydown", closeMenu);
     return () => {
       document.removeEventListener("pointerdown", closeMenu);
       document.removeEventListener("keydown", closeMenu);
     };
-  }, []);
+  }, [onOpenProfile]);
 
   async function signOut() {
     setSignOutError("");
@@ -51,13 +49,9 @@ export default function AccountMenu({ email, onSignOut }) {
       setError("The new passwords do not match.");
       return;
     }
-
     setBusy(true);
     try {
-      const { error: verificationError } = await supabase.auth.signInWithPassword({
-        email,
-        password: currentPassword,
-      });
+      const { error: verificationError } = await supabase.auth.signInWithPassword({ email, password: currentPassword });
       if (verificationError) {
         setError("The current password could not be verified.");
         return;
@@ -78,33 +72,31 @@ export default function AccountMenu({ email, onSignOut }) {
     }
   }
 
+  if (onOpenProfile) {
   return (
-    <div
-      className="admin-account-menu"
-      ref={menuRef}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-    >
+    <div className="admin-account-menu">
       <button
         className="admin-account-trigger"
         type="button"
-        aria-label={`Account menu for ${email}`}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen(true)}
+        aria-label={`Open admin profile for ${displayName || "admin"}`}
+        onClick={onOpenProfile}
       >
+        <span>{displayName || "Admin"}</span>
+      </button>
+    </div>
+  );
+  }
+
+  return (
+    <div className="admin-account-menu" ref={menuRef} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button className="admin-account-trigger" type="button" aria-label={`Account menu for ${email}`} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(true)}>
         <span>{email}</span>
         <span className="admin-account-chevron" aria-hidden="true">⌄</span>
       </button>
       {open && (
         <div className="admin-account-dropdown" role="menu">
           {signOutError && <AdminNotice kind="error">{signOutError}</AdminNotice>}
-          <button
-            className="admin-account-signout"
-            type="button"
-            role="menuitem"
-            onClick={() => { setPasswordOpen((value) => !value); setError(""); setNotice(""); }}
-          >
+          <button className="admin-account-signout" type="button" role="menuitem" onClick={() => { setPasswordOpen((value) => !value); setError(""); setNotice(""); }}>
             {passwordOpen ? "Close password change" : "Change password"}
           </button>
           {passwordOpen && (
@@ -117,14 +109,7 @@ export default function AccountMenu({ email, onSignOut }) {
               <AdminButton variant="primary" type="submit" disabled={busy}>{busy ? "Changing..." : "Save new password"}</AdminButton>
             </form>
           )}
-          <button
-            className="admin-account-signout"
-            type="button"
-            role="menuitem"
-            onClick={signOut}
-          >
-            Sign out
-          </button>
+          <button className="admin-account-signout" type="button" role="menuitem" onClick={signOut}>Sign out</button>
         </div>
       )}
     </div>

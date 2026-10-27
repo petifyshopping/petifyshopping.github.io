@@ -1,10 +1,25 @@
-export default function AdminTopbar({ brand, pageTitle, backHref = "/", children }) {
+import ProjectHeader from "../../shared/ProjectHeader.jsx";
+
+export default function AdminTopbar({
+  brand,
+  storefrontBrand,
+  pageTitle,
+  searchValue,
+  onSearchChange,
+  showSearch = false,
+  children,
+}) {
   return (
-    <header className="admin-topbar">
-      <a className="admin-mobile-back" href={backHref} aria-label="Back to storefront">‹</a>
-      <span className="admin-mobile-page-title">{pageTitle}</span>
-      <a className="admin-brand" href="/">{brand.name} <span>{brand.label}</span></a>
+    <ProjectHeader
+      variant="admin"
+      brand={brand}
+      storefrontBrand={storefrontBrand}
+      pageTitle={pageTitle}
+      searchValue={searchValue}
+      onSearchChange={onSearchChange}
+      showAdminSearch={showSearch}
+    >
       {children}
-    </header>
+    </ProjectHeader>
   );
 }

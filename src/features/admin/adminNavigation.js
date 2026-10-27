@@ -5,7 +5,6 @@ export const SITE_SETTINGS_VIEWS = [
   { id: "site-storefront", label: "Store sections", description: "Catalog visibility, features, and coming-soon content.", section: "storefront" },
   { id: "site-brand-assets", label: "Brand assets", description: "Store logo and browser favicon.", section: "brand-assets" },
   { id: "site-appearance", label: "Branding & loading", description: "Admin dashboard identity and loading screen.", section: "appearance" },
-  { id: "site-team", label: "Team & access", description: "Manage team access and workspace permissions.", section: "team" },
 ];
 
 const settingsViewIds = new Set(SITE_SETTINGS_VIEWS.map(({ id }) => id));
@@ -15,8 +14,9 @@ export function isSiteSettingsView(view) {
 }
 
 export function normalizeAdminView(view) {
+  if (view === "site-team") return "profile";
   if (view === "site-settings") return "site-settings";
-  return view === "products" || settingsViewIds.has(view) ? view : "products";
+  return view === "products" || view === "profile" || settingsViewIds.has(view) ? view : "products";
 }
 
 export function createAdminNavigationItems(activeView, onSelect) {
@@ -34,6 +34,13 @@ export function createAdminNavigationItems(activeView, onSelect) {
       icon: "settings",
       active: isSiteSettingsView(activeView),
       onClick: () => onSelect("site-settings"),
+    },
+    {
+      id: "profile",
+      label: "Profile",
+      icon: "team",
+      active: activeView === "profile",
+      onClick: () => onSelect("profile"),
     },
   ];
 }

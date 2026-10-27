@@ -14,7 +14,11 @@ import AdminBottomNav from "../admin/components/AdminBottomNav.jsx";
 import WorkspaceAccessStatus from "../admin/auth/WorkspaceAccessStatus.jsx";
 import { requestAccess } from "../../services/access.js";
 
-export default function SalesPortal({ products, adminBrand: initialAdminBrand }) {
+export default function SalesPortal({
+  products,
+  adminBrand: initialAdminBrand,
+  storefrontBrand,
+}) {
   const {
     session,
     setSession,
@@ -118,7 +122,11 @@ export default function SalesPortal({ products, adminBrand: initialAdminBrand })
   return (
     <div className="admin-shell sales-portal-shell">
       {signOutError && <AdminNotice kind="error">{signOutError}</AdminNotice>}
-      <AdminTopbar brand={{ ...adminBrand, label: "Sales" }} pageTitle="Sales dashboard">
+      <AdminTopbar
+        brand={{ ...adminBrand, label: "Sales" }}
+        storefrontBrand={storefrontBrand}
+        pageTitle="Sales dashboard"
+      >
         <AccountMenu email={session.user.email} onSignOut={handleSignOut} />
       </AdminTopbar>
       <main className="admin-content">

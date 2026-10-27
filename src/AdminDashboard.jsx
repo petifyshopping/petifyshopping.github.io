@@ -8,7 +8,11 @@ import WorkspaceAccessStatus from "./features/admin/auth/WorkspaceAccessStatus.j
 const AdminLogin = lazy(() => import("./features/admin/auth/AdminLogin.jsx"));
 const ProductManager = lazy(() => import("./features/admin/AdminWorkspace.jsx"));
 
-export default function AdminDashboard({ adminBrand: initialAdminBrand, initialView }) {
+export default function AdminDashboard({
+  adminBrand: initialAdminBrand,
+  storefrontBrand,
+  initialView,
+}) {
   const {
     session,
     setSession,
@@ -68,7 +72,13 @@ export default function AdminDashboard({ adminBrand: initialAdminBrand, initialV
 
   return (
     <Suspense fallback={<div className="admin-gate"><p className="admin-muted">Loading admin workspace...</p></div>}>
-      <ProductManager session={session} adminBrand={adminBrand} onAdminBrandChange={setAdminBrand} initialView={initialView} />
+      <ProductManager
+        session={session}
+        adminBrand={adminBrand}
+        storefrontBrand={storefrontBrand}
+        onAdminBrandChange={setAdminBrand}
+        initialView={initialView}
+      />
     </Suspense>
   );
 }

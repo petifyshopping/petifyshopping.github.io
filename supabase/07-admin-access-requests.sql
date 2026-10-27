@@ -80,18 +80,13 @@ as $$
 declare
   v_user_id uuid := (select auth.uid());
   v_is_admin boolean;
-  v_has_sales_access boolean;
   v_status text;
 begin
   select exists (
     select 1 from public.admin_users where user_id = v_user_id
   ) into v_is_admin;
 
-  v_has_sales_access := v_is_admin or exists (
-    select 1 from public.sales_users where user_id = v_user_id
-  );
-
-  if v_has_sales_access then
+  if v_is_admin then
     v_status := 'approved';
   else
     select case
@@ -108,7 +103,6 @@ begin
 
   return jsonb_build_object(
     'is_admin', coalesce(v_is_admin, false),
-    'has_sales_access', coalesce(v_has_sales_access, false),
     'status', v_status
   );
 end;

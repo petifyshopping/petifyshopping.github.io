@@ -1,5 +1,5 @@
 git add .
-git commit -m "sales removed and fixed admin panels"
+git commit -m "fixed admin header, admin profile"
 git push origin admin-edits
 
 npm run build

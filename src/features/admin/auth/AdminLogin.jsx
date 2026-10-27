@@ -86,7 +86,7 @@ export default function AdminLogin({
       }
 
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/?view=reset-password`,
+        redirectTo: `${window.location.origin}/?password-reset=1`,
       });
       if (resetError) {
         setError(GENERIC_AUTH_ERROR);

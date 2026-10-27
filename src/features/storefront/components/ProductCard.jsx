@@ -10,7 +10,7 @@ function handleImageError(event) {
   event.currentTarget.src = placeholderImage;
 }
 
-export default function ProductCard({ product, whatsappNumber, cartItems, onAddToCart, onUpdateQuantity, onOpenDetails }) {
+export default function ProductCard({ product, whatsappNumber, cartItems, onAddToCart, onUpdateQuantity, onOpenDetails, onDirectOrder }) {
   const variants = productOptions(product);
   const isVariantProduct = Boolean(product.variants?.length);
   const [selectedVariantId, setSelectedVariantId] = useState(variants[0]?.id ?? "");
@@ -49,10 +49,14 @@ export default function ProductCard({ product, whatsappNumber, cartItems, onAddT
           <div className="product-tile-heading">
             <div className="product-tile-title-group">
               <h3>{product.title}</h3>
-              {(product.badge || (combo && product.saveTag)) && (
+              {(product.badge || combo) && (
                 <div className="product-tile-labels">
                   {product.badge && <span className="product-summary-badge">{product.badge}</span>}
-                  {combo && product.saveTag && <span className="product-summary-badge product-tile-savings">{product.saveTag}</span>}
+                  {combo && (
+                    <span className="product-summary-badge product-tile-savings">
+                      {product.saveTag || "Combo"}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -112,6 +116,7 @@ export default function ProductCard({ product, whatsappNumber, cartItems, onAddT
                 combo={combo}
                 variant={isVariantProduct ? selectedVariant : null}
                 compact
+                onOrder={onDirectOrder}
               />
             </div>
           </div>

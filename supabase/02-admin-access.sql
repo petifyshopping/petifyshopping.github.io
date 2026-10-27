@@ -13,6 +13,7 @@ create policy "Users can read their own admin status"
   to authenticated
   using (user_id = (select auth.uid()));
 
+-- Admin authorization is evaluated against the user ID in each request's JWT.
 create or replace function public.is_petify_admin()
 returns boolean
 language sql

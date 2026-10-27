@@ -51,6 +51,7 @@ function loadSiteSettingsManager() {
 
 const SiteSettingsManager = lazy(loadSiteSettingsManager);
 const ProductEditor = lazy(() => import("./products/ProductEditor.jsx"));
+const CustomerManagement = lazy(() => import("./CustomerManagement.jsx"));
 
 export default function ProductManager({
   session,
@@ -556,7 +557,7 @@ export default function ProductManager({
       <AdminTopbar
         brand={adminBrand}
         storefrontBrand={storefrontBrand}
-        pageTitle={editorProduct ? (editorProduct.id ? "Edit product" : "Add product") : SITE_SETTINGS_VIEWS.find(({ id }) => id === activeView)?.label ?? (isSettingsView ? "Site settings" : activeView === "profile" ? "Profile" : "Products")}
+        pageTitle={editorProduct ? (editorProduct.id ? "Edit product" : "Add product") : SITE_SETTINGS_VIEWS.find(({ id }) => id === activeView)?.label ?? (isSettingsView ? "Site settings" : activeView === "profile" ? "Profile" : activeView === "customers" ? "Customers" : "Products")}
         searchValue={productSearch}
         onSearchChange={setProductSearch}
         showSearch={activeView === "products" && !editorProduct}
@@ -619,6 +620,11 @@ export default function ProductManager({
               onSignOut={signOut}
               onDisplayNameChange={setProfileName}
             />
+          )}
+          {activeView === "customers" && (
+            <Suspense fallback={<p className="admin-muted">Loading customers and orders...</p>}>
+              <CustomerManagement />
+            </Suspense>
           )}
           <div hidden={activeView !== "products"}>
             {editorProduct ? (
@@ -972,6 +978,7 @@ export default function ProductManager({
       </FilterSheet>
       <AdminBottomNav items={[
         { id: "products", label: "Products", icon: "▦", active: activeView === "products", onClick: () => selectWorkspaceView("products") },
+        { id: "customers", label: "Customers", icon: "♙", active: activeView === "customers", onClick: () => selectWorkspaceView("customers") },
         { id: "settings", label: "Settings", icon: "⚙", active: isSettingsView, onClick: () => selectWorkspaceView("site-settings") },
         { id: "profile", label: "Profile", icon: "☺", active: activeView === "profile", onClick: () => selectWorkspaceView("profile") },
       ]} />

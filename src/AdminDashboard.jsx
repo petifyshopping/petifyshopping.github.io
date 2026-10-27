@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useState } from "react";
-import { supabase } from "./lib/supabase.js";
+import { adminSupabase } from "./lib/supabase.js";
 import { DEFAULT_ADMIN_BRAND, normalizeAdminBrand } from "./config/siteAppearance.js";
 import useWorkspaceAccess from "./hooks/useWorkspaceAccess.js";
 import { requestAccess } from "./services/access.js";
@@ -37,7 +37,7 @@ export default function AdminDashboard({
   }), [initialAdminBrand]);
   const isAdmin = Boolean(access?.is_admin);
 
-  if (!supabase) {
+  if (!adminSupabase) {
     return <div className="admin-gate"><div><p className="admin-eyebrow">SUPABASE SETUP</p><h1>Connect your project first</h1><p>Add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> to <code>.env.local</code>, then restart Vite.</p><a href="/">Back to storefront</a></div></div>;
   }
 

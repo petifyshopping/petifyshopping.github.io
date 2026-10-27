@@ -1,8 +1,8 @@
-import { supabase } from "../lib/supabase.js";
+import { adminSupabase } from "../lib/supabase.js";
 
 function requireSupabase() {
-  if (!supabase) throw new Error("Connect Supabase before saving workspace drafts.");
-  return supabase;
+  if (!adminSupabase) throw new Error("Connect Supabase before saving workspace drafts.");
+  return adminSupabase;
 }
 
 export async function getWorkspaceDraft(userId, draftType, draftKey) {

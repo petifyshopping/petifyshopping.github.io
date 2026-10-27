@@ -1,6 +1,6 @@
 git add .
-git commit -m "fixed admin header, admin profile"
-git push origin admin-edits
+git commit -m "user profile management"
+git push origin user-profiles
 
 npm run build
 npm run deploy

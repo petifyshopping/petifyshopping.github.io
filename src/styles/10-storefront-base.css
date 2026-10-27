@@ -121,6 +121,7 @@ header {
 }
 
 .store-menu-panel a,
+.store-menu-account,
 .store-menu-cart {
   display: flex;
   min-height: 46px;
@@ -140,6 +141,7 @@ header {
 }
 
 .store-menu-panel a:hover,
+.store-menu-account:hover,
 .store-menu-cart:hover {
   background: color-mix(in srgb, var(--primary) 7%, white);
 }
@@ -154,6 +156,7 @@ header {
 
 .store-menu-trigger:focus-visible,
 .store-menu-panel a:focus-visible,
+.store-menu-account:focus-visible,
 .store-menu-cart:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 3px;
@@ -1463,15 +1466,25 @@ html {
   background: linear-gradient(120deg, #10a36f, #07865c);
   box-shadow: 0 10px 24px rgba(5, 150, 105, 0.2);
   color: white;
+  border: 0;
+  padding: 0.8rem 1rem;
+  font: inherit;
   font-weight: 800;
   text-align: center;
   text-decoration: none;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
 }
 
 .store-cart-checkout:hover {
   transform: translateY(-2px);
   box-shadow: 0 14px 28px rgba(5, 150, 105, 0.28);
+}
+
+.store-cart-checkout:disabled {
+  cursor: wait;
+  opacity: 0.72;
+  transform: none;
 }
 
 .store-cart-checkout svg {
@@ -1700,4 +1713,3 @@ body:has(#site-header) #site-footer .footer-legal {
     transform: none;
   }
 }
-

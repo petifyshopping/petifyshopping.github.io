@@ -1,0 +1,384 @@
+.customer-management {
+  display: grid;
+  gap: 1.6rem;
+  padding-bottom: 2rem;
+}
+
+.customer-management > .admin-page-heading {
+  align-items: flex-end;
+}
+
+.customer-management-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.customer-management-summary span,
+.customer-management-count {
+  padding: 0.48rem 0.7rem;
+  border: 1px solid var(--admin-border, #e1e6ef);
+  border-radius: 999px;
+  background: var(--admin-surface, #fff);
+  color: var(--admin-muted, #718097);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.customer-management-summary strong {
+  color: var(--admin-text, #1d2940);
+  font-variant-numeric: tabular-nums;
+}
+
+.customer-management-error {
+  padding: 0.8rem 1rem;
+  border: 1px solid #efc1c1;
+  border-radius: 12px;
+  background: #fff3f3;
+  color: #8d2929;
+  font-size: 0.85rem;
+}
+
+.customer-management-section {
+  min-width: 0;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  border: 1px solid var(--admin-border, #e1e6ef);
+  border-radius: 18px;
+  background: var(--admin-surface, #fff);
+  box-shadow: 0 8px 26px rgb(19 36 66 / 5%);
+}
+
+.customer-management-section-heading,
+.customer-order-admin-heading,
+.customer-order-admin-items li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.customer-management-section-heading {
+  margin-bottom: 1rem;
+}
+
+.customer-management-section-heading h2 {
+  margin: 0;
+  color: var(--admin-text, #1d2940);
+  font-size: 1.15rem;
+}
+
+.customer-management-section-heading .admin-eyebrow {
+  margin-bottom: 0.25rem;
+}
+
+.customer-management-search input {
+  width: min(100%, 290px);
+  min-height: 42px;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--admin-border, #dce2ec);
+  border-radius: 11px;
+  background: var(--admin-surface, #fff);
+  color: var(--admin-text, #1d2940);
+  font: inherit;
+  font-size: 0.82rem;
+}
+
+.customer-management-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--admin-border, #e7eaf0);
+  border-radius: 13px;
+}
+
+.customer-management-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.customer-management-table th,
+.customer-management-table td {
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--admin-border, #e9edf3);
+  color: var(--admin-text, #29364d);
+  font-size: 0.8rem;
+  vertical-align: top;
+}
+
+.customer-management-table th {
+  background: var(--admin-subtle, #f7f9fc);
+  color: var(--admin-muted, #64728a);
+  font-size: 0.69rem;
+  font-weight: 800;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.customer-management-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.customer-management-table td:first-child {
+  min-width: 190px;
+}
+
+.customer-management-table td:first-child strong,
+.customer-management-table td:first-child > span {
+  display: block;
+}
+
+.customer-management-table td:first-child > span {
+  margin-top: 0.15rem;
+  color: var(--admin-muted, #748198);
+  font-size: 0.74rem;
+}
+
+.customer-management-muted,
+.customer-management-empty {
+  color: var(--admin-muted, #748198);
+}
+
+.customer-management-section > .customer-management-muted {
+  margin: -0.3rem 0 1rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.customer-contact-settings {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.customer-contact-setting {
+  display: flex;
+  min-width: min(100%, 220px);
+  flex: 1 1 220px;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  border: 1px solid var(--admin-border, #e1e6ef);
+  border-radius: 12px;
+  background: var(--admin-subtle, #fbfcfe);
+  color: var(--admin-text, #29364d);
+  cursor: pointer;
+}
+
+.customer-contact-setting input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin: 0.12rem 0 0;
+  accent-color: var(--admin-link, #345dc2);
+}
+
+.customer-contact-setting span {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.customer-contact-setting strong {
+  font-size: 0.8rem;
+}
+
+.customer-contact-setting small {
+  color: var(--admin-muted, #748198);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.customer-contact-settings-notice {
+  align-self: center;
+  margin: 0;
+  color: #207346;
+  font-size: 0.78rem;
+}
+
+.customer-management-empty {
+  margin: 0;
+  padding: 1rem 0;
+  font-size: 0.85rem;
+}
+
+.customer-management-load-more {
+  display: block;
+  min-height: 42px;
+  margin: 0.9rem auto 0;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--admin-border, #dce2ec);
+  border-radius: 11px;
+  background: var(--admin-surface, #fff);
+  color: var(--admin-text, #29364d);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.customer-management-load-more:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.customer-order-admin-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.customer-order-admin-card {
+  padding: 1rem;
+  border: 1px solid var(--admin-border, #e5e9f0);
+  border-radius: 14px;
+  background: var(--admin-subtle, #fbfcfe);
+}
+
+.customer-order-admin-heading h3 {
+  margin: 0;
+  color: var(--admin-text, #1d2940);
+  font-size: 0.95rem;
+}
+
+.customer-order-admin-heading a,
+.customer-order-admin-contact a {
+  color: var(--admin-link, #345dc2);
+  font-size: 0.76rem;
+  text-decoration: none;
+}
+
+.customer-order-admin-total {
+  display: grid;
+  gap: 0.1rem;
+  justify-items: end;
+}
+
+.customer-order-admin-total strong {
+  color: var(--admin-text, #1d2940);
+  font-size: 0.92rem;
+}
+
+.customer-order-admin-total span {
+  color: var(--admin-muted, #748198);
+  font-size: 0.69rem;
+}
+
+.customer-order-admin-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin-top: 0.65rem;
+  color: var(--admin-muted, #64728a);
+  font-size: 0.78rem;
+}
+
+.customer-order-admin-items {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.8rem 0;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--admin-border, #e5e9f0);
+  border-bottom: 1px solid var(--admin-border, #e5e9f0);
+  list-style: none;
+}
+
+.customer-order-admin-items li {
+  color: var(--admin-text, #39465d);
+  font-size: 0.78rem;
+}
+
+.customer-order-admin-items strong {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+}
+
+.customer-order-admin-note {
+  margin: 0.6rem 0;
+  color: var(--admin-muted, #64728a);
+  font-size: 0.78rem;
+  white-space: pre-wrap;
+}
+
+.customer-order-admin-status {
+  display: inline-flex;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  background: #fff3da;
+  color: #795512;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.customer-order-admin-status.is-confirmed {
+  background: #e8f1ff;
+  color: #2852a2;
+}
+
+.customer-order-admin-status.is-fulfilled {
+  background: #e8f7ef;
+  color: #207346;
+}
+
+.customer-order-admin-status.is-cancelled {
+  background: #fff0f0;
+  color: #9c3434;
+}
+
+.customer-order-admin-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+
+.customer-order-admin-actions select,
+.customer-order-admin-save {
+  min-height: 36px;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--admin-border, #dce2ec);
+  border-radius: 9px;
+  background: var(--admin-surface, #fff);
+  color: var(--admin-text, #29364d);
+  font: inherit;
+  font-size: 0.74rem;
+}
+
+.customer-order-admin-save {
+  border-color: var(--admin-link, #345dc2);
+  background: var(--admin-link, #345dc2);
+  color: white;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.customer-order-admin-save:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.customer-order-admin-card > .customer-management-error {
+  margin: 0.65rem 0 0;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.76rem;
+}
+
+@media (max-width: 700px) {
+  .customer-management > .admin-page-heading {
+    align-items: flex-start;
+  }
+
+  .customer-management-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .customer-management-search,
+  .customer-management-search input {
+    width: 100%;
+  }
+
+  .customer-order-admin-heading {
+    align-items: flex-start;
+  }
+}

@@ -3,7 +3,7 @@ import { formatProductPrice, parseProductPrice, productOptions } from "../../../
 import ProductGallery from "./ProductGallery.jsx";
 import ProductOrderLink from "./ProductOrderLink.jsx";
 
-export default function ProductDetailsDialog({ product, whatsappNumber, onAddToCart, onClose, initialVariantId }) {
+export default function ProductDetailsDialog({ product, whatsappNumber, onAddToCart, onDirectOrder, onClose, initialVariantId }) {
   const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
   const combo = product.type === "combo";
@@ -182,6 +182,7 @@ export default function ProductDetailsDialog({ product, whatsappNumber, onAddToC
               whatsappNumber={whatsappNumber}
               combo={combo}
               variant={isVariantProduct ? selectedVariant : null}
+              onOrder={onDirectOrder}
             />
           </div>
           <p className="product-share-status" role="status" aria-live="polite">{shareStatus}</p>

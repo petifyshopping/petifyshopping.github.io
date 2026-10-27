@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabase.js";
+import { adminSupabase } from "../lib/supabase.js";
 import { compressImageFile } from "../lib/imageProcessing.js";
 import { DEFAULT_ABOUT_CONTENT, normalizeAboutContent } from "../config/siteContent.js";
 
@@ -6,8 +6,8 @@ const imageBucket = "product-images";
 
 export async function getAdminProducts() {
   const [productsResult, inventoryResult] = await Promise.all([
-    supabase.from("products").select("*").order("display_order", { ascending: true }),
-    supabase.from("product_inventory").select("product_id, quantity"),
+    adminSupabase.from("products").select("*").order("display_order", { ascending: true }),
+    adminSupabase.from("product_inventory").select("product_id, quantity"),
   ]);
   if (productsResult.error) throw productsResult.error;
   if (inventoryResult.error) throw inventoryResult.error;
@@ -34,7 +34,7 @@ export async function getAdminProducts() {
 }
 
 export async function getAdminSections() {
-  const { data, error } = await supabase
+  const { data, error } = await adminSupabase
     .from("catalog_sections")
     .select("*")
     .order("display_order", { ascending: true });
@@ -44,7 +44,7 @@ export async function getAdminSections() {
 }
 
 export async function getAdminMainSections() {
-  const { data, error } = await supabase
+  const { data, error } = await adminSupabase
     .from("catalog_main_sections")
     .select("*")
     .order("display_order", { ascending: true });
@@ -54,7 +54,7 @@ export async function getAdminMainSections() {
 }
 
 export async function getStoreLogo() {
-  const { data, error } = await supabase
+  const { data, error } = await adminSupabase
     .from("site_settings")
     .select("logo_url")
     .eq("id", "storefront")
@@ -65,7 +65,7 @@ export async function getStoreLogo() {
 }
 
 export async function getStoreFavicon() {
-  const { data, error } = await supabase
+  const { data, error } = await adminSupabase
     .from("site_settings")
     .select("favicon_url")
     .eq("id", "storefront")
@@ -76,7 +76,7 @@ export async function getStoreFavicon() {
 }
 
 export async function getAppearanceSettings() {
-  const { data, error } = await supabase
+  const { data, error } = await adminSupabase
     .from("site_settings")
     .select("loading_screen, admin_brand")
     .eq("id", "storefront")
@@ -91,7 +91,7 @@ export async function getAppearanceSettings() {
 }
 
 export async function saveAdminBrand(adminBrand) {
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("site_settings")
     .update({ admin_brand: adminBrand, updated_at: new Date().toISOString() })
     .eq("id", "storefront");
@@ -99,7 +99,7 @@ export async function saveAdminBrand(adminBrand) {
 }
 
 export async function saveLoadingScreen(loadingScreen) {
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("site_settings")
     .update({ loading_screen: loadingScreen, updated_at: new Date().toISOString() })
     .eq("id", "storefront");
@@ -107,7 +107,7 @@ export async function saveLoadingScreen(loadingScreen) {
 }
 
 export async function getHeroPills() {
-  const { data, error } = await supabase
+  const { data, error } = await adminSupabase
     .from("site_settings")
     .select("hero_pills")
     .eq("id", "storefront")
@@ -118,7 +118,7 @@ export async function getHeroPills() {
 }
 
 export async function getStorefrontContent() {
-  const { data, error } = await supabase
+  const { data, error } = await adminSupabase
     .from("site_settings")
     .select("brand_title, tagline, whatsapp_number, phone_display, email, location, features, footer_title, footer_copyright, footer_disclaimer, footer_version, coming_soon_title, visibility")
     .eq("id", "storefront")
@@ -126,7 +126,7 @@ export async function getStorefrontContent() {
   if (error) throw error;
   if (!data) throw new Error("Storefront settings are missing from Supabase.");
 
-  const aboutResult = await supabase
+  const aboutResult = await adminSupabase
     .from("site_settings")
     .select("about_content")
     .eq("id", "storefront")
@@ -156,7 +156,7 @@ export async function getStorefrontContent() {
 }
 
 export async function saveStorefrontContent(content) {
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("site_settings")
     .update({
       brand_title: content.brandTitle,
@@ -180,7 +180,7 @@ export async function saveStorefrontContent(content) {
 }
 
 export async function saveHeroPills(heroPills) {
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("site_settings")
     .update({ hero_pills: heroPills, updated_at: new Date().toISOString() })
     .eq("id", "storefront");
@@ -188,7 +188,7 @@ export async function saveHeroPills(heroPills) {
 }
 
 export async function createCatalogSection(section) {
-  const { error } = await supabase.from("catalog_sections").insert({
+  const { error } = await adminSupabase.from("catalog_sections").insert({
     id: section.id,
     title: section.title,
     display_order: section.displayOrder,
@@ -198,7 +198,7 @@ export async function createCatalogSection(section) {
 }
 
 export async function createCatalogMainSection(section) {
-  const { error } = await supabase.from("catalog_main_sections").insert({
+  const { error } = await adminSupabase.from("catalog_main_sections").insert({
     id: section.id,
     title: section.title,
     display_order: section.displayOrder,
@@ -207,7 +207,7 @@ export async function createCatalogMainSection(section) {
 }
 
 export async function renameCatalogSection(sectionId, title) {
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("catalog_sections")
     .update({ title, updated_at: new Date().toISOString() })
     .eq("id", sectionId);
@@ -215,7 +215,7 @@ export async function renameCatalogSection(sectionId, title) {
 }
 
 export async function renameCatalogMainSection(sectionId, title) {
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("catalog_main_sections")
     .update({ title, updated_at: new Date().toISOString() })
     .eq("id", sectionId);
@@ -223,15 +223,15 @@ export async function renameCatalogMainSection(sectionId, title) {
 }
 
 export async function deleteCatalogSection(sectionId) {
-  const { error } = await supabase.from("catalog_sections").delete().eq("id", sectionId);
+  const { error } = await adminSupabase.from("catalog_sections").delete().eq("id", sectionId);
   if (error) throw error;
 }
 
 export async function deleteCatalogMainSection(sectionId) {
-  const { error: deleteError } = await supabase.from("catalog_main_sections").delete().eq("id", sectionId);
+  const { error: deleteError } = await adminSupabase.from("catalog_main_sections").delete().eq("id", sectionId);
   if (deleteError) throw deleteError;
 
-  const { data, error: settingsError } = await supabase
+  const { data, error: settingsError } = await adminSupabase
     .from("site_settings")
     .select("hero_pills")
     .eq("id", "storefront")
@@ -247,7 +247,7 @@ export async function deleteCatalogMainSection(sectionId) {
   const heroPills = data.hero_pills;
   const nextHeroPills = heroPills.map((pill) => pill?.target === target ? { ...pill, target: "" } : pill);
   if (heroPills.some((pill) => pill?.target === target)) {
-    const { error: updateError } = await supabase
+    const { error: updateError } = await adminSupabase
       .from("site_settings")
       .update({ hero_pills: nextHeroPills, updated_at: new Date().toISOString() })
       .eq("id", "storefront");
@@ -259,7 +259,7 @@ export async function deleteCatalogMainSection(sectionId) {
 
 export async function saveCatalogSectionOrder(sections) {
   const results = await Promise.all(sections.map((section, index) =>
-    supabase
+    adminSupabase
       .from("catalog_sections")
       .update({ display_order: index + 1 })
       .eq("id", section.id)
@@ -270,7 +270,7 @@ export async function saveCatalogSectionOrder(sections) {
 
 export async function saveCatalogMainSectionOrder(sections) {
   const results = await Promise.all(sections.map((section, index) =>
-    supabase
+    adminSupabase
       .from("catalog_main_sections")
       .update({ display_order: index + 1 })
       .eq("id", section.id)
@@ -280,7 +280,7 @@ export async function saveCatalogMainSectionOrder(sections) {
 }
 
 export async function setCatalogSectionMainSection(sectionId, mainSectionId) {
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("catalog_sections")
     .update({
       main_section_id: mainSectionId || null,
@@ -302,7 +302,7 @@ export async function updateStoreLogo(file, imageOptions = {}) {
 }
 
 export async function saveStoreLogoUrl(logoUrl) {
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("site_settings")
     .update({ logo_url: logoUrl, updated_at: new Date().toISOString() })
     .eq("id", "storefront");
@@ -318,7 +318,7 @@ export async function updateStoreFavicon(file) {
 }
 
 export async function saveStoreFaviconUrl(faviconUrl) {
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("site_settings")
     .update({ favicon_url: faviconUrl, updated_at: new Date().toISOString() })
     .eq("id", "storefront");
@@ -335,7 +335,7 @@ export async function uploadProductImages(productId, files, onProgress, options 
     onProgress?.({ completed: index, total: uploadFiles.length, fileName: file.name });
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
     const filePath = `${productId}/${crypto.randomUUID()}-${safeName}`;
-    const { error } = await supabase.storage.from(imageBucket).upload(filePath, file, {
+    const { error } = await adminSupabase.storage.from(imageBucket).upload(filePath, file, {
       contentType: file.type,
       upsert: false,
     });
@@ -344,7 +344,7 @@ export async function uploadProductImages(productId, files, onProgress, options 
     }
     if (error) throw error;
 
-    uploadedUrls.push(supabase.storage.from(imageBucket).getPublicUrl(filePath).data.publicUrl);
+    uploadedUrls.push(adminSupabase.storage.from(imageBucket).getPublicUrl(filePath).data.publicUrl);
     onProgress?.({ completed: index + 1, total: uploadFiles.length, fileName: "" });
   }
 
@@ -372,14 +372,14 @@ export async function saveProduct(product) {
   };
 
   const query = product.isNew
-    ? supabase.from("products").insert(row)
-    : supabase.from("products").update(row).eq("id", row.id);
+    ? adminSupabase.from("products").insert(row)
+    : adminSupabase.from("products").update(row).eq("id", row.id);
   const { error } = await query;
   if (error) throw error;
 }
 
 export async function deleteProduct(product) {
-  const { error } = await supabase.from("products").delete().eq("id", product.id);
+  const { error } = await adminSupabase.from("products").delete().eq("id", product.id);
   if (error?.code === "23503") {
     throw new Error("This product is linked to sales history and cannot be deleted. Hide it instead.");
   }
@@ -391,7 +391,7 @@ export async function deleteProduct(product) {
     .map((url) => url.split(storagePrefix)[1]);
 
   if (paths.length) {
-    const { error: storageError } = await supabase.storage.from(imageBucket).remove(paths);
+    const { error: storageError } = await adminSupabase.storage.from(imageBucket).remove(paths);
     if (storageError) {
       throw new Error(`Product deleted, but one or more product photos could not be removed: ${storageError.message}`);
     }
@@ -399,7 +399,7 @@ export async function deleteProduct(product) {
 }
 
 export async function setCatalogSectionActive(sectionId, isActive) {
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("catalog_sections")
     .update({ is_active: isActive, updated_at: new Date().toISOString() })
     .eq("id", sectionId);
@@ -407,7 +407,7 @@ export async function setCatalogSectionActive(sectionId, isActive) {
 }
 
 export async function setProductActive(productId, isActive) {
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("products")
     .update({ is_active: isActive, updated_at: new Date().toISOString() })
     .eq("id", productId);
@@ -415,7 +415,7 @@ export async function setProductActive(productId, isActive) {
 }
 
 export async function setProductPrice(productId, price) {
-  const { error } = await supabase
+  const { error } = await adminSupabase
     .from("products")
     .update({ price, updated_at: new Date().toISOString() })
     .eq("id", productId);
@@ -428,7 +428,7 @@ export async function setProductStock(productId, quantity) {
     throw new Error("Stock must be a whole number of zero or more.");
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await adminSupabase
     .from("product_inventory")
     .update({ quantity: normalizedQuantity })
     .eq("product_id", productId)

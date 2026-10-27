@@ -4,14 +4,20 @@ import CatalogLoading from "./features/storefront/components/CatalogLoading.jsx"
 import CatalogSections from "./features/storefront/components/CatalogSections.jsx";
 import FeatureList from "./features/storefront/components/FeatureList.jsx";
 import ScrollToTop from "./features/storefront/components/ScrollToTop.jsx";
-import StoreCart from "./features/storefront/components/StoreCart.jsx";
 import StoreFooter from "./features/storefront/components/StoreFooter.jsx";
 import StoreHeader from "./features/storefront/components/StoreHeader.jsx";
-import ProductDetailsDialog from "./features/storefront/components/ProductDetailsDialog.jsx";
 import { getCatalogProductsByIds } from "./services/catalog.js";
 import useStorefrontCatalog from "./features/storefront/useStorefrontCatalog.js";
-import { productOptions } from "./lib/productPricing.js";
+import { parseProductPrice, productOptions } from "./lib/productPricing.js";
+import { getCustomerOrderContactDetails } from "./lib/customerOrderDetails.js";
 import { WorkspaceAccessProvider } from "./hooks/WorkspaceAccessProvider.jsx";
+import { supabase } from "./lib/supabase.js";
+import {
+  createCustomerOrder,
+  getCustomerAccount,
+  saveCustomerCart,
+} from "./services/customers.js";
+import { signOutCustomer } from "./services/customerAuth.js";
 import {
   DEFAULT_LOADING_SCREEN,
   applyColorPalette,
@@ -22,6 +28,9 @@ import {
 const AdminDashboard = lazy(() => import("./AdminDashboard.jsx"));
 const SalesPortal = lazy(() => import("./features/sales/SalesPortal.jsx"));
 const PasswordReset = lazy(() => import("./features/admin/auth/PasswordReset.jsx"));
+const CustomerAccount = lazy(() => import("./features/storefront/components/CustomerAccount.jsx"));
+const StoreCart = lazy(() => import("./features/storefront/components/StoreCart.jsx"));
+const ProductDetailsDialog = lazy(() => import("./features/storefront/components/ProductDetailsDialog.jsx"));
 const CART_STORAGE_KEY = "petify-store-cart";
 const DEFAULT_DOCUMENT_TITLE = "Pëtify | Pure love, premium care";
 
@@ -48,6 +57,7 @@ function readStoredCart() {
       && typeof item.productId === "string"
       && Number.isSafeInteger(item.quantity)
       && item.quantity > 0
+      && item.quantity <= 99
       && Number.isFinite(item.price)
       && item.price >= 0
     ));
@@ -59,6 +69,41 @@ function readStoredCart() {
     console.error("Could not restore the saved cart.", storageError);
     return { items: [], notice: "Your saved cart could not be restored on this device." };
   }
+}
+
+function mergeCartItems(savedItems, guestItems) {
+  const items = new Map();
+  for (const item of [...savedItems, ...guestItems]) {
+    if (
+      !item
+      || typeof item.productId !== "string"
+      || !Number.isSafeInteger(item.quantity)
+      || item.quantity < 1
+      || !Number.isFinite(item.price)
+      || item.price < 0
+    ) continue;
+    const key = item.key ?? `${item.productId}:${item.variantId ?? ""}`;
+    const existing = items.get(key);
+    items.set(key, {
+      ...item,
+      key,
+      productId: String(item.productId),
+      variantId: String(item.variantId ?? ""),
+      quantity: Math.min(99, (existing?.quantity ?? 0) + item.quantity),
+    });
+  }
+  return [...items.values()];
+}
+
+function addCustomerDetailsToOrderLink(link, profile, address, enabledFields) {
+  const url = new URL(link);
+  const existingMessage = url.searchParams.get("text") ?? "";
+  const customerDetails = [
+    profile.full_name ? `Name: ${profile.full_name}` : "",
+    ...getCustomerOrderContactDetails(profile, address, enabledFields),
+  ].filter(Boolean);
+  url.searchParams.set("text", [existingMessage, ...customerDetails].join("\n\n"));
+  return url.toString();
 }
 
 export default function App() {
@@ -77,6 +122,15 @@ export default function App() {
   } = useStorefrontCatalog();
   const [routeHash, setRouteHash] = useState(window.location.hash);
   const [routePath, setRoutePath] = useState(window.location.pathname.replace(/\/+$/, "") || "/");
+  const [customerSession, setCustomerSession] = useState(null);
+  const [customerAuthReady, setCustomerAuthReady] = useState(!supabase);
+  const [customerProfile, setCustomerProfile] = useState(null);
+  const [selectedCustomerAddressId, setSelectedCustomerAddressId] = useState("");
+  const [customerCartUserId, setCustomerCartUserId] = useState("");
+  const [customerAccountError, setCustomerAccountError] = useState("");
+  const [customerAccountErrorUserId, setCustomerAccountErrorUserId] = useState("");
+  const [customerAccountMessage, setCustomerAccountMessage] = useState("");
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
   const isAdminRoute = routeHash === "#admin"
     || routeHash === "#admin-settings"
     || routeHash === "#admin-products"
@@ -88,6 +142,7 @@ export default function App() {
   const [showScrollTop, setShowScrollTop] = useState(window.scrollY > 320);
   const [storedCart] = useState(readStoredCart);
   const [cart, setCart] = useState(storedCart.items);
+  const cartRef = useRef(storedCart.items);
   const [cartNotice, setCartNotice] = useState(storedCart.notice);
   const [cartValidationError, setCartValidationError] = useState(false);
   const [cartValidationAttempt, setCartValidationAttempt] = useState(0);
@@ -102,6 +157,69 @@ export default function App() {
   const [productFetchAttempt, setProductFetchAttempt] = useState(0);
   const pendingHeroTarget = useRef(null);
   const validatedProducts = useRef(new Map());
+  const previousAuthUserId = useRef(null);
+  const activeCustomerId = useRef(null);
+  cartRef.current = cart;
+
+  useEffect(() => {
+    if (!supabase) return undefined;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUserId = session?.user?.id ?? null;
+      if (activeCustomerId.current && activeCustomerId.current !== nextUserId) {
+        setCustomerProfile(null);
+        setSelectedCustomerAddressId("");
+        setCustomerCartUserId("");
+        setCart([]);
+        activeCustomerId.current = null;
+      }
+      if (previousAuthUserId.current !== nextUserId) {
+        setCustomerAccountError("");
+        setCustomerAccountErrorUserId("");
+      }
+      previousAuthUserId.current = nextUserId;
+      setCustomerSession(session);
+      setCustomerAuthReady(true);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const customerUserId = customerSession?.user?.id ?? "";
+  const customerProfileLoading = Boolean(
+    customerUserId
+    && customerCartUserId !== customerUserId
+    && customerAccountErrorUserId !== customerUserId,
+  );
+
+  useEffect(() => {
+    if (!customerUserId) return undefined;
+
+    let active = true;
+    getCustomerAccount(customerUserId)
+      .then(async ({ profile, cart: savedCart }) => {
+        if (!active) return;
+        const guestCart = cartRef.current;
+        const mergedCart = mergeCartItems(savedCart, guestCart);
+        if (guestCart.length) await saveCustomerCart(customerUserId, mergedCart);
+        if (!active) return;
+        activeCustomerId.current = customerUserId;
+        setCustomerProfile(profile);
+        setSelectedCustomerAddressId((current) => (
+          profile.addresses.some((address) => address.id === current)
+            ? current
+            : profile.addresses[0]?.id ?? ""
+        ));
+        setCart(mergedCart);
+        setCustomerCartUserId(customerUserId);
+      })
+      .catch((accountError) => {
+        if (!active) return;
+        console.error("Could not load the customer account.", accountError);
+        setCustomerAccountError(accountError.message || "Your customer account could not be loaded.");
+        setCustomerAccountErrorUserId(customerUserId);
+        setCustomerCartUserId("");
+      })
+    return () => { active = false; };
+  }, [customerUserId]);
 
   useEffect(() => {
     function handleCartStorageError() {
@@ -135,12 +253,28 @@ export default function App() {
 
   useEffect(() => {
     try {
+      if (!customerAuthReady) return;
+      if (customerSession && customerProfile && customerCartUserId === customerUserId) {
+        window.localStorage.removeItem(CART_STORAGE_KEY);
+        return;
+      }
       window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
     } catch (storageError) {
       console.error("Could not save the cart on this device.", storageError);
       window.dispatchEvent(new Event("petify-cart-storage-error"));
     }
-  }, [cart]);
+  }, [cart, customerAuthReady, customerCartUserId, customerProfile, customerSession, customerUserId]);
+
+  useEffect(() => {
+    if (!customerUserId || !customerProfile || customerProfileLoading || customerCartUserId !== customerUserId) return undefined;
+    const timeoutId = window.setTimeout(() => {
+      saveCustomerCart(customerUserId, cart).catch((saveError) => {
+        console.error("Could not save the cart to the customer account.", saveError);
+        setCartNotice("Your cart could not be saved to your account. Please check your connection and try again.");
+      });
+    }, 350);
+    return () => window.clearTimeout(timeoutId);
+  }, [cart, customerCartUserId, customerProfile, customerProfileLoading, customerUserId]);
 
   useEffect(() => {
     if (loading || error || cart.length === 0) return undefined;
@@ -324,7 +458,7 @@ export default function App() {
   }
 
   const addToCart = useCallback((product, variant) => {
-    if (!variant || variant.price <= 0) return;
+    if (!variant || !Number.isFinite(variant.price) || variant.price <= 0) return;
     const key = `${product.id}:${variant.id ?? ""}`;
     setCart((currentCart) => {
       const existingItem = currentCart.find((item) => item.key === key);
@@ -363,6 +497,120 @@ export default function App() {
 
   const closeCart = useCallback(() => setIsCartOpen(false), []);
   const openCart = useCallback(() => setIsCartOpen(true), []);
+  const openAccount = useCallback((message = "") => {
+    setIsCartOpen(false);
+    if (new URL(window.location.href).searchParams.has("product")) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("product");
+      url.searchParams.delete("variant");
+      window.history.replaceState({}, "", url);
+      setDetailProductId(null);
+      setDetailVariantId(null);
+      setProductFetchError(null);
+    }
+    setCustomerAccountMessage(message);
+    setIsAccountOpen(true);
+  }, []);
+  const closeAccount = useCallback(() => {
+    setIsAccountOpen(false);
+    setCustomerAccountMessage("");
+  }, []);
+  const handleProfileChange = useCallback((profile) => {
+    setCustomerProfile(profile);
+    setSelectedCustomerAddressId((current) => (
+      profile.addresses?.some((address) => address.id === current)
+        ? current
+        : profile.addresses?.[0]?.id ?? ""
+    ));
+  }, []);
+  const handleCustomerAuth = useCallback((session) => {
+    setCustomerAccountError("");
+    setCustomerAccountErrorUserId("");
+    setCustomerSession(session);
+  }, []);
+  const handleCustomerSignOut = useCallback(async () => {
+    if (customerSession && customerProfile && customerCartUserId === customerSession.user.id) {
+      await saveCustomerCart(customerSession.user.id, cartRef.current);
+    }
+    await signOutCustomer();
+  }, [customerCartUserId, customerProfile, customerSession]);
+  const handleCartOrder = useCallback(async ({ items, addressId, note }) => {
+    if (!customerSession) {
+      openAccount("Sign in or create an account before placing an order.");
+      throw new Error("Sign in to continue to WhatsApp.");
+    }
+    if (!customerProfile) throw new Error("Your customer profile is still loading. Please try again.");
+    await createCustomerOrder({ items, addressId, note });
+  }, [customerProfile, customerSession, openAccount]);
+  const handleCartOrderHandoff = useCallback(async () => {
+    const userId = customerSession?.user.id;
+    setCart([]);
+    setIsCartOpen(false);
+    if (!userId || customerCartUserId !== userId) return;
+
+    try {
+      await saveCustomerCart(userId, []);
+    } catch (saveError) {
+      console.error("The order was sent to WhatsApp, but the saved cart could not be cleared.", saveError);
+      setCartNotice("Your order was sent to WhatsApp, but your saved cart could not be cleared. Please check your cart before ordering again.");
+    }
+  }, [customerCartUserId, customerSession]);
+  const handleDirectOrder = useCallback(async ({ product, variant, link }) => {
+    if (!customerSession) {
+      openAccount("Sign in or create an account before placing an order.");
+      return;
+    }
+    if (!customerProfile) {
+      openAccount(customerProfileLoading
+        ? "Your account is still loading. Please try again in a moment."
+        : "Your customer profile could not be loaded. Please try again.");
+      return;
+    }
+    const deliveryAddress = customerProfile.addresses.find((address) => address.id === selectedCustomerAddressId);
+    if (!deliveryAddress) {
+      openAccount("Add a delivery address to your account before placing an order.");
+      return;
+    }
+    const whatsappWindow = window.open("about:blank", "_blank");
+    if (!whatsappWindow) {
+      setCartNotice("Allow pop-ups to continue to WhatsApp after your order is saved.");
+      return;
+    }
+    whatsappWindow.opener = null;
+    try {
+      const options = productOptions(product);
+      await createCustomerOrder({
+        items: [{
+          productId: String(product.id),
+          variantId: String(variant?.id ?? ""),
+          quantity: 1,
+          allowUnpriced: options.length === 0,
+          expectedPrice: variant?.price ?? parseProductPrice(product.price),
+          title: product.title,
+          variantLabel: variant?.label ?? "",
+        }],
+        addressId: deliveryAddress.id,
+        note: product.defaultWhatsappMsg ?? "",
+      });
+      whatsappWindow.location.href = addCustomerDetailsToOrderLink(
+        link,
+        customerProfile,
+        deliveryAddress.address,
+        settings?.customerOrderContactFields,
+      );
+    } catch (orderError) {
+      whatsappWindow.close();
+      console.error("Could not save the direct customer order.", orderError);
+      setCartNotice(orderError.message || "Your order could not be saved. Please try again.");
+    }
+  }, [
+    customerProfile,
+    customerProfileLoading,
+    customerSession,
+    openAccount,
+    selectedCustomerAddressId,
+    settings?.customerOrderContactFields,
+  ]);
   const retryCatalog = useCallback(() => {
     validatedProducts.current.clear();
     setValidatedProductIds([]);
@@ -406,7 +654,10 @@ export default function App() {
 
   if (isPasswordResetRoute) return (
     <Suspense fallback={<div className="admin-gate"><p className="admin-muted">Loading password reset...</p></div>}>
-      <PasswordReset adminBrand={settings?.adminBrand} />
+      <PasswordReset
+        adminBrand={settings?.adminBrand}
+        customerReset={new URLSearchParams(window.location.search).get("view") === "reset-password"}
+      />
     </Suspense>
   );
 
@@ -455,6 +706,8 @@ export default function App() {
           onPillClick={scrollToHeroTarget}
           cartItemCount={cartItemCount}
           onCartClick={openCart}
+          accountLabel={customerSession ? "My account" : "Sign in"}
+          onAccountClick={() => openAccount()}
           isAboutRoute={isAboutRoute}
           searchValue={searchInput}
           onSearchChange={setSearchInput}
@@ -486,6 +739,7 @@ export default function App() {
                 onAddToCart={addToCart}
                 onUpdateQuantity={updateCartQuantity}
                 onOpenDetails={openProductDetails}
+                onDirectOrder={handleDirectOrder}
               />
             )}
             {!loading && detailProductId && !detailProduct && (
@@ -513,29 +767,60 @@ export default function App() {
         <StoreFooter footerTitle={settings.footerTitle} footerCopyright={settings.footerCopyright} footerDisclaimer={settings.footerDisclaimer} footerVersion={settings.footerVersion} contact={settings.contact} visibility={settings.visibility} />
       )}
       {!loading && !error && settings && isCartOpen && (
-        <StoreCart
-          items={cart}
-          whatsappNumber={settings.contact.whatsappNumber}
-          brandTitle={settings.brandTitle}
-          canCheckout={!cartValidationPending && !cartValidationError}
-          validationMessage={cartValidationPending ? "Checking prices and availability…" : cartValidationError ? "Checkout is paused until current cart prices and availability can be verified." : ""}
-          onRetryValidation={() => setCartValidationAttempt((attempt) => attempt + 1)}
-          onClose={closeCart}
-          onUpdateQuantity={updateCartQuantity}
-          onRemoveItem={removeCartItem}
-          onRemoveAllItems={removeAllCartItems}
-        />
+        <Suspense fallback={<div className="store-cart-overlay" role="status"><p className="store-cart-drawer">Loading your cart…</p></div>}>
+          <StoreCart
+            items={cart}
+            whatsappNumber={settings.contact.whatsappNumber}
+            brandTitle={settings.brandTitle}
+            canCheckout={!cartValidationPending && !cartValidationError}
+            validationMessage={cartValidationPending ? "Checking prices and availability…" : cartValidationError ? "Checkout is paused until current cart prices and availability can be verified." : ""}
+            onRetryValidation={() => setCartValidationAttempt((attempt) => attempt + 1)}
+            onClose={closeCart}
+            onUpdateQuantity={updateCartQuantity}
+            onRemoveItem={removeCartItem}
+            onRemoveAllItems={removeAllCartItems}
+            profile={customerProfile}
+            selectedAddressId={selectedCustomerAddressId}
+            onAddressSelect={setSelectedCustomerAddressId}
+            authenticated={Boolean(customerSession)}
+            authLoading={!customerAuthReady || customerProfileLoading}
+            onOpenAccount={openAccount}
+            onCheckout={handleCartOrder}
+            onOrderHandoff={handleCartOrderHandoff}
+            customerOrderContactFields={settings.customerOrderContactFields}
+          />
+        </Suspense>
       )}
       {!loading && !error && settings && detailProduct && (
-        <ProductDetailsDialog
-          product={detailProduct}
-          whatsappNumber={settings.contact.whatsappNumber}
-          onAddToCart={addToCart}
-          onClose={closeProductDetails}
-          initialVariantId={detailVariantId}
-        />
+        <Suspense fallback={null}>
+          <ProductDetailsDialog
+            product={detailProduct}
+            whatsappNumber={settings.contact.whatsappNumber}
+            onAddToCart={addToCart}
+            onDirectOrder={handleDirectOrder}
+            onClose={closeProductDetails}
+            initialVariantId={detailVariantId}
+          />
+        </Suspense>
       )}
       {showScrollTop && <ScrollToTop onClick={scrollToTop} />}
+      {isAccountOpen && (
+        <Suspense fallback={<div className="admin-gate"><p className="admin-muted">Loading customer account...</p></div>}>
+          <CustomerAccount
+            session={customerSession}
+            profile={customerProfile}
+            profileLoading={customerProfileLoading}
+            customerOrderContactFields={settings?.customerOrderContactFields}
+            message={customerAccountMessage}
+            authError={customerAccountError}
+            onClearMessage={() => setCustomerAccountMessage("")}
+            onClose={closeAccount}
+            onProfileChange={handleProfileChange}
+            onAuthChange={handleCustomerAuth}
+            onSignOut={handleCustomerSignOut}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

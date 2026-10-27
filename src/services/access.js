@@ -1,8 +1,8 @@
-import { supabase } from "../lib/supabase.js";
+import { adminSupabase } from "../lib/supabase.js";
 
 function requireSupabase() {
-  if (!supabase) throw new Error("Connect Supabase before managing workspace access.");
-  return supabase;
+  if (!adminSupabase) throw new Error("Connect Supabase before managing workspace access.");
+  return adminSupabase;
 }
 
 export async function getPendingAccessRequests() {

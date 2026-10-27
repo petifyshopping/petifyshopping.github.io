@@ -16,6 +16,8 @@ export default function ProjectHeader({
   onPillClick,
   cartItemCount,
   onCartClick,
+  accountLabel,
+  onAccountClick,
   isAboutRoute,
   searchValue,
   onSearchChange,
@@ -139,6 +141,9 @@ export default function ProjectHeader({
             </button>
             {menuOpen && (
               <nav className="store-menu-panel" id="store-header-menu-panel" aria-label="Store menu">
+                <button className="store-menu-account" type="button" onClick={() => { setMenuOpen(false); onAccountClick(); }}>
+                  {accountLabel}
+                </button>
                 <a href={isAboutRoute ? "#top" : "#about"} onClick={() => setMenuOpen(false)}>
                   {isAboutRoute ? "Visit store" : "About us"}
                 </a>

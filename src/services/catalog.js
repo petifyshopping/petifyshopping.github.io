@@ -29,6 +29,11 @@ function mapSettings(row, aboutContent, aboutContentAvailable) {
     colorPalette: row.color_palette ?? null,
     loadingScreen: row.loading_screen ?? null,
     adminBrand: row.admin_brand ?? null,
+    customerOrderContactFields: {
+      email: row.customer_order_contact_fields?.email === true,
+      phone: row.customer_order_contact_fields?.phone !== false,
+      whatsapp: row.customer_order_contact_fields?.whatsapp === true,
+    },
     heroPills: row.hero_pills ?? [],
     contact: {
       whatsappNumber: row.whatsapp_number,
@@ -75,7 +80,7 @@ export async function getCatalog(onSettingsLoaded) {
 
   const settingsRequest = supabase
     .from("site_settings")
-    .select("logo_url, favicon_url, color_palette, loading_screen, admin_brand, hero_pills, brand_title, tagline, whatsapp_number, phone_display, email, location, features, footer_title, footer_copyright, footer_disclaimer, footer_version, coming_soon_title, visibility")
+    .select("logo_url, favicon_url, color_palette, loading_screen, admin_brand, customer_order_contact_fields, hero_pills, brand_title, tagline, whatsapp_number, phone_display, email, location, features, footer_title, footer_copyright, footer_disclaimer, footer_version, coming_soon_title, visibility")
     .eq("id", "storefront")
     .maybeSingle();
   const settingsPromise = Promise.all([settingsRequest, getAboutContentSettings()]).then(([result, about]) => {

@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { formatProductPrice } from "../../../lib/productPricing.js";
+import { getCustomerOrderContactDetails } from "../../../lib/customerOrderDetails.js";
 import QuantityStepper from "./QuantityStepper.jsx";
 
-function cartOrderLink(items, whatsappNumber, total, customer) {
+function cartOrderLink(items, whatsappNumber, total, customer, profile, enabledContactFields) {
   const lines = items.map((item) => {
     const option = item.variantLabel ? ` (${item.variantLabel})` : "";
     return `• ${item.title}${option}\n  Qty: ${item.quantity} × ${formatProductPrice(item.price)} = ${formatProductPrice(item.price * item.quantity)}`;
   });
   const customerDetails = [
-    customer.name ? `Name: ${customer.name}` : "",
-    customer.address ? `Address: ${customer.address}` : "",
+    profile?.full_name ? `Name: ${profile.full_name}` : "",
+    ...getCustomerOrderContactDetails(profile, customer.address, enabledContactFields),
     customer.note ? `Note: ${customer.note}` : "",
   ].filter(Boolean);
   const message = [
@@ -39,13 +40,37 @@ export default function StoreCart({
   onUpdateQuantity,
   onRemoveItem,
   onRemoveAllItems,
+  profile,
+  selectedAddressId,
+  onAddressSelect,
+  authenticated,
+  authLoading,
+  onOpenAccount,
+  onCheckout,
+  onOrderHandoff,
+  customerOrderContactFields,
 }) {
   const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
-  const [customer, setCustomer] = useState({ name: "", address: "", note: "" });
+  const [customer, setCustomer] = useState({ note: "" });
+  const [checkoutError, setCheckoutError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const totalQuantity = items.reduce((total, item) => total + item.quantity, 0);
   const totalPrice = items.reduce((total, item) => total + item.price * item.quantity, 0);
-  const checkoutLink = cartOrderLink(items, whatsappNumber, totalPrice, customer);
+  const deliveryAddress = profile?.addresses?.find((address) => address.id === selectedAddressId);
+  const customerDetails = { ...customer, address: deliveryAddress?.address ?? "" };
+  const whatsappDetails = [
+    profile?.full_name ? { label: "Name", value: profile.full_name } : null,
+    ...getCustomerOrderContactDetails(profile, deliveryAddress?.address, customerOrderContactFields)
+      .map((detail) => {
+        const separatorIndex = detail.indexOf(":");
+        return {
+          label: detail.slice(0, separatorIndex),
+          value: detail.slice(separatorIndex + 1).trim(),
+        };
+      }),
+  ].filter(Boolean);
+  const checkoutLink = cartOrderLink(items, whatsappNumber, totalPrice, customerDetails, profile, customerOrderContactFields);
 
   useEffect(() => {
     const previouslyFocused = document.activeElement;
@@ -85,6 +110,43 @@ export default function StoreCart({
       }
     };
   }, [onClose]);
+
+  async function beginCheckout() {
+    setCheckoutError("");
+    if (!authenticated) {
+      onOpenAccount("Sign in or create an account before placing an order.");
+      return;
+    }
+    if (!deliveryAddress) {
+      setCheckoutError("Add and select a delivery address before ordering.");
+      return;
+    }
+    const whatsappWindow = window.open("about:blank", "_blank");
+    if (!whatsappWindow) {
+      setCheckoutError("Allow pop-ups to continue to WhatsApp after your order is saved.");
+      return;
+    }
+    whatsappWindow.opener = null;
+    setSubmitting(true);
+    try {
+      await onCheckout({ items, addressId: deliveryAddress.id, note: customer.note.trim() });
+      whatsappWindow.location.href = cartOrderLink(
+        items,
+        whatsappNumber,
+        totalPrice,
+        customerDetails,
+        profile,
+        customerOrderContactFields,
+      );
+      await onOrderHandoff();
+    } catch (orderError) {
+      whatsappWindow.close();
+      console.error("Could not save the cart order.", orderError);
+      setCheckoutError(orderError.message || "Your order could not be saved. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <div className="store-cart-overlay">
@@ -170,20 +232,66 @@ export default function StoreCart({
                 <strong>{formatProductPrice(totalPrice)}</strong>
               </div>
               <p className="store-cart-note">Shipping and availability are confirmed by our team on WhatsApp.</p>
+              <section className="store-cart-delivery-card" aria-label="Delivery details">
+                <div className="store-cart-delivery-heading">
+                  <div>
+                    <span>WHATSAPP ORDER MESSAGE</span>
+                    <strong>{authenticated ? "Details shared with the store" : "Sign in to add delivery details"}</strong>
+                  </div>
+                  {authenticated && profile?.addresses?.length > 0 && (
+                    <label className="store-cart-address-select">
+                      <span className="visually-hidden">Choose delivery address</span>
+                      <select
+                        value={deliveryAddress?.id ?? ""}
+                        onChange={(event) => {
+                          onAddressSelect(event.target.value);
+                          setCheckoutError("");
+                        }}
+                        disabled={authLoading || submitting}
+                      >
+                        {profile.addresses.map((address) => (
+                          <option value={address.id} key={address.id}>{address.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                </div>
+                {deliveryAddress ? (
+                  <dl className="store-cart-delivery-address">
+                    {whatsappDetails.map((entry) => (
+                      <div key={entry.label}>
+                        <dt>{entry.label}</dt>
+                        <dd>{entry.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                ) : (
+                  <div className="store-cart-no-address">
+                    <p>{authenticated ? "Add a saved delivery address to continue." : "Sign in to choose a saved delivery address."}</p>
+                    <button
+                      type="button"
+                      onClick={() => onOpenAccount(authenticated
+                        ? "Save a delivery address to continue with your order."
+                        : "Sign in or create an account to save a delivery address.")}
+                      disabled={authLoading || submitting}
+                    >
+                      {authenticated ? "Add address" : "Sign in"}
+                    </button>
+                  </div>
+                )}
+              </section>
               <div className="store-cart-customer-fields">
                 <label>
-                  Name <span>(optional)</span>
-                  <input value={customer.name} onChange={(event) => setCustomer((current) => ({ ...current, name: event.target.value }))} autoComplete="name" />
-                </label>
-                <label>
-                  Address <span>(optional)</span>
-                  <textarea value={customer.address} onChange={(event) => setCustomer((current) => ({ ...current, address: event.target.value }))} autoComplete="street-address" rows="2" />
-                </label>
-                <label>
-                  Note <span>(optional)</span>
-                  <textarea value={customer.note} onChange={(event) => setCustomer((current) => ({ ...current, note: event.target.value }))} rows="2" />
+                  <span>Order note (optional)</span>
+                  <input
+                    value={customer.note}
+                    onChange={(event) => setCustomer((current) => ({ ...current, note: event.target.value }))}
+                    placeholder="Add a delivery note"
+                    maxLength={500}
+                  />
                 </label>
               </div>
+              {checkoutError && <p className="store-cart-phone-error" role="alert">{checkoutError}</p>}
               {!canCheckout ? (
                 <div className="store-cart-validation" role="status" aria-live="polite">
                   <p>{validationMessage}</p>
@@ -192,13 +300,13 @@ export default function StoreCart({
                   )}
                 </div>
               ) : checkoutLink ? (
-                <a className="store-cart-checkout" href={checkoutLink} target="_blank" rel="noopener noreferrer">
+                <button className="store-cart-checkout" type="button" onClick={beginCheckout} disabled={authLoading || submitting || !authenticated || !deliveryAddress}>
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M20.5 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.2-4.6A8.5 8.5 0 1 1 20.5 11.5Z" />
                   <path d="M8.5 8.2c.5 2.7 2.1 4.3 4.8 5" />
                 </svg>
-                  <span>Order via WhatsApp</span>
-                </a>
+                  <span>{submitting ? "Saving order…" : authenticated ? "Order via WhatsApp" : "Sign in to order"}</span>
+                </button>
               ) : <p className="store-cart-phone-error" role="alert">WhatsApp checkout is unavailable because a contact number has not been configured.</p>}
               <p className="store-cart-secure-note">Your order request opens directly in WhatsApp. No online payment is taken here.</p>
             </div>

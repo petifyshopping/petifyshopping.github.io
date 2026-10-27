@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "../../lib/supabase.js";
+import { adminSupabase } from "../../lib/supabase.js";
 import AdminButton from "./components/AdminButton.jsx";
 import AdminNotice from "./components/AdminNotice.jsx";
 
@@ -51,12 +51,12 @@ export default function AccountMenu({ displayName, onOpenProfile, email, onSignO
     }
     setBusy(true);
     try {
-      const { error: verificationError } = await supabase.auth.signInWithPassword({ email, password: currentPassword });
+      const { error: verificationError } = await adminSupabase.auth.signInWithPassword({ email, password: currentPassword });
       if (verificationError) {
         setError("The current password could not be verified.");
         return;
       }
-      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+      const { error: updateError } = await adminSupabase.auth.updateUser({ password: newPassword });
       if (updateError) {
         setError("The password could not be changed. Try again.");
         return;

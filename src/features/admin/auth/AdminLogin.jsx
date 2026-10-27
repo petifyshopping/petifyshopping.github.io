@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { supabase } from "../../../lib/supabase.js";
+import { adminSupabase } from "../../../lib/supabase.js";
 import AdminNotice from "../components/AdminNotice.jsx";
 import AdminButton from "../components/AdminButton.jsx";
 
@@ -61,7 +61,7 @@ export default function AdminLogin({
     setBusy(true);
     try {
       if (mode === "signin") {
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error: signInError } = await adminSupabase.auth.signInWithPassword({ email, password });
         if (signInError) {
           setError(GENERIC_AUTH_ERROR);
           return;
@@ -71,7 +71,7 @@ export default function AdminLogin({
       }
 
       if (mode === "request") {
-        const { data, error: signUpError } = await supabase.auth.signUp({
+        const { data, error: signUpError } = await adminSupabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: window.location.origin },
@@ -85,7 +85,7 @@ export default function AdminLogin({
         return;
       }
 
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error: resetError } = await adminSupabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/?password-reset=1`,
       });
       if (resetError) {

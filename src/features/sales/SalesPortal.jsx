@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { DEFAULT_ADMIN_BRAND, normalizeAdminBrand } from "../../config/siteAppearance.js";
-import { supabase } from "../../lib/supabase.js";
+import { adminSupabase } from "../../lib/supabase.js";
 import useWorkspaceAccess from "../../hooks/useWorkspaceAccess.js";
 import AdminLogin from "../admin/auth/AdminLogin.jsx";
 import WorkspaceSidebar from "../admin/WorkspaceSidebar.jsx";
@@ -67,7 +67,7 @@ export default function SalesPortal({
     };
   }, [hasSalesAccess]);
 
-  if (!supabase) {
+  if (!adminSupabase) {
     return <div className="admin-gate"><div><p className="admin-eyebrow">SUPABASE SETUP</p><h1>Connect your project first</h1><p>Add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> to <code>.env.local</code>, then restart Vite.</p><a href="/">Back to storefront</a></div></div>;
   }
 

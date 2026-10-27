@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../../../lib/supabase.js";
+import { adminSupabase, supabase } from "../../../lib/supabase.js";
 import { DEFAULT_ADMIN_BRAND, normalizeAdminBrand } from "../../../config/siteAppearance.js";
 import AdminButton from "../components/AdminButton.jsx";
 import AdminNotice from "../components/AdminNotice.jsx";
 
-export default function PasswordReset({ adminBrand: initialAdminBrand }) {
+export default function PasswordReset({ adminBrand: initialAdminBrand, customerReset = false }) {
+  const authClient = customerReset ? supabase : adminSupabase;
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -16,9 +17,9 @@ export default function PasswordReset({ adminBrand: initialAdminBrand }) {
   const adminBrand = normalizeAdminBrand(initialAdminBrand ?? DEFAULT_ADMIN_BRAND);
 
   useEffect(() => {
-    if (!supabase) return undefined;
+    if (!authClient) return undefined;
     let active = true;
-    supabase.auth.getSession()
+    authClient.auth.getSession()
       .then(({ data, error: sessionError }) => {
         if (!active) return;
         if (sessionError || !data.session) {
@@ -33,9 +34,9 @@ export default function PasswordReset({ adminBrand: initialAdminBrand }) {
         }
       });
     return () => { active = false; };
-  }, []);
+  }, [authClient]);
 
-  if (!supabase) {
+  if (!authClient) {
     return <div className="admin-gate"><div><p className="admin-eyebrow">SUPABASE SETUP</p><h1>Password reset unavailable</h1><p>Connect Supabase before resetting a workspace password.</p></div></div>;
   }
 
@@ -49,7 +50,7 @@ export default function PasswordReset({ adminBrand: initialAdminBrand }) {
     }
     setBusy(true);
     try {
-      const { error: updateError } = await supabase.auth.updateUser({ password });
+      const { error: updateError } = await authClient.auth.updateUser({ password });
       if (updateError) {
         setError("The password could not be updated. The reset link may have expired.");
         return;

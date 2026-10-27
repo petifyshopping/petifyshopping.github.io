@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { supabase } from "../lib/supabase.js";
+import { adminSupabase } from "../lib/supabase.js";
 import { clearSessionLifetime } from "./sessionLifetime.js";
 import useWorkspaceSession from "./useWorkspaceSession.js";
 import WorkspaceAccessContext from "./workspaceAccessContext.js";
@@ -66,7 +66,7 @@ export function WorkspaceAccessProvider({ children }) {
       setAccessState({ userId: "", access: null, loading: false, error: "" });
       return;
     }
-    if (!supabase) {
+    if (!adminSupabase) {
       setAccessState({ userId, access: null, loading: false, error: "Connect Supabase before checking workspace access." });
       return;
     }
@@ -85,7 +85,7 @@ export function WorkspaceAccessProvider({ children }) {
         error: "",
       }));
       try {
-        const { data, error } = await supabase.rpc("get_my_access");
+        const { data, error } = await adminSupabase.rpc("get_my_access");
         if (error) throw error;
         if (
           !data
@@ -135,8 +135,8 @@ export function WorkspaceAccessProvider({ children }) {
   const signOut = useCallback(async () => {
     clearSessionLifetime(session);
     clearCachedAccess(userId);
-    if (!supabase) return;
-    const { error } = await supabase.auth.signOut();
+    if (!adminSupabase) return;
+    const { error } = await adminSupabase.auth.signOut({ scope: "local" });
     if (error) throw error;
   }, [session, userId]);
 

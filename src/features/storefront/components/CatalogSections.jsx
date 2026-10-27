@@ -29,6 +29,7 @@ export default function CatalogSections({
   onAddToCart,
   onUpdateQuantity,
   onOpenDetails,
+  onDirectOrder,
 }) {
   const [selectedMainId, setSelectedMainId] = useState("");
   const [selectedSectionId, setSelectedSectionId] = useState("");
@@ -83,6 +84,7 @@ export default function CatalogSections({
               onAddToCart={onAddToCart}
               onUpdateQuantity={onUpdateQuantity}
               onOpenDetails={onOpenDetails}
+              onDirectOrder={onDirectOrder}
             />
           ))}
         </div>

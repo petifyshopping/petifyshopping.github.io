@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from "react";
-import { supabase } from "../../lib/supabase.js";
+import { adminSupabase } from "../../lib/supabase.js";
 import AdminButton from "./components/AdminButton.jsx";
 import AdminNotice from "./components/AdminNotice.jsx";
 import AdminState from "./components/AdminState.jsx";
@@ -37,7 +37,7 @@ export default function AdminProfile({ user, onSignOut, onDisplayNameChange }) {
 
     setSavingProfile(true);
     try {
-      const { error: updateError } = await supabase.auth.updateUser({
+      const { error: updateError } = await adminSupabase.auth.updateUser({
         data: { full_name: nextDisplayName },
       });
       if (updateError) throw updateError;
@@ -62,7 +62,7 @@ export default function AdminProfile({ user, onSignOut, onDisplayNameChange }) {
 
     setSavingPassword(true);
     try {
-      const { error: verificationError } = await supabase.auth.signInWithPassword({
+      const { error: verificationError } = await adminSupabase.auth.signInWithPassword({
         email: user.email,
         password: currentPassword,
       });
@@ -70,7 +70,7 @@ export default function AdminProfile({ user, onSignOut, onDisplayNameChange }) {
         setPasswordError("The current password could not be verified.");
         return;
       }
-      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+      const { error: updateError } = await adminSupabase.auth.updateUser({ password: newPassword });
       if (updateError) {
         setPasswordError("The password could not be changed. Try again.");
         return;

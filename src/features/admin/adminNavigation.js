@@ -16,7 +16,7 @@ export function isSiteSettingsView(view) {
 export function normalizeAdminView(view) {
   if (view === "site-team") return "profile";
   if (view === "site-settings") return "site-settings";
-  return view === "products" || view === "profile" || settingsViewIds.has(view) ? view : "products";
+  return view === "products" || view === "customers" || view === "profile" || settingsViewIds.has(view) ? view : "products";
 }
 
 export function createAdminNavigationItems(activeView, onSelect) {
@@ -27,6 +27,13 @@ export function createAdminNavigationItems(activeView, onSelect) {
       icon: "products",
       active: activeView === "products",
       onClick: () => onSelect("products"),
+    },
+    {
+      id: "customers",
+      label: "Customers",
+      icon: "customers",
+      active: activeView === "customers",
+      onClick: () => onSelect("customers"),
     },
     {
       id: "settings",

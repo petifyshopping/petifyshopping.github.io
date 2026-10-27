@@ -41,9 +41,31 @@
 }
 
 #site-header.admin-project-header .store-header-inner {
+  width: min(100%, 1440px);
+  min-height: 52px;
   grid-template-areas: "brand search actions";
-  grid-template-columns: minmax(0, 1fr) minmax(220px, min(560px, 48vw)) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(220px, min(560px, 42vw)) minmax(0, 1fr);
+  align-items: center;
   column-gap: clamp(1rem, 2.5vw, 2rem);
+}
+
+#site-header.admin-project-header {
+  padding: max(0.65rem, env(safe-area-inset-top)) clamp(1rem, 3vw, 2.5rem);
+}
+
+#site-header.admin-project-header {
+  display: block;
+}
+
+#site-header.admin-project-header .store-header-brand {
+  grid-area: brand;
+  align-content: center;
+}
+
+#site-header.admin-project-header .admin-header-search {
+  grid-area: search;
+  width: 100%;
+  margin: 0;
 }
 
 .store-header-brand {
@@ -116,7 +138,7 @@
   top: auto;
   right: auto;
   grid-area: actions;
-  align-self: start;
+  align-self: center;
   justify-self: end;
 }
 
@@ -329,6 +351,10 @@ body:has(#site-header) #site-footer .footer-legal {
     padding: max(0.65rem, env(safe-area-inset-top)) 0.75rem 0.65rem;
   }
 
+  #site-header.admin-project-header {
+    padding: max(0.65rem, env(safe-area-inset-top)) 0.75rem 0.65rem;
+  }
+
   .store-header-inner {
     min-height: 42px;
     grid-template-areas:
@@ -339,10 +365,13 @@ body:has(#site-header) #site-footer .footer-legal {
   }
 
   #site-header.admin-project-header .store-header-inner {
+    min-height: 42px;
     grid-template-areas:
       "brand actions"
       "search search";
     grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.55rem;
   }
 
   .admin-project-header .store-header-actions {
@@ -350,12 +379,20 @@ body:has(#site-header) #site-footer .footer-legal {
     top: auto;
     right: auto;
     grid-area: actions;
-    align-self: start;
+    align-self: center;
     justify-self: end;
   }
 
   #site-header.admin-project-header:not(.has-search) .store-header-inner {
     grid-template-areas: "brand actions";
+  }
+
+  #site-header.admin-project-header .admin-header-search {
+    height: 40px;
+  }
+
+  #site-header.admin-project-header .admin-account-trigger {
+    max-width: min(18rem, 42vw);
   }
 
   .store-header-brand {

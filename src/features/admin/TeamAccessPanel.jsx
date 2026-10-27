@@ -17,7 +17,7 @@ import useWorkspaceAccess from "../../hooks/useWorkspaceAccess.js";
 export default function TeamAccessPanel() {
   const { session } = useWorkspaceAccess();
   const [requests, setRequests] = useState([]);
-  const [team, setTeam] = useState({ admins: [], sales: [] });
+  const [team, setTeam] = useState({ admins: [] });
   const [email, setEmail] = useState("");
   const [busyId, setBusyId] = useState("");
   const [loading, setLoading] = useState(true);

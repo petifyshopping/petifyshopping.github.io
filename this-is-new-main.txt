@@ -1,5 +1,5 @@
 git add .
-git commit -m "user profile management"
+git commit -m "sales table issue"
 git push origin user-profiles
 
 npm run build

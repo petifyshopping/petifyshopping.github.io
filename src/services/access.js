@@ -18,7 +18,7 @@ export async function getPendingAccessRequests() {
 export async function getAccessTeam() {
   const { data, error } = await requireSupabase().rpc("get_access_team");
   if (error) throw error;
-  if (!data || !Array.isArray(data.admins) || !Array.isArray(data.sales)) {
+  if (!data || !Array.isArray(data.admins)) {
     throw new Error("Workspace access returned an invalid team list.");
   }
   return data;
@@ -56,10 +56,5 @@ export async function rejectAccessRequest(requestId) {
 
 export async function revokeAdmin(userId) {
   const { error } = await requireSupabase().rpc("revoke_admin", { p_user_id: userId });
-  if (error) throw error;
-}
-
-export async function revokeSalesAccess(userId) {
-  const { error } = await requireSupabase().rpc("revoke_sales_access", { p_user_id: userId });
   if (error) throw error;
 }

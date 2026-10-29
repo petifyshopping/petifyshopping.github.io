@@ -121,6 +121,7 @@
 }
 
 .admin-project-header .admin-project-context {
+  margin: 0;
   overflow: hidden;
   color: rgb(255 255 255 / 72%);
   font-size: 0.68rem;

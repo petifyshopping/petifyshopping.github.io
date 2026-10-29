@@ -611,16 +611,9 @@ export default function InvoiceManager({ products, storefrontBrand }) {
   return (
     <section className={`invoice-manager${invoice ? " is-editing-invoice" : ""}`}>
       {!invoiceSettingsOpen && !invoice && (
-        <div className="admin-page-heading invoice-page-heading">
-          <div>
-            <p className="admin-eyebrow">BILLING</p>
-            <h1>Invoices</h1>
-            <p className="admin-muted">Create and manage customer invoices.</p>
-          </div>
-          <div className="invoice-page-actions">
-            <button className="admin-secondary-button" type="button" disabled={loading} onClick={openInvoiceSettings}>Settings</button>
-            <button className="admin-primary-button" type="button" disabled={loading} onClick={startNewInvoice}>Create invoice</button>
-          </div>
+        <div className="invoice-page-actions" role="group" aria-label="Invoice actions">
+          <button className="admin-secondary-button" type="button" disabled={loading} onClick={openInvoiceSettings}>Settings</button>
+          <button className="admin-primary-button" type="button" disabled={loading} onClick={startNewInvoice}>Create invoice</button>
         </div>
       )}
       {error && <AdminNotice kind="error">{error}</AdminNotice>}

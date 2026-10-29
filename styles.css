@@ -10,3 +10,5 @@
 @import "./src/styles/40-admin-responsive.css";
 /* Final shared header and layout overrides. */
 @import "./src/styles/50-header-overrides.css";
+/* Modern workspace navigation styling. */
+@import "./src/styles/60-admin-polish.css";

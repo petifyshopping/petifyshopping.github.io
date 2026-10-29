@@ -4,10 +4,6 @@
   padding-bottom: 2rem;
 }
 
-.customer-management > .admin-page-heading {
-  align-items: flex-end;
-}
-
 .customer-management-summary {
   display: flex;
   flex-wrap: wrap;
@@ -364,10 +360,6 @@
 }
 
 @media (max-width: 700px) {
-  .customer-management > .admin-page-heading {
-    align-items: flex-start;
-  }
-
   .customer-management-section-heading {
     align-items: flex-start;
     flex-direction: column;

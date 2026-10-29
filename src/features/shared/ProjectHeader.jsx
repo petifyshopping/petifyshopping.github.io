@@ -61,7 +61,7 @@ export default function ProjectHeader({
                 : <span className="admin-project-brand-title">{storefrontBrand?.brandTitle || brand.name}</span>}
             </a>
             {storefrontBrand?.tagline && <p className="brand-tagline">{storefrontBrand.tagline}</p>}
-            <span className="admin-project-context">{pageTitle}</span>
+            <h1 className="admin-project-context">{pageTitle}</h1>
           </div>
           {showAdminSearch && (
             <form className="store-search admin-header-search" role="search" aria-label={`${pageTitle} catalog search`} onSubmit={(event) => event.preventDefault()}>

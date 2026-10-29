@@ -1,0 +1,232 @@
+.workspace-nav {
+  gap: 0.75rem;
+  padding: 0.7rem;
+  border: 1px solid #e4eaf3;
+  border-radius: 20px;
+  background: linear-gradient(155deg, #fff 0%, #f5f8ff 100%);
+  box-shadow: 0 14px 36px -28px rgb(22 45 89 / 42%);
+  scrollbar-width: thin;
+  scrollbar-color: #cbd6e7 transparent;
+}
+
+.workspace-nav nav {
+  gap: 0.35rem;
+}
+
+.workspace-nav-toggle,
+.workspace-nav-item {
+  min-height: 46px;
+  gap: 0.8rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  color: #53647d;
+  font-size: 0.88rem;
+  font-weight: 650;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.workspace-nav-toggle {
+  justify-content: flex-start;
+  border-color: #e6ecf5;
+  background: #fff;
+  color: #334865;
+  box-shadow: 0 3px 10px rgb(24 48 89 / 5%);
+}
+
+.workspace-nav-toggle svg,
+.workspace-nav-item svg {
+  width: 19px;
+  height: 19px;
+  color: #7788a2;
+  transition: color 160ms ease, transform 160ms ease;
+}
+
+.workspace-nav-toggle:hover,
+.workspace-nav-item:hover,
+.workspace-nav-group-toggle:hover {
+  border-color: #dbe6f5;
+  background: #edf3fd;
+  color: #183c83;
+}
+
+.workspace-nav-item:hover svg,
+.workspace-nav-toggle:hover svg {
+  color: #2454aa;
+}
+
+.workspace-nav-item.active,
+.workspace-nav-group-header > .workspace-nav-item.active {
+  border-color: transparent;
+  background: linear-gradient(115deg, #214aa5, #3169d3);
+  color: #fff;
+  box-shadow: 0 7px 16px -9px rgb(31 77 165 / 75%);
+}
+
+.workspace-nav-item.active svg,
+.workspace-nav-group-header > .workspace-nav-item.active svg {
+  color: #fff;
+}
+
+.workspace-nav-heading {
+  margin: 0.15rem 0 0.2rem;
+  padding: 0.45rem 0.8rem 0.2rem;
+  color: #8492a8;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.workspace-nav-group {
+  gap: 0.3rem;
+}
+
+.workspace-nav-group-toggle {
+  flex-basis: 38px;
+  border-radius: 12px;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.workspace-nav-group-toggle:hover {
+  border-color: transparent;
+}
+
+.workspace-nav-chevron {
+  color: #8392a8;
+  font-size: 1.4rem;
+  transition: color 160ms ease, transform 180ms ease;
+}
+
+.workspace-nav-group-toggle:hover .workspace-nav-chevron {
+  color: #2454aa;
+}
+
+.workspace-nav-children {
+  gap: 0.22rem;
+  margin: 0.05rem 0 0.15rem 1.05rem;
+  padding-left: 0.55rem;
+  border-left: 1px solid #d9e3f1;
+}
+
+.workspace-nav-child {
+  min-height: 39px;
+  gap: 0.65rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 11px;
+  color: #64748b;
+  font-size: 0.83rem;
+  font-weight: 600;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.workspace-nav-child svg {
+  color: #91a0b5;
+}
+
+.workspace-nav-child:hover {
+  background: #edf3fd;
+  color: #183c83;
+}
+
+.workspace-nav-child.active {
+  background: #e7efff;
+  color: #214aa5;
+  font-weight: 750;
+}
+
+.workspace-nav-child.active svg {
+  color: #3169d3;
+}
+
+.workspace-nav-item:focus-visible,
+.workspace-nav-toggle:focus-visible,
+.workspace-nav-child:focus-visible,
+.workspace-nav-group-toggle:focus-visible {
+  outline: 3px solid #93b7f5;
+  outline-offset: 2px;
+}
+
+.workspace-nav.is-collapsed {
+  padding: 0.55rem;
+}
+
+.workspace-nav.is-collapsed .workspace-nav-toggle,
+.workspace-nav.is-collapsed .workspace-nav-item {
+  justify-content: center;
+  padding-inline: 0.45rem;
+  border-radius: 14px;
+}
+
+.workspace-nav.is-collapsed .workspace-nav-toggle {
+  border-color: transparent;
+  background: #eaf1fc;
+  color: #214aa5;
+  box-shadow: none;
+}
+
+.workspace-nav.is-collapsed .workspace-nav-toggle svg {
+  color: #214aa5;
+}
+
+.workspace-nav.is-collapsed .workspace-nav-item.active {
+  background: linear-gradient(145deg, #214aa5, #3169d3);
+}
+
+.admin-bottom-nav {
+  border: 1px solid rgb(221 230 243 / 90%);
+  border-radius: 20px;
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 12px 35px -18px rgb(15 35 73 / 35%);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+}
+
+.admin-bottom-nav-item {
+  min-height: 54px;
+  gap: 0.18rem;
+  border-radius: 14px;
+  color: #718099;
+  font-size: 0.72rem;
+  font-weight: 700;
+  transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.admin-bottom-nav-item:hover {
+  background: #f0f4fb;
+  color: #214aa5;
+}
+
+.admin-bottom-nav-item.active {
+  background: linear-gradient(145deg, #edf3ff, #e5eeff);
+  color: #214aa5;
+}
+
+.admin-bottom-nav-icon {
+  font-size: 1.15rem;
+}
+
+@media (max-width: 760px) {
+  .admin-bottom-nav {
+    inset: auto 0.75rem calc(0.55rem + env(safe-area-inset-bottom));
+    padding: 0.35rem;
+    border-radius: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-nav-toggle,
+  .workspace-nav-item,
+  .workspace-nav-toggle svg,
+  .workspace-nav-item svg,
+  .workspace-nav-group-toggle,
+  .workspace-nav-chevron,
+  .workspace-nav-child,
+  .admin-bottom-nav-item {
+    transition: none;
+  }
+}

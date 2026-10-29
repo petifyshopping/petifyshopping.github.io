@@ -3,18 +3,6 @@
   gap: 1.25rem;
 }
 
-.invoice-page-heading {
-  align-items: center;
-}
-
-.invoice-page-heading h1 {
-  margin-bottom: 0.3rem;
-}
-
-.invoice-page-heading .admin-muted {
-  margin: 0;
-}
-
 .invoice-list-section {
   display: grid;
   gap: 0.9rem;
@@ -1293,9 +1281,7 @@
     flex-wrap: wrap;
   }
 
-  .invoice-page-heading {
-    align-items: flex-start;
-  }
+
 
   .invoice-page-heading .admin-primary-button {
     flex-shrink: 0;

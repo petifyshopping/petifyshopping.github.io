@@ -99,19 +99,11 @@ export default function AdminProfile({ user, onSignOut, onDisplayNameChange }) {
   }
 
   return (
-    <section className="admin-profile" aria-labelledby="admin-profile-title">
-      <div className="admin-page-heading">
-        <div>
-          <p className="admin-eyebrow">ACCOUNT</p>
-          <h1 id="admin-profile-title">Admin profile</h1>
-          <p className="admin-muted">Manage the personal details associated with your admin account.</p>
-        </div>
-      </div>
+    <section className="admin-profile" aria-label="Admin profile">
       <div className="admin-profile-card">
         <div className="admin-settings-heading">
           <div>
             <h2>Profile details</h2>
-            <p className="admin-muted">Your email is managed by your sign-in provider.</p>
           </div>
         </div>
         <form className="admin-form-grid admin-profile-form" onSubmit={saveProfile}>

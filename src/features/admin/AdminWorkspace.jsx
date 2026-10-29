@@ -583,7 +583,6 @@ export default function ProductManager({
           <div hidden={!isSettingsView}>
             {(settingsVisited || isSettingsView) && (
               <>
-                <div className="admin-page-heading"><div><p className="admin-eyebrow">SITE CONFIGURATION</p><h1>Site settings</h1><p className="admin-muted">Choose an area below to manage your storefront and brand.</p></div></div>
                 <section className="admin-settings-section-picker" aria-labelledby="admin-settings-section-picker-title">
                   <div className="admin-settings-section-picker-heading">
                     <h2 id="admin-settings-section-picker-title">Choose an area to configure</h2>
@@ -656,9 +655,6 @@ export default function ProductManager({
               </Suspense>
             ) : (
               <>
-              <div className="admin-page-heading">
-                <div><p className="admin-eyebrow">CATALOG MANAGEMENT</p><h1>Products</h1><p className="admin-muted">Search, filter and update your store catalog.</p></div>
-              </div>
               <div className={`admin-create-fab${createFabVisible ? "" : " is-scroll-hidden"}`} aria-hidden={!createFabVisible} inert={!createFabVisible}>
                 {addingMainSection ? (
                   <form className="admin-create-form admin-section-form admin-section-fab-form" onSubmit={addMainSection}>

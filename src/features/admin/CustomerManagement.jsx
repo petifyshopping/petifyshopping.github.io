@@ -163,23 +163,16 @@ export default function CustomerManagement() {
 
   return (
     <div className="customer-management">
-      <div className="admin-page-heading">
-        <div>
-          <p className="admin-eyebrow">CUSTOMER ACCOUNTS</p>
-          <h1>Customers &amp; orders</h1>
-          <p className="admin-muted">Review customer profiles and order requests handed off to WhatsApp.</p>
-        </div>
-        <div className="customer-management-summary" aria-label={`${customerTotal} customers and ${orderTotal} orders`}>
-          <span><strong>{customerTotal}</strong> customers</span>
-          <span><strong>{orderTotal}</strong> orders</span>
-          {orderStats && (
-            <>
-              <span><strong>{orderStats.confirmed_orders}</strong> confirmed</span>
-              <span><strong>{orderStats.fulfilled_orders}</strong> completed</span>
-              <span><strong>{formatProductPrice(orderStats.fulfilled_total)}</strong> completed value</span>
-            </>
-          )}
-        </div>
+      <div className="customer-management-summary" aria-label={`${customerTotal} customers and ${orderTotal} orders`}>
+        <span><strong>{customerTotal}</strong> customers</span>
+        <span><strong>{orderTotal}</strong> orders</span>
+        {orderStats && (
+          <>
+            <span><strong>{orderStats.confirmed_orders}</strong> confirmed</span>
+            <span><strong>{orderStats.fulfilled_orders}</strong> completed</span>
+            <span><strong>{formatProductPrice(orderStats.fulfilled_total)}</strong> completed value</span>
+          </>
+        )}
       </div>
 
       {error && <p className="customer-management-error" role="alert">{error}</p>}

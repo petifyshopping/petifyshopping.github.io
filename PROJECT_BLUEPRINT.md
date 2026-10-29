@@ -571,7 +571,7 @@ Only fix issues that are necessary for parity, security or the allowed scope; do
 - [ ] About content, feature cards, footer contacts and visibility toggles match.
 - [ ] Admin login/request/approval/reset/session expiration and admin-only authorization match; forgot label is visible.
 - [ ] Products CRUD, sections, stock, images/crops, drafts, filters, mobile admin nav and five-second deletion undo match.
-- [ ] Admin invoices are available at `/#admin-invoice`; live preview is user-toggleable beside the editor, full-page view is optional, header/logo controls are inside Invoice settings, catalog/custom lines can be added below current lines, and records save/reopen, print to PDF, and share as an image.
+- [ ] Admin invoices are available at `/#admin-invoice`; live preview is user-toggleable beside the editor, full-page view is optional, header/logo controls open in an Invoice settings popup and persist with Save invoice, customer name/phone/address/delivery-partner details are optional, catalog/custom lines can be added below current lines, and records save/reopen, print to PDF, and share as an image.
 - [ ] Site settings retain brand/content/assets/navigation/loading/admin branding/team access except Sales and palette editing.
 - [ ] No Sales dashboard route, screen, menu, settings, table, RPC, service, stylesheet or Sales-specific access role.
 - [ ] Breakpoints: product grid two columns <640, three >=640, four >=1100, five >=1440; admin mobile switch <=760; 420px admin width rule.

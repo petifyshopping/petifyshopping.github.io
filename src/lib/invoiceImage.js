@@ -50,7 +50,7 @@ function drawContainedImage(context, image, x, y, width, height) {
   context.drawImage(image, x + (width - drawnWidth) / 2, y + (height - drawnHeight) / 2, drawnWidth, drawnHeight);
 }
 
-export async function createInvoiceImage(invoice, totals, { defaultLogoUrl } = {}) {
+export async function createInvoiceImage(invoice, totals) {
   const logoUrl = invoice.businessDetails.visible.logo ? invoice.businessDetails.values.logoUrl : "";
   const logo = logoUrl ? await loadInvoiceLogo(logoUrl) : null;
   const measureCanvas = document.createElement("canvas");
@@ -66,12 +66,20 @@ export async function createInvoiceImage(invoice, totals, { defaultLogoUrl } = {
         : []
     )),
   ];
-  const customerLines = [
-    ...wrapText(measureContext, invoice.customerDetails.name || "Customer name", contentWidth),
-    ...["companyName", "phone", "email", "gstin", "place", "address"].flatMap((key) => (
-      invoice.customerDetails[key] ? wrapText(measureContext, invoice.customerDetails[key], contentWidth) : []
-    )),
-  ];
+  const invoiceCustomer = invoice.customerDetails.source === "saved"
+    ? invoice.customerDetails.savedCustomer ?? {}
+    : invoice.customerDetails.manualCustomer ?? invoice.customerDetails;
+  const customerLines = invoice.customerDetails.enabled
+    ? [
+      ...["name", "phone", "address"].flatMap((key) => (
+        invoiceCustomer[key] ? wrapText(measureContext, invoiceCustomer[key], contentWidth) : []
+      )),
+      ...(invoice.customerDetails.deliveryPartner
+        ? wrapText(measureContext, `Delivery partner: ${invoice.customerDetails.deliveryPartner}`, contentWidth)
+        : []),
+    ]
+    : [];
+  const customerBlockHeight = customerLines.length ? 70 + customerLines.length * 32 : 0;
   const itemRows = invoice.items.map((item) => {
     const descriptionLines = wrapText(measureContext, item.description || "Item", 530);
     return { item, descriptionLines, height: Math.max(58, descriptionLines.length * 30 + 24) };
@@ -82,7 +90,7 @@ export async function createInvoiceImage(invoice, totals, { defaultLogoUrl } = {
     70 + businessLines.length * 32,
     logo ? 162 + businessLines.length * 32 : 0,
   );
-  const plannedHeight = pageMargin * 2 + headerHeight + 70 + customerLines.length * 32 + 68
+  const plannedHeight = pageMargin * 2 + headerHeight + customerBlockHeight + 68
     + itemRows.reduce((height, row) => height + row.height, 0)
     + 230 + (notesLines.length ? 110 + notesLines.length * 32 : 0);
   const canvas = document.createElement("canvas");
@@ -97,8 +105,7 @@ export async function createInvoiceImage(invoice, totals, { defaultLogoUrl } = {
   const business = invoice.businessDetails;
   let businessY = pageMargin + 24;
   if (logo) {
-    const isDefaultLogo = Boolean(defaultLogoUrl && logoUrl === defaultLogoUrl);
-    if (isDefaultLogo) {
+    if (business.logoBlueBackground === true) {
       context.fillStyle = "#173f67";
       context.fillRect(pageMargin, pageMargin, 284, 130);
     }
@@ -132,19 +139,17 @@ export async function createInvoiceImage(invoice, totals, { defaultLogoUrl } = {
   context.fillRect(pageMargin, headerBottom, contentWidth, 3);
 
   let y = headerBottom + 48;
-  context.fillStyle = "#526579";
-  context.font = "bold 18px Arial, sans-serif";
-  context.fillText("BILL TO", pageMargin, y);
-  y += 38;
-  y = drawWrappedText(context, wrapText(context, invoice.customerDetails.name || "Customer name", contentWidth), pageMargin, y, {
-    color: "#172b3e",
-    font: "bold 23px Arial, sans-serif",
-  });
-  ["companyName", "phone", "email", "gstin", "place", "address"].forEach((key) => {
-    if (!invoice.customerDetails[key]) return;
-    y = drawWrappedText(context, wrapText(context, invoice.customerDetails[key], contentWidth), pageMargin, y + 2);
-  });
-  y += 30;
+  if (customerLines.length) {
+    context.fillStyle = "#526579";
+    context.font = "bold 18px Arial, sans-serif";
+    context.fillText("CUSTOMER DETAILS", pageMargin, y);
+    y += 38;
+    y = drawWrappedText(context, customerLines, pageMargin, y, {
+      color: "#172b3e",
+      font: "22px Arial, sans-serif",
+    });
+    y += 30;
+  }
 
   const descriptionX = pageMargin + 12;
   const quantityX = pageWidth - pageMargin - 365;

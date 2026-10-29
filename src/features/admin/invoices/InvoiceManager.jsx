@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { formatProductPrice, parseProductPrice, productOptions } from "../../../lib/productPricing.js";
 import { createInvoiceImage } from "../../../lib/invoiceImage.js";
 import { uploadProductImages } from "../../../services/admin.js";
+import { getAdminCustomerPage } from "../../../services/customers.js";
 import { getInvoices, saveInvoice } from "../../../services/invoices.js";
 import AdminNotice from "../components/AdminNotice.jsx";
 import ImageUploadField from "../components/ImageUploadField.jsx";
@@ -37,9 +39,16 @@ function newInvoice(storefrontBrand) {
         address: storefrontBrand?.address || "",
         logoUrl: storefrontBrand?.logoUrl || "",
       },
+      logoBlueBackground: false,
       visible: { businessName: true, phone: false, email: false, address: false, logo: Boolean(storefrontBrand?.logoUrl) },
     },
-    customerDetails: { name: "", companyName: "", phone: "", email: "", gstin: "", place: "", address: "" },
+    customerDetails: {
+      enabled: false,
+      source: "manual",
+      savedCustomer: { profileId: "", name: "", phone: "", address: "" },
+      manualCustomer: { name: "", phone: "", address: "" },
+      deliveryPartner: "",
+    },
     items: [],
     issueDate: localDate(),
     dueDate: "",
@@ -49,9 +58,21 @@ function newInvoice(storefrontBrand) {
 }
 
 function editableInvoice(invoice) {
+  const customerDetails = invoice.customerDetails ?? {};
+  const hasSeparateCustomerData = customerDetails.savedCustomer || customerDetails.manualCustomer;
+  const legacyCustomer = hasSeparateCustomerData
+    ? {}
+    : {
+      name: customerDetails.name ?? "",
+      phone: customerDetails.phone ?? "",
+      address: customerDetails.address ?? "",
+    };
+  const savedCustomer = customerDetails.savedCustomer ?? { profileId: "", name: "", phone: "", address: "" };
+  const manualCustomer = customerDetails.manualCustomer ?? legacyCustomer;
   return {
     ...invoice,
     businessDetails: {
+      logoBlueBackground: invoice.businessDetails?.logoBlueBackground === true,
       values: {
         ...Object.fromEntries(headerFields.map(([key]) => [key, invoice.businessDetails?.values?.[key] ?? ""])),
         logoUrl: invoice.businessDetails?.values?.logoUrl ?? "",
@@ -62,13 +83,34 @@ function editableInvoice(invoice) {
       },
     },
     customerDetails: {
-      name: invoice.customerDetails?.name ?? "",
-      companyName: invoice.customerDetails?.companyName ?? "",
-      phone: invoice.customerDetails?.phone ?? "",
-      email: invoice.customerDetails?.email ?? "",
-      gstin: invoice.customerDetails?.gstin ?? "",
-      place: invoice.customerDetails?.place ?? "",
-      address: invoice.customerDetails?.address ?? "",
+      enabled: customerDetails.enabled === true
+        || Boolean(
+          customerDetails.name
+          || customerDetails.phone
+          || customerDetails.address
+          || customerDetails.deliveryPartner
+          || customerDetails.companyName
+          || customerDetails.email
+          || customerDetails.gstin
+          || customerDetails.place
+          || savedCustomer.profileId
+          || manualCustomer.name
+          || manualCustomer.phone
+          || manualCustomer.address
+        ),
+      source: customerDetails.source === "saved" && savedCustomer.profileId ? "saved" : "manual",
+      savedCustomer: {
+        profileId: savedCustomer.profileId ?? "",
+        name: savedCustomer.name ?? "",
+        phone: savedCustomer.phone ?? "",
+        address: savedCustomer.address ?? "",
+      },
+      manualCustomer: {
+        name: manualCustomer.name ?? "",
+        phone: manualCustomer.phone ?? "",
+        address: manualCustomer.address ?? "",
+      },
+      deliveryPartner: customerDetails.deliveryPartner ?? "",
     },
     items: (invoice.items ?? []).map((item) => ({
       ...item,
@@ -81,18 +123,29 @@ function editableInvoice(invoice) {
   };
 }
 
+function selectedCustomerDetails(customerDetails) {
+  return customerDetails.source === "saved"
+    ? customerDetails.savedCustomer ?? {}
+    : customerDetails.manualCustomer ?? customerDetails;
+}
+
+function invoiceCustomerName(customerDetails) {
+  return selectedCustomerDetails(customerDetails ?? {}).name || "No customer details";
+}
+
 function lineTotal(item) {
   return Math.round(Math.max(0, Number(item.quantity) || 0) * Math.max(0, Number(item.unitPrice) || 0) * 100) / 100;
 }
 
-function InvoicePreview({ invoice, totals, storefrontBrand }) {
+function InvoicePreview({ invoice, totals }) {
   const { values, visible } = invoice.businessDetails;
+  const customer = selectedCustomerDetails(invoice.customerDetails);
   return (
     <article className="invoice-paper" aria-label="Invoice print preview">
       <header className="invoice-paper-header">
         <div className="invoice-paper-business">
           {visible.logo && values.logoUrl && (
-            <img className={`invoice-paper-logo${values.logoUrl === storefrontBrand?.logoUrl ? " is-store-logo" : ""}`} src={values.logoUrl} alt="" />
+            <img className={`invoice-paper-logo${invoice.businessDetails.logoBlueBackground ? " has-blue-background" : ""}`} src={values.logoUrl} alt="" />
           )}
           {headerFields.map(([key]) => visible[key] && values[key] && (
             <p className={key === "businessName" ? "invoice-paper-business-name" : ""} key={key}>{values[key]}</p>
@@ -105,16 +158,15 @@ function InvoicePreview({ invoice, totals, storefrontBrand }) {
           {invoice.dueDate && <p><strong>Due</strong> {invoice.dueDate}</p>}
         </div>
       </header>
-      <section className="invoice-paper-customer">
-        <h3>Bill to</h3>
-        <p>{invoice.customerDetails.name || "Customer name"}</p>
-        {invoice.customerDetails.companyName && <p>{invoice.customerDetails.companyName}</p>}
-        {invoice.customerDetails.phone && <p>{invoice.customerDetails.phone}</p>}
-        {invoice.customerDetails.email && <p>{invoice.customerDetails.email}</p>}
-        {invoice.customerDetails.gstin && <p>GSTIN / tax ID: {invoice.customerDetails.gstin}</p>}
-        {invoice.customerDetails.place && <p>{invoice.customerDetails.place}</p>}
-        {invoice.customerDetails.address && <p>{invoice.customerDetails.address}</p>}
-      </section>
+      {invoice.customerDetails.enabled && (
+        <section className="invoice-paper-customer">
+          <h3>Customer details</h3>
+          {customer.name && <p>{customer.name}</p>}
+          {customer.phone && <p>{customer.phone}</p>}
+          {customer.address && <p>{customer.address}</p>}
+          {invoice.customerDetails.deliveryPartner && <p>Delivery partner: {invoice.customerDetails.deliveryPartner}</p>}
+        </section>
+      )}
       <div className="invoice-paper-table-wrap">
         <table className="invoice-paper-table">
           <thead><tr><th>Item</th><th>Qty</th><th>Unit price</th><th>Amount</th></tr></thead>
@@ -140,8 +192,144 @@ function InvoicePreview({ invoice, totals, storefrontBrand }) {
   );
 }
 
+function InvoiceSettingsDialog({
+  open,
+  businessDetails,
+  storefrontBrand,
+  uploadingLogo,
+  onChange,
+  onLogoSelected,
+  onClose,
+}) {
+  const dialogRef = useRef(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return undefined;
+    if (open && !dialog.open) dialog.showModal();
+    if (!open && dialog.open) dialog.close();
+    return undefined;
+  }, [open]);
+
+  if (!open) return null;
+
+  return createPortal(
+    <dialog
+      ref={dialogRef}
+      className="invoice-settings-dialog"
+      aria-labelledby="invoice-settings-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      onClose={onClose}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <header className="invoice-settings-dialog-header">
+        <div>
+          <p className="admin-eyebrow">INVOICE OPTIONS</p>
+          <h2 id="invoice-settings-title">Invoice settings</h2>
+        </div>
+        <button className="admin-secondary-button" type="button" aria-label="Close invoice settings" onClick={onClose}>×</button>
+      </header>
+      <p className="invoice-section-hint">Choose which business details appear at the top-left of the invoice.</p>
+      <div className="invoice-logo-controls">
+        {businessDetails.values.logoUrl && (
+          <img
+            className={`invoice-logo-thumbnail${businessDetails.logoBlueBackground ? " has-blue-background" : ""}`}
+            src={businessDetails.values.logoUrl}
+            alt="Current invoice logo"
+          />
+        )}
+        <div className="invoice-logo-actions">
+          <ImageUploadField
+            label={uploadingLogo ? "Uploading invoice logo..." : "Upload a different invoice logo"}
+            accept="image/jpeg,image/png,image/webp"
+            maxSizeBytes={5 * 1024 * 1024}
+            disabled={uploadingLogo}
+            hint="JPEG, PNG, or WebP. This logo is used on this invoice only."
+            onChange={onLogoSelected}
+          />
+          {storefrontBrand?.logoUrl && businessDetails.values.logoUrl !== storefrontBrand.logoUrl && (
+            <button className="admin-secondary-button" type="button" disabled={uploadingLogo} onClick={() => onChange({
+              ...businessDetails,
+              values: { ...businessDetails.values, logoUrl: storefrontBrand.logoUrl },
+              visible: { ...businessDetails.visible, logo: true },
+            })}>Use store logo</button>
+          )}
+          {businessDetails.values.logoUrl && (
+            <button className="invoice-remove-item" type="button" disabled={uploadingLogo} onClick={() => onChange({
+              ...businessDetails,
+              values: { ...businessDetails.values, logoUrl: "" },
+              visible: { ...businessDetails.visible, logo: false },
+            })}>Remove logo</button>
+          )}
+        </div>
+      </div>
+      <div className="invoice-header-fields">
+        {businessDetails.values.logoUrl && (
+          <label className="invoice-checkbox invoice-logo-checkbox">
+            <input
+              type="checkbox"
+              checked={businessDetails.visible.logo}
+              onChange={(event) => onChange({
+                ...businessDetails,
+                visible: { ...businessDetails.visible, logo: event.target.checked },
+              })}
+            />
+            <span>Show logo</span>
+          </label>
+        )}
+        {businessDetails.values.logoUrl && (
+          <label className="invoice-checkbox invoice-logo-background-checkbox">
+            <input
+              type="checkbox"
+              checked={businessDetails.logoBlueBackground}
+              onChange={(event) => onChange({
+                ...businessDetails,
+                logoBlueBackground: event.target.checked,
+              })}
+            />
+            <span>Add blue background behind logo</span>
+          </label>
+        )}
+        {headerFields.map(([key, label]) => (
+          <div className="invoice-header-field" key={key}>
+            <label className="invoice-checkbox">
+              <input
+                type="checkbox"
+                checked={businessDetails.visible[key]}
+                onChange={(event) => onChange({
+                  ...businessDetails,
+                  visible: { ...businessDetails.visible, [key]: event.target.checked },
+                })}
+              />
+              <span>Show {label.toLowerCase()}</span>
+            </label>
+            <input
+              aria-label={label}
+              placeholder={label}
+              value={businessDetails.values[key]}
+              onChange={(event) => onChange({
+                ...businessDetails,
+                values: { ...businessDetails.values, [key]: event.target.value },
+              })}
+            />
+          </div>
+        ))}
+      </div>
+      <footer className="invoice-settings-dialog-footer">
+        <p>Changes are saved with this invoice when you select Save invoice.</p>
+        <button className="admin-primary-button" type="button" onClick={onClose}>Done</button>
+      </footer>
+    </dialog>,
+    document.body,
+  );
+}
+
 export default function InvoiceManager({ products, storefrontBrand }) {
-  const invoiceFormRef = useRef(null);
   const [invoices, setInvoices] = useState([]);
   const [invoice, setInvoice] = useState(null);
   const [invoiceMode, setInvoiceMode] = useState("edit");
@@ -151,16 +339,14 @@ export default function InvoiceManager({ products, storefrontBrand }) {
   const [saving, setSaving] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [customers, setCustomers] = useState([]);
+  const [customerTotal, setCustomerTotal] = useState(0);
+  const [customersLoaded, setCustomersLoaded] = useState(false);
+  const [customersLoading, setCustomersLoading] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [customerPickerError, setCustomerPickerError] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-
-  useEffect(() => {
-    if (!invoice || !window.matchMedia("(max-width: 760px)").matches) return undefined;
-    const frame = window.requestAnimationFrame(() => {
-      invoiceFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [invoice]);
 
   useEffect(() => {
     let active = true;
@@ -181,6 +367,27 @@ export default function InvoiceManager({ products, storefrontBrand }) {
   function updateInvoice(field, value) {
     setInvoice((current) => ({ ...current, [field]: value }));
   }
+
+  async function loadCustomers(append = false) {
+    if (customersLoading) return;
+    setCustomersLoading(true);
+    setCustomerPickerError("");
+    try {
+      const page = await getAdminCustomerPage(append ? customers.length : 0, 30);
+      setCustomers((current) => append ? [...current, ...page.rows] : page.rows);
+      setCustomerTotal(page.total);
+      setCustomersLoaded(true);
+    } catch (loadError) {
+      setCustomerPickerError(loadError.message || "Customer records could not be loaded.");
+    } finally {
+      setCustomersLoading(false);
+    }
+  }
+
+  const matchingCustomers = customers.filter((customer) => (
+    [customer.full_name, customer.email, customer.phone, customer.address]
+      .some((value) => String(value ?? "").toLocaleLowerCase().includes(customerSearch.trim().toLocaleLowerCase()))
+  ));
 
   function addItem() {
     updateInvoice("items", [...invoice.items, { productId: "", variantIndex: 0, description: "", quantity: 1, unitPrice: 0 }]);
@@ -258,7 +465,7 @@ export default function InvoiceManager({ products, storefrontBrand }) {
     setError("");
     setNotice("");
     try {
-      const blob = await createInvoiceImage(invoice, totals, { defaultLogoUrl: storefrontBrand?.logoUrl });
+      const blob = await createInvoiceImage(invoice, totals);
       const safeNumber = invoice.invoiceNumber.replace(/[^a-z0-9_-]/gi, "-") || "invoice";
       const file = new File([blob], `${safeNumber}.png`, { type: "image/png" });
       const shareData = { files: [file], title: `Invoice ${invoice.invoiceNumber}`, text: `Invoice ${invoice.invoiceNumber}` };
@@ -284,10 +491,6 @@ export default function InvoiceManager({ products, storefrontBrand }) {
 
   async function handleSave(event) {
     event.preventDefault();
-    if (!invoice.customerDetails.name.trim()) {
-      setError("Enter the customer name before saving the invoice.");
-      return;
-    }
     if (!invoice.items.length || invoice.items.some((item) => !item.description.trim() || !(Number(item.quantity) > 0) || !(Number(item.unitPrice) >= 0))) {
       setError("Add at least one item and check each item name, quantity, and price.");
       return;
@@ -335,13 +538,13 @@ export default function InvoiceManager({ products, storefrontBrand }) {
         <div className="invoice-list">
           {!invoices.length ? <div className="invoice-empty">No invoices yet. Create an invoice to get started.</div> : invoices.map((record) => (
             <button className="invoice-list-row" key={record.id} type="button" onClick={() => { setInvoice(editableInvoice(record)); setInvoiceMode("view"); setError(""); setNotice(""); }}>
-              <span><strong>{record.invoiceNumber}</strong><small>{record.customerDetails?.name || "Customer"} · {record.issueDate}</small></span>
+              <span><strong>{record.invoiceNumber}</strong><small>{invoiceCustomerName(record.customerDetails)} · {record.issueDate}</small></span>
               <strong>{formatProductPrice(record.total)}</strong>
             </button>
           ))}
         </div>
       ) : (
-        <form ref={invoiceFormRef} className={`invoice-layout${invoiceMode === "edit" ? " is-editing" : ""}${livePreviewEnabled ? " has-live-preview" : ""}`} onSubmit={handleSave}>
+        <form className={`invoice-layout${invoiceMode === "edit" ? " is-editing" : ""}${livePreviewEnabled ? " has-live-preview" : ""}`} onSubmit={handleSave}>
           <div className="invoice-editor-toolbar">
             <button type="button" className="admin-secondary-button" onClick={() => { setInvoice(null); setError(""); setNotice(""); }}>← All invoices</button>
             <div className="invoice-mode-switch" role="group" aria-label="Invoice mode">
@@ -365,11 +568,11 @@ export default function InvoiceManager({ products, storefrontBrand }) {
               <button
                 type="button"
                 className={`admin-secondary-button${invoiceSettingsOpen ? " active" : ""}`}
+                aria-haspopup="dialog"
                 aria-expanded={invoiceSettingsOpen}
-                aria-controls="invoice-settings-panel"
                 onClick={() => {
                   setInvoiceMode("edit");
-                  setInvoiceSettingsOpen((open) => !open);
+                  setInvoiceSettingsOpen(true);
                 }}
               >
                 Invoice settings
@@ -389,70 +592,130 @@ export default function InvoiceManager({ products, storefrontBrand }) {
                 <label>Due date<input type="date" value={invoice.dueDate} onChange={(event) => updateInvoice("dueDate", event.target.value)} /></label>
               </div>
             </section>
-            {invoiceSettingsOpen && <section className="invoice-editor-section" id="invoice-settings-panel">
-              <h2>Invoice header</h2>
-              <p className="invoice-section-hint">Choose which business details appear at the top-left of the printed invoice.</p>
-              <div className="invoice-logo-controls">
-                {invoice.businessDetails.values.logoUrl && (
-                  <img className={`invoice-logo-thumbnail${invoice.businessDetails.values.logoUrl === storefrontBrand?.logoUrl ? " is-store-logo" : ""}`} src={invoice.businessDetails.values.logoUrl} alt="Current invoice logo" />
-                )}
-                <div className="invoice-logo-actions">
-                  <ImageUploadField
-                    label={uploadingLogo ? "Uploading invoice logo..." : "Upload a different invoice logo"}
-                    accept="image/jpeg,image/png,image/webp"
-                    maxSizeBytes={5 * 1024 * 1024}
-                    disabled={uploadingLogo}
-                    hint="JPEG, PNG, or WebP. This logo is used on this invoice only."
-                    onChange={(files) => void handleInvoiceLogoSelected(files)}
-                  />
-                  {storefrontBrand?.logoUrl && invoice.businessDetails.values.logoUrl !== storefrontBrand.logoUrl && (
-                    <button className="admin-secondary-button" type="button" disabled={uploadingLogo} onClick={() => updateInvoice("businessDetails", {
-                      ...invoice.businessDetails,
-                      values: { ...invoice.businessDetails.values, logoUrl: storefrontBrand.logoUrl },
-                      visible: { ...invoice.businessDetails.visible, logo: true },
-                    })}>Use store logo</button>
-                  )}
-                  {invoice.businessDetails.values.logoUrl && (
-                    <button className="invoice-remove-item" type="button" disabled={uploadingLogo} onClick={() => updateInvoice("businessDetails", {
-                      ...invoice.businessDetails,
-                      values: { ...invoice.businessDetails.values, logoUrl: "" },
-                      visible: { ...invoice.businessDetails.visible, logo: false },
-                    })}>Remove logo</button>
-                  )}
-                </div>
-              </div>
-              <div className="invoice-header-fields">
-                {invoice.businessDetails.values.logoUrl && (
-                  <label className="invoice-checkbox invoice-logo-checkbox"><input type="checkbox" checked={invoice.businessDetails.visible.logo} onChange={(event) => updateInvoice("businessDetails", {
-                    ...invoice.businessDetails,
-                    visible: { ...invoice.businessDetails.visible, logo: event.target.checked },
-                  })} /><span>Show store logo</span></label>
-                )}
-                {headerFields.map(([key, label]) => (
-                  <div className="invoice-header-field" key={key}>
-                    <label className="invoice-checkbox"><input type="checkbox" checked={invoice.businessDetails.visible[key]} onChange={(event) => updateInvoice("businessDetails", {
-                      ...invoice.businessDetails,
-                      visible: { ...invoice.businessDetails.visible, [key]: event.target.checked },
-                    })} /><span>Show {label.toLowerCase()}</span></label>
-                    <input aria-label={label} placeholder={label} value={invoice.businessDetails.values[key]} onChange={(event) => updateInvoice("businessDetails", {
-                      ...invoice.businessDetails,
-                      values: { ...invoice.businessDetails.values, [key]: event.target.value },
-                    })} />
-                  </div>
-                ))}
-              </div>
-            </section>}
             <section className="invoice-editor-section">
-              <h2>Customer</h2>
-              <div className="invoice-form-grid">
-                <label>Name<input required value={invoice.customerDetails.name} onChange={(event) => updateInvoice("customerDetails", { ...invoice.customerDetails, name: event.target.value })} /></label>
-                <label>Company / business<input value={invoice.customerDetails.companyName} onChange={(event) => updateInvoice("customerDetails", { ...invoice.customerDetails, companyName: event.target.value })} /></label>
-                <label>Phone<input type="tel" value={invoice.customerDetails.phone} onChange={(event) => updateInvoice("customerDetails", { ...invoice.customerDetails, phone: event.target.value })} /></label>
-                <label>Email<input type="email" value={invoice.customerDetails.email} onChange={(event) => updateInvoice("customerDetails", { ...invoice.customerDetails, email: event.target.value })} /></label>
-                <label>GSTIN / tax ID<input value={invoice.customerDetails.gstin} onChange={(event) => updateInvoice("customerDetails", { ...invoice.customerDetails, gstin: event.target.value })} /></label>
-                <label>Place / city<input value={invoice.customerDetails.place} onChange={(event) => updateInvoice("customerDetails", { ...invoice.customerDetails, place: event.target.value })} /></label>
-                <label className="invoice-wide-field">Address<textarea rows="2" value={invoice.customerDetails.address} onChange={(event) => updateInvoice("customerDetails", { ...invoice.customerDetails, address: event.target.value })} /></label>
-              </div>
+              <label className="invoice-customer-toggle">
+                <input
+                  type="checkbox"
+                  checked={invoice.customerDetails.enabled}
+                  onChange={(event) => updateInvoice("customerDetails", event.target.checked
+                    ? { ...invoice.customerDetails, enabled: true }
+                    : {
+                      enabled: false,
+                      source: "manual",
+                      savedCustomer: { profileId: "", name: "", phone: "", address: "" },
+                      manualCustomer: { name: "", phone: "", address: "" },
+                      deliveryPartner: "",
+                    })}
+                />
+                <span><strong>Add customer details</strong><small>Add these details to the invoice if needed.</small></span>
+              </label>
+              {invoice.customerDetails.enabled && (
+                <>
+                  <label className="invoice-customer-source">
+                    Customer source
+                    <select
+                      value={invoice.customerDetails.source}
+                      onChange={(event) => {
+                        const source = event.target.value;
+                        updateInvoice("customerDetails", { ...invoice.customerDetails, source });
+                        if (source === "saved" && !customersLoaded) void loadCustomers();
+                      }}
+                    >
+                      <option value="manual">Enter invoice-only customer details</option>
+                      <option value="saved">Choose from saved customers</option>
+                    </select>
+                  </label>
+                  {invoice.customerDetails.source === "saved" ? (
+                    <div className="invoice-customer-picker">
+                      <label>
+                        Saved customer
+                        <select
+                          value={invoice.customerDetails.savedCustomer.profileId}
+                          onChange={(event) => {
+                            const selected = customers.find((customer) => customer.user_id === event.target.value);
+                            updateInvoice("customerDetails", {
+                              ...invoice.customerDetails,
+                              savedCustomer: selected
+                                ? {
+                                  profileId: selected.user_id,
+                                  name: selected.full_name,
+                                  phone: selected.phone,
+                                  address: selected.address ?? "",
+                                }
+                                : { profileId: "", name: "", phone: "", address: "" },
+                            });
+                          }}
+                        >
+                          <option value="">Select a saved customer</option>
+                          {invoice.customerDetails.savedCustomer.profileId
+                            && !matchingCustomers.some((customer) => customer.user_id === invoice.customerDetails.savedCustomer.profileId)
+                            && (
+                              <option value={invoice.customerDetails.savedCustomer.profileId} key={invoice.customerDetails.savedCustomer.profileId}>
+                                {invoice.customerDetails.savedCustomer.name}
+                                {invoice.customerDetails.savedCustomer.phone && ` · ${invoice.customerDetails.savedCustomer.phone}`}
+                              </option>
+                            )}
+                          {matchingCustomers.map((customer) => (
+                            <option key={customer.user_id} value={customer.user_id}>
+                              {[customer.full_name, customer.phone || customer.email].filter(Boolean).join(" · ")}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      {customers.length > 0 && (
+                        <label>
+                          Find loaded customers
+                          <input
+                            type="search"
+                            value={customerSearch}
+                            onChange={(event) => setCustomerSearch(event.target.value)}
+                            placeholder="Search name, phone, or email"
+                          />
+                        </label>
+                      )}
+                      {customerPickerError && <p className="invoice-customer-error" role="alert">{customerPickerError}</p>}
+                      {customersLoading && <p className="invoice-customer-hint">Loading customers...</p>}
+                      {!customersLoading && customersLoaded && !customers.length && (
+                        <p className="invoice-customer-hint">No saved customers are available. You can enter invoice-only details instead.</p>
+                      )}
+                      {!customersLoading && customers.length > 0 && customers.length < customerTotal && (
+                        <button className="admin-secondary-button" type="button" disabled={customersLoading} onClick={() => void loadCustomers(true)}>
+                          {customersLoading ? "Loading customers..." : "Load more customers"}
+                        </button>
+                      )}
+                      {invoice.customerDetails.savedCustomer.profileId && (
+                        <p className="invoice-customer-hint">
+                          Invoice snapshot: {invoice.customerDetails.savedCustomer.name}
+                          {invoice.customerDetails.savedCustomer.phone && ` · ${invoice.customerDetails.savedCustomer.phone}`}
+                          {invoice.customerDetails.savedCustomer.address && ` · ${invoice.customerDetails.savedCustomer.address}`}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="invoice-form-grid">
+                      <label>Name<input value={invoice.customerDetails.manualCustomer.name} onChange={(event) => updateInvoice("customerDetails", {
+                        ...invoice.customerDetails,
+                        manualCustomer: { ...invoice.customerDetails.manualCustomer, name: event.target.value },
+                      })} /></label>
+                      <label>Phone<input type="tel" value={invoice.customerDetails.manualCustomer.phone} onChange={(event) => updateInvoice("customerDetails", {
+                        ...invoice.customerDetails,
+                        manualCustomer: { ...invoice.customerDetails.manualCustomer, phone: event.target.value },
+                      })} /></label>
+                      <label className="invoice-wide-field">Address<textarea rows="2" value={invoice.customerDetails.manualCustomer.address} onChange={(event) => updateInvoice("customerDetails", {
+                        ...invoice.customerDetails,
+                        manualCustomer: { ...invoice.customerDetails.manualCustomer, address: event.target.value },
+                      })} /></label>
+                    </div>
+                  )}
+                  <label className="invoice-customer-source">
+                    Delivery partner
+                    <input value={invoice.customerDetails.deliveryPartner} onChange={(event) => updateInvoice("customerDetails", {
+                      ...invoice.customerDetails,
+                      deliveryPartner: event.target.value,
+                    })} />
+                  </label>
+                </>
+              )}
             </section>
             <section className="invoice-editor-section">
               <div className="invoice-section-title"><h2>Items</h2></div>
@@ -505,9 +768,20 @@ export default function InvoiceManager({ products, storefrontBrand }) {
             </div>
           ) : null}
           <div className={`invoice-preview-wrap${invoiceMode === "edit" && !livePreviewEnabled ? " is-preview-disabled" : ""}`}>
-            <InvoicePreview invoice={invoice} totals={totals} storefrontBrand={storefrontBrand} />
+            <InvoicePreview invoice={invoice} totals={totals} />
           </div>
         </form>
+      )}
+      {invoice && (
+        <InvoiceSettingsDialog
+          open={invoiceSettingsOpen}
+          businessDetails={invoice.businessDetails}
+          storefrontBrand={storefrontBrand}
+          uploadingLogo={uploadingLogo}
+          onChange={(businessDetails) => updateInvoice("businessDetails", businessDetails)}
+          onLogoSelected={(files) => void handleInvoiceLogoSelected(files)}
+          onClose={() => setInvoiceSettingsOpen(false)}
+        />
       )}
     </section>
   );

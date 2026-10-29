@@ -210,11 +210,333 @@
   font-size: 1.15rem;
 }
 
+.admin-shell {
+  --primary: #315ec4;
+  --primary-dark: #21458f;
+  --bg-light: #f4f7fc;
+  --text-dark: #17243b;
+  --text-muted: #66758d;
+  --card-bg: #fff;
+  --admin-border: #e2e9f3;
+  --admin-radius-sm: 11px;
+  --admin-radius-md: 16px;
+  --admin-radius-lg: 22px;
+  --admin-control-height: 44px;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at 82% 0%, rgb(49 94 196 / 6%), transparent 30rem),
+    var(--bg-light);
+  color: var(--text-dark);
+}
+
+.admin-shell .admin-content {
+  gap: clamp(1rem, 2vw, 1.5rem);
+}
+
+.admin-shell .admin-page-panel {
+  display: grid;
+  align-content: start;
+  gap: 1.25rem;
+}
+
+.admin-shell .admin-page-heading {
+  margin-bottom: 1.25rem;
+}
+
+.admin-shell .admin-page-heading h1,
+.admin-shell .admin-editor-heading h2 {
+  color: #17243b;
+  font-size: clamp(1.7rem, 3vw, 2.15rem);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+}
+
+.admin-shell .admin-muted,
+.admin-shell .admin-page-heading .admin-muted {
+  color: #718099;
+}
+
+.admin-shell .admin-profile,
+.admin-shell .admin-site-settings {
+  gap: 1rem;
+}
+
+.admin-shell .admin-profile-card,
+.admin-shell .admin-settings-section-card,
+.admin-shell .admin-saved-drafts,
+.admin-shell .admin-table-wrap,
+.admin-shell .admin-editor,
+.admin-shell .admin-content-section,
+.admin-shell .admin-create-menu,
+.admin-shell .admin-section-fab-form,
+.admin-shell .admin-product-card,
+.admin-shell .admin-section-order,
+.admin-shell .customer-management-section,
+.admin-shell .invoice-list-toolbar,
+.admin-shell .invoice-list-row,
+.admin-shell .invoice-editor-toolbar,
+.admin-shell .invoice-editor-section,
+.admin-shell .invoice-empty-state,
+.admin-shell .customer-order-admin-card {
+  border-color: #e2e9f3;
+  border-radius: 17px;
+  background-color: #fff;
+  box-shadow: 0 8px 26px -20px rgb(22 45 89 / 30%);
+}
+
+.admin-shell .admin-profile-card {
+  padding: clamp(1rem, 2.2vw, 1.5rem);
+}
+
+.admin-shell .admin-settings-heading {
+  margin-bottom: 1.1rem;
+}
+
+.admin-shell .admin-profile-card h2,
+.admin-shell .admin-settings-heading h2,
+.admin-shell .customer-management-section-heading h2 {
+  color: #1d2b45;
+  font-size: 1.08rem;
+  font-weight: 780;
+  letter-spacing: -0.02em;
+}
+
+.admin-shell .admin-settings-section-card {
+  min-height: 100px;
+  padding: 1rem;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.admin-shell .admin-settings-section-card:hover {
+  border-color: #bfd0ed;
+  box-shadow: 0 10px 24px -16px rgb(31 77 165 / 30%);
+  transform: translateY(-1px);
+}
+
+.admin-shell .admin-settings-section-card.active {
+  border-color: #a9c1ed;
+  background: linear-gradient(145deg, #f3f7ff, #eaf1ff);
+  box-shadow: inset 3px 0 0 #3169d3, 0 8px 20px -17px rgb(31 77 165 / 44%);
+  color: #21458f;
+}
+
+.admin-shell .admin-content-section {
+  padding: 1.1rem;
+  background: linear-gradient(150deg, #fff, #fbfcff);
+}
+
+.admin-shell .admin-section-order {
+  padding: clamp(1rem, 2vw, 1.35rem);
+}
+
+.admin-shell .admin-settings-block {
+  border-top-color: #e2e9f3;
+}
+
+.admin-shell .admin-storefront-content {
+  border-color: #e2e9f3;
+}
+
+.admin-shell .admin-table-wrap,
+.admin-shell .customer-management-table-wrap {
+  overflow: auto;
+  border: 1px solid #e2e9f3;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 8px 26px -22px rgb(22 45 89 / 28%);
+}
+
+.admin-shell .admin-table th,
+.admin-shell .customer-management-table th {
+  padding-block: 0.9rem;
+  border-color: #e9eef6;
+  background: #f7f9fd;
+  color: #697991;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.065em;
+}
+
+.admin-shell .admin-table td,
+.admin-shell .customer-management-table td {
+  border-color: #edf1f7;
+}
+
+.admin-shell .admin-table tbody tr,
+.admin-shell .customer-management-table tbody tr {
+  transition: background-color 140ms ease;
+}
+
+.admin-shell .admin-table tbody tr:hover,
+.admin-shell .customer-management-table tbody tr:hover {
+  background: #f8faff;
+}
+
+.admin-shell .admin-product-cell img,
+.admin-shell .admin-product-placeholder {
+  border-radius: 12px;
+}
+
+.admin-shell .admin-form-grid {
+  gap: 1rem;
+}
+
+.admin-shell input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.admin-shell select,
+.admin-shell textarea {
+  border-color: #dce4ef;
+  border-radius: 11px;
+  background-color: #fff;
+  color: #1d2b45;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.admin-shell input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):hover,
+.admin-shell select:hover,
+.admin-shell textarea:hover {
+  border-color: #b9c9e2;
+}
+
+.admin-shell input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+.admin-shell select:focus,
+.admin-shell textarea:focus {
+  border-color: #6d91d7;
+  outline: 0;
+  box-shadow: 0 0 0 3px rgb(49 94 196 / 14%);
+}
+
+.admin-shell .admin-primary-button,
+.admin-shell .admin-secondary-button,
+.admin-shell .admin-delete-button,
+.admin-shell .admin-quiet-button,
+.admin-shell .customer-management-load-more,
+.admin-shell .customer-order-admin-save {
+  min-height: 42px;
+  border-radius: 11px;
+  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.admin-shell .admin-primary-button {
+  border-color: #2a56b3;
+  background: linear-gradient(135deg, #2856b4, #3972d4);
+  box-shadow: 0 6px 14px -9px rgb(34 79 168 / 70%);
+}
+
+.admin-shell .admin-primary-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #214a9f, #3067c8);
+  box-shadow: 0 9px 18px -10px rgb(34 79 168 / 75%);
+  transform: translateY(-1px);
+}
+
+.admin-shell .admin-secondary-button,
+.admin-shell .customer-management-load-more {
+  border-color: #dce4ef;
+  background: #fff;
+  color: #40516b;
+}
+
+.admin-shell .admin-secondary-button:hover:not(:disabled),
+.admin-shell .customer-management-load-more:hover:not(:disabled) {
+  border-color: #c4d2e8;
+  background: #f5f8fe;
+  color: #21458f;
+}
+
+.admin-shell .admin-delete-button {
+  border-color: #f2d2d2;
+  background: #fff;
+  color: #a3333b;
+}
+
+.admin-shell .admin-delete-button:hover:not(:disabled) {
+  border-color: #e8b6b9;
+  background: #fff5f5;
+}
+
+.admin-shell .admin-confirm-dialog,
+.admin-shell .admin-editor-dialog,
+.admin-shell .admin-create-menu,
+.admin-shell .admin-section-fab-form {
+  border-color: #e1e8f2;
+  border-radius: 22px;
+  box-shadow: 0 24px 70px rgb(23 39 68 / 22%);
+}
+
+.admin-shell .admin-dialog-backdrop,
+.admin-shell .admin-editor-backdrop {
+  background: rgb(18 31 53 / 42%);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+
+.admin-shell .admin-error,
+.admin-shell .admin-success,
+.admin-shell .admin-info {
+  padding: 0.75rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: 12px;
+}
+
+.admin-shell .admin-error {
+  border-color: #f0caca;
+  background: #fff5f5;
+}
+
+.admin-shell .admin-success {
+  border-color: #c4e6d3;
+  background: #f2fbf6;
+}
+
+.admin-shell .admin-info {
+  border-color: #d5e2f6;
+  background: #f4f8ff;
+}
+
+.admin-shell .customer-management-section {
+  gap: 1rem;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+.admin-shell .customer-contact-setting,
+.admin-shell .customer-order-admin-card {
+  border-color: #e4eaf3;
+  border-radius: 14px;
+  background: #fbfcff;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.admin-shell .customer-contact-setting:hover,
+.admin-shell .customer-order-admin-card:hover {
+  border-color: #cbd9ee;
+  box-shadow: 0 8px 20px -17px rgb(31 77 165 / 40%);
+}
+
+.admin-shell .invoice-list-row:hover {
+  border-color: #cbd9ee;
+  box-shadow: 0 10px 24px -18px rgb(31 77 165 / 38%);
+}
+
+.admin-shell .invoice-editor-section {
+  padding: clamp(1rem, 2vw, 1.35rem);
+}
+
 @media (max-width: 760px) {
   .admin-bottom-nav {
     inset: auto 0.75rem calc(0.55rem + env(safe-area-inset-bottom));
     padding: 0.35rem;
     border-radius: 20px;
+  }
+
+  .admin-shell .admin-page-panel {
+    gap: 1rem;
+  }
+
+  .admin-shell .admin-profile-card {
+    padding: 1rem;
+  }
+
+  .admin-shell .admin-page-heading h1 {
+    font-size: clamp(1.65rem, 7vw, 2.1rem);
   }
 }
 
@@ -226,7 +548,19 @@
   .workspace-nav-group-toggle,
   .workspace-nav-chevron,
   .workspace-nav-child,
-  .admin-bottom-nav-item {
+  .admin-bottom-nav-item,
+  .admin-shell .admin-settings-section-card,
+  .admin-shell input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  .admin-shell select,
+  .admin-shell textarea,
+  .admin-shell .admin-primary-button,
+  .admin-shell .admin-secondary-button,
+  .admin-shell .admin-delete-button,
+  .admin-shell .admin-quiet-button,
+  .admin-shell .customer-management-load-more,
+  .admin-shell .customer-contact-setting,
+  .admin-shell .customer-order-admin-card,
+  .admin-shell .invoice-list-row {
     transition: none;
   }
 }

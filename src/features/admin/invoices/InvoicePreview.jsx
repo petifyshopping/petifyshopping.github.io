@@ -23,7 +23,9 @@ export default function InvoicePreview({ invoice, totals, storefrontTagline, lin
       <header className="invoice-paper-header">
         <div className="invoice-paper-business">
           {visible.logo && values.logoUrl && (
-            <img className={`invoice-paper-logo${invoice.businessDetails.logoBlueBackground ? " has-blue-background" : ""}`} src={values.logoUrl} alt="" />
+            <span className={`invoice-paper-logo-wrap${invoice.businessDetails.logoBlueBackground ? " has-blue-background" : ""}`}>
+              <img className="invoice-paper-logo" src={values.logoUrl} alt="" />
+            </span>
           )}
           {visible.tagline && tagline && <p className="invoice-paper-tagline">{tagline}</p>}
           {headerFields.map(([key]) => visible[key] && values[key] && (

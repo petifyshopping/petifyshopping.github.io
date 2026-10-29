@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatProductPrice, parseProductPrice, productOptions } from "../../../lib/productPricing.js";
 import { createInvoiceImage } from "../../../lib/invoiceImage.js";
 import { uploadProductImages } from "../../../services/admin.js";
@@ -192,6 +192,9 @@ export default function InvoiceManager({ products, storefrontBrand }) {
   const [settingsBusinessDetails, setSettingsBusinessDetails] = useState(null);
   const [invoiceMode, setInvoiceMode] = useState("edit");
   const [livePreviewEnabled, setLivePreviewEnabled] = useState(false);
+  const moreActionsRef = useRef(null);
+  const shareActionsRef = useRef(null);
+  const topShareActionsRef = useRef(null);
   const [invoiceSettingsOpen, setInvoiceSettingsOpen] = useState(false);
   const [customProducts, setCustomProducts] = useState([]);
   const [customCustomers, setCustomCustomers] = useState([]);
@@ -212,6 +215,26 @@ export default function InvoiceManager({ products, storefrontBrand }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const { confirm, dialogProps } = useConfirmDialog();
+
+  function handleActionMenuToggle(event) {
+    const currentMenu = event.currentTarget.parentElement;
+    const layout = currentMenu?.closest(".invoice-layout");
+    layout?.querySelectorAll("details.invoice-action-menu[open]").forEach((menu) => {
+      if (menu !== currentMenu) menu.removeAttribute("open");
+    });
+  }
+
+  useEffect(() => {
+    function closeActionMenus(event) {
+      if (event.target.closest(".invoice-action-menu")) return;
+      document.querySelectorAll("details.invoice-action-menu[open]").forEach((menu) => {
+        menu.removeAttribute("open");
+      });
+    }
+
+    document.addEventListener("pointerdown", closeActionMenus);
+    return () => document.removeEventListener("pointerdown", closeActionMenus);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -418,7 +441,7 @@ export default function InvoiceManager({ products, storefrontBrand }) {
     }
   }
 
-  async function persistInvoice() {
+  async function persistInvoice(overrides = {}) {
     if (!invoice.items.length || invoice.items.some((item) => !item.description.trim() || !(Number(item.quantity) > 0) || !(Number(item.unitPrice) >= 0))) {
       setError("Add at least one item and check each item name, quantity, and price.");
       return null;
@@ -461,6 +484,7 @@ export default function InvoiceManager({ products, storefrontBrand }) {
       });
       const saved = await saveInvoice({
         ...invoice,
+        ...overrides,
         businessDetails: {
           ...invoice.businessDetails,
           values: {
@@ -494,6 +518,27 @@ export default function InvoiceManager({ products, storefrontBrand }) {
     if (!savedInvoice) return;
     setInvoice(null);
     setInvoiceMode("edit");
+  }
+
+  async function saveAsDraft() {
+    const savedInvoice = await persistInvoice({ status: "draft" });
+    if (!savedInvoice) return;
+    setInvoice(null);
+    setInvoiceMode("edit");
+  }
+
+  async function discardInvoiceChanges() {
+    if (!await confirm({
+      title: invoice.id ? "Discard invoice changes?" : "Discard this invoice?",
+      description: invoice.id
+        ? "Your unsaved changes will be lost. The saved invoice will not be deleted."
+        : "This unsaved invoice will be removed.",
+      confirmLabel: "Discard",
+    })) return;
+    setInvoice(null);
+    setInvoiceMode("edit");
+    setError("");
+    setNotice("");
   }
 
   async function printInvoice() {
@@ -653,53 +698,37 @@ export default function InvoiceManager({ products, storefrontBrand }) {
         <form className={`invoice-layout${invoiceMode === "edit" ? " is-editing" : ""}${livePreviewEnabled ? " has-live-preview" : ""}`} onSubmit={handleSave}>
           <div className="invoice-editor-toolbar">
             <div className="invoice-toolbar-main">
-              <button type="button" className="admin-secondary-button" onClick={() => { setInvoice(null); setError(""); setNotice(""); }}>← All invoices</button>
+              <button type="button" className="invoice-back-button" onClick={() => { setInvoice(null); setError(""); setNotice(""); }} aria-label="Back to all invoices">← Invoices</button>
               <div className="invoice-toolbar-title">
                 <strong>{invoice.id ? invoice.invoiceNumber : "New invoice"}</strong>
-                <small>{invoice.id ? "Saved invoice" : "Unsaved draft"}</small>
+                <small>{invoice.id ? "Saved" : "Unsaved"}</small>
               </div>
-              <label className="invoice-status-control">
-                <span>Status</span>
-                <select
-                  value={invoice.status ?? "draft"}
-                  disabled={updatingInvoiceStatus}
-                  onChange={(event) => {
-                    if (invoiceMode === "view") void changeInvoiceStatus(event.target.value);
-                    else updateInvoice("status", event.target.value);
-                  }}
-                >
-                  <option value="draft">Draft</option>
-                  <option value="sent">Sent</option>
-                  <option value="paid">Paid</option>
-                </select>
-              </label>
-              <span className={`invoice-status-badge is-${invoiceStatus(invoice)}`}>
-                {updatingInvoiceStatus ? "Updating..." : invoiceStatus(invoice)}
-              </span>
+              {invoiceStatus(invoice) === "overdue" && (
+                <span className="invoice-status-badge is-overdue">{updatingInvoiceStatus ? "Updating..." : "Overdue"}</span>
+              )}
               <div className="invoice-mode-switch" role="group" aria-label="Invoice mode">
                 <button type="button" className={`admin-secondary-button${invoiceMode === "edit" ? " active" : ""}`} aria-pressed={invoiceMode === "edit"} onClick={() => setInvoiceMode("edit")}>Edit</button>
                 <button type="button" className={`admin-secondary-button${invoiceMode === "view" ? " active" : ""}`} aria-pressed={invoiceMode === "view"} onClick={() => setInvoiceMode("view")}>View</button>
               </div>
-            </div>
-            <div className="invoice-editor-actions">
-              <div className="invoice-editor-utility-actions">
-                <button type="button" className="admin-secondary-button" onClick={openInvoiceSettings}>Settings</button>
-                {invoiceMode === "edit" && (
-                  <button
-                    type="button"
-                    className={`admin-secondary-button${livePreviewEnabled ? " active" : ""}`}
-                    aria-pressed={livePreviewEnabled}
-                    onClick={() => setLivePreviewEnabled((enabled) => !enabled)}
-                  >
-                    {livePreviewEnabled ? "Hide preview" : "Show preview"}
-                  </button>
-                )}
-              </div>
-              <div className="invoice-editor-export-actions">
-                  <button type="button" className="admin-secondary-button" onClick={() => void printInvoice()} disabled={saving || sharing || printing || updatingInvoiceStatus}>{printing ? "Preparing print..." : "Print / PDF"}</button>
-                  <button type="button" className="admin-secondary-button" onClick={() => void shareInvoiceAsImage()} disabled={saving || sharing || printing || updatingInvoiceStatus}>{sharing ? "Preparing image..." : "Share image"}</button>
-                  {invoiceMode === "edit" && <button className="admin-primary-button" type="submit" disabled={saving || sharing || printing || updatingInvoiceStatus}>{saving ? "Saving..." : "Save invoice"}</button>}
-              </div>
+              <details className="invoice-share-actions invoice-action-menu" ref={topShareActionsRef}>
+                <summary aria-label="Share or export invoice" onClick={handleActionMenuToggle}>Share</summary>
+                <div>
+                  <button type="button" onClick={() => { topShareActionsRef.current.open = false; void printInvoice(); }} disabled={saving || sharing || printing || updatingInvoiceStatus}>{printing ? "Preparing PDF..." : "Print / PDF"}</button>
+                  <button type="button" onClick={() => { topShareActionsRef.current.open = false; void shareInvoiceAsImage(); }} disabled={saving || sharing || printing || updatingInvoiceStatus}>{sharing ? "Preparing image..." : "Share image"}</button>
+                  {invoiceMode === "edit" && (
+                    <button
+                      type="button"
+                      aria-pressed={livePreviewEnabled}
+                      onClick={() => {
+                        setLivePreviewEnabled((enabled) => !enabled);
+                        topShareActionsRef.current.open = false;
+                      }}
+                    >
+                      {livePreviewEnabled ? "Hide preview" : "Show preview"}
+                    </button>
+                  )}
+                </div>
+              </details>
             </div>
           </div>
           {invoiceMode === "edit" ? (
@@ -874,50 +903,55 @@ export default function InvoiceManager({ products, storefrontBrand }) {
               <div className="invoice-section-title"><h2>Items</h2></div>
               {!invoice.items.length && (
                 <div className="invoice-empty-item">
-                  <p className="invoice-section-hint">Add a product from your catalog or create a custom invoice item.</p>
-                  <button className="admin-secondary-button" type="button" onClick={addItem}>Add item</button>
+                  <p className="invoice-section-hint">Add products from your catalog or create custom invoice items.</p>
                 </div>
               )}
-              {invoice.items.map((item, index) => (
+              {invoice.items.map((item, index) => {
+                const selectedProduct = products.find((product) => product.id === item.productId);
+                const options = selectedProduct ? productOptions(selectedProduct) : [];
+                return (
                 <div className="invoice-item-row" key={`${item.productId || "custom"}-${index}`}>
-                  <label>Product<select value={item.productId ? `catalog:${item.productId}` : item.invoiceCustomProductId ? `custom:${item.invoiceCustomProductId}` : ""} onChange={(event) => chooseProduct(index, event.target.value)}>
+                  <div className="invoice-item-product-fields">
+                    <label>Product<select value={item.productId ? `catalog:${item.productId}` : item.invoiceCustomProductId ? `custom:${item.invoiceCustomProductId}` : ""} onChange={(event) => chooseProduct(index, event.target.value)}>
                     <option value="">Custom item / choose product</option>
                     {products.length > 0 && (
-                  <optgroup label="Store catalog">
-                    {products.map((product) => <option value={`catalog:${product.id}`} key={product.id}>{product.title}{product.isActive ? "" : " (inactive)"}</option>)}
-                  </optgroup>
+                      <optgroup label="Store catalog">
+                        {products.map((product) => <option value={`catalog:${product.id}`} key={product.id}>{product.title}{product.isActive ? "" : " (inactive)"}</option>)}
+                      </optgroup>
                     )}
                     {customProducts.length > 0 && (
-                  <optgroup label="Saved invoice products">
-                    {customProducts.map((product) => <option value={`custom:${product.id}`} key={product.id}>{product.name}</option>)}
-                  </optgroup>
+                      <optgroup label="Saved invoice products">
+                        {customProducts.map((product) => <option value={`custom:${product.id}`} key={product.id}>{product.name}</option>)}
+                      </optgroup>
                     )}
-                  </select></label>
-                  {(() => {
-                    const selectedProduct = products.find((product) => product.id === item.productId);
-                    const options = selectedProduct ? productOptions(selectedProduct) : [];
-                    return options.length > 1 ? (
+                    </select></label>
+                    {options.length > 1 && (
                       <label>Product option<select value={item.variantIndex ?? 0} onChange={(event) => chooseVariant(index, selectedProduct, event.target.value)}>
                         {options.map((option, optionIndex) => <option value={optionIndex} key={option.id || optionIndex}>{option.label || `Option ${optionIndex + 1}`} · {formatProductPrice(option.price)}</option>)}
                       </select></label>
-                    ) : null;
-                  })()}
+                    )}
+                  </div>
                   <label>Item name<input required value={item.description} onChange={(event) => updateItem(index, { description: event.target.value, productId: "", invoiceCustomProductId: "" })} /></label>
                   <div className="invoice-item-numbers">
                     <label>Qty<input type="number" min="0.01" step="any" required value={item.quantity} onChange={(event) => updateItem(index, { quantity: event.target.value })} /></label>
                     <label>Unit price<input type="number" min="0" step="0.01" required value={item.unitPrice} onChange={(event) => updateItem(index, { unitPrice: event.target.value })} /></label>
-                    <strong>{formatProductPrice(lineTotal(item))}</strong>
+                    <div className="invoice-item-line-total">
+                      <span>Line total</span>
+                      <strong>{formatProductPrice(lineTotal(item))}</strong>
+                    </div>
                   </div>
-                  <button className="invoice-remove-item" type="button" aria-label={`Remove ${item.description || "item"}`} onClick={() => updateInvoice("items", invoice.items.filter((_, itemIndex) => itemIndex !== index))}>Remove</button>
-                  <button className="invoice-add-item-below admin-secondary-button" type="button" onClick={() => {
-                    updateInvoice("items", [
-                      ...invoice.items.slice(0, index + 1),
-                      { productId: "", invoiceCustomProductId: "", variantIndex: 0, description: "", quantity: 1, unitPrice: 0 },
-                      ...invoice.items.slice(index + 1),
-                    ]);
-                  }}>                  {item.productId || item.invoiceCustomProductId ? "Add item below this product" : "Add another item"}</button>
+                  <button className="invoice-remove-item" type="button" aria-label={`Remove ${item.description || "item"}`} onClick={() => updateInvoice("items", invoice.items.filter((_, itemIndex) => itemIndex !== index))}>
+                    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
+                      <path d="M3.5 5.5h13m-11.5 0 .7 11h9.6l.7-11M8 5.5V3.8h4v1.7m-3 3v5m3-5v5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <span>Remove</span>
+                  </button>
                 </div>
-              ))}
+                );
+              })}
+              <button className="invoice-add-item-button admin-secondary-button" type="button" onClick={addItem}>
+                {invoice.items.length ? "Add another" : "Add item"}
+              </button>
               <div className="invoice-tax-row">
                 <label>Tax rate (%)<input type="number" min="0" step="0.01" value={invoice.taxRate} onChange={(event) => updateInvoice("taxRate", event.target.value)} /></label>
                 <label>Discount (%)<input type="number" min="0" max="100" step="0.01" value={invoice.discountRate} onChange={(event) => updateInvoice("discountRate", event.target.value)} /></label>
@@ -939,6 +973,54 @@ export default function InvoiceManager({ products, storefrontBrand }) {
               storefrontTagline={storefrontBrand?.tagline || ""}
               lineTotal={lineTotal}
             />
+          </div>
+          <div className="invoice-bottom-actions">
+            <span className="invoice-bottom-actions-label">Invoice actions</span>
+            <div className="invoice-editor-actions">
+              <details className="invoice-share-actions invoice-action-menu" ref={shareActionsRef}>
+                <summary aria-label="Share or export invoice" onClick={handleActionMenuToggle}>Share</summary>
+                <div>
+                  <button type="button" onClick={() => { shareActionsRef.current.open = false; void printInvoice(); }} disabled={saving || sharing || printing || updatingInvoiceStatus}>{printing ? "Preparing PDF..." : "Print / PDF"}</button>
+                  <button type="button" onClick={() => { shareActionsRef.current.open = false; void shareInvoiceAsImage(); }} disabled={saving || sharing || printing || updatingInvoiceStatus}>{sharing ? "Preparing image..." : "Share image"}</button>
+                  {invoiceMode === "edit" && (
+                    <button
+                      type="button"
+                      aria-pressed={livePreviewEnabled}
+                      onClick={() => {
+                        setLivePreviewEnabled((enabled) => !enabled);
+                        shareActionsRef.current.open = false;
+                      }}
+                    >
+                      {livePreviewEnabled ? "Hide preview" : "Show preview"}
+                    </button>
+                  )}
+                </div>
+              </details>
+              <details className="invoice-more-actions invoice-action-menu" ref={moreActionsRef}>
+                <summary aria-label="More invoice actions" onClick={handleActionMenuToggle}>More</summary>
+                <div>
+                  <button type="button" onClick={() => { moreActionsRef.current.open = false; openInvoiceSettings(); }}>Settings</button>
+                  <label className="invoice-more-status">
+                    <span>Status</span>
+                    <select
+                      value={invoice.status ?? "draft"}
+                      disabled={updatingInvoiceStatus}
+                      onChange={(event) => {
+                        if (invoiceMode === "view") void changeInvoiceStatus(event.target.value);
+                        else updateInvoice("status", event.target.value);
+                      }}
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="sent">Sent</option>
+                      <option value="paid">Paid</option>
+                    </select>
+                  </label>
+                  {invoiceMode === "edit" && <button type="button" onClick={() => { moreActionsRef.current.open = false; void saveAsDraft(); }} disabled={saving || sharing || printing || updatingInvoiceStatus}>{saving ? "Saving..." : "Save as draft"}</button>}
+                  <button type="button" className="invoice-discard-action" onClick={() => { moreActionsRef.current.open = false; void discardInvoiceChanges(); }} disabled={saving || sharing || printing || updatingInvoiceStatus}>Discard</button>
+                </div>
+              </details>
+              {invoiceMode === "edit" && <button className="admin-primary-button invoice-save-button" type="submit" disabled={saving || sharing || printing || updatingInvoiceStatus}>{saving ? "Saving..." : "Save invoice"}</button>}
+            </div>
           </div>
         </form>
       )}

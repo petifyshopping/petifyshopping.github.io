@@ -1,6 +1,6 @@
 # Petify Storefront — Faithful Rebuild Blueprint
 
-> **Rebuild contract.** Recreate the existing Petify storefront and admin experience; do not redesign, reinterpret, or substitute a generic e-commerce layout. Match the current component structure, copy, asset treatment, proportions, spacing, breakpoints, URL behavior, loading/error states, and interactions described below. There are exactly two intentional deviations: (1) use a fixed blue-and-white theme and remove color-changing controls from Admin → Site settings; (2) remove the Sales dashboard and every Sales-only screen, route, setting, and backend feature. Do not add checkout/payment/order-management features that are not described here.
+> **Rebuild contract.** Recreate the existing Petify storefront and admin experience; do not redesign, reinterpret, or substitute a generic e-commerce layout. Match the current component structure, copy, asset treatment, proportions, spacing, breakpoints, URL behavior, loading/error states, and interactions described below. Intentional deviations are: (1) use a fixed blue-and-white theme and remove color-changing controls from Admin → Site settings; (2) remove the Sales dashboard and every Sales-only screen, route, setting, and backend feature; and (3) add an admin-only invoice creator with catalog products, persisted invoices, and print-to-PDF support. Do not add checkout/payment/order-management features that are not described here.
 
 ## Table of contents
 
@@ -34,11 +34,11 @@ Petify is a product catalog for pet-care goods. Customers browse categories, sea
 
 ### Remove or lock
 
-- **Remove Sales dashboard entirely:** no Sales route/page/menu item, no sales-only login behavior, invoice/customer/payment/delivery UI, sales settings, metrics, draft types, sales service calls, tables, RPCs, triggers, or sales migrations in the rebuilt app.
+- **Remove Sales dashboard entirely:** no Sales route/page/menu item, no sales-only login behavior, sales customer/payment/delivery UI, sales settings, metrics, draft types, sales service calls, tables, RPCs, triggers, or sales migrations in the rebuilt app. Admin invoices are a separate feature and must remain admin-only.
 - A legacy visit to `/petify-dashboard` must not reveal Sales. Route it to the normal storefront (or the host's normal not-found page); do not build a replacement screen.
 - **Fixed blue + white theme:** remove palette presets, color pickers, hex inputs, palette drafts, palette save calls, and any setting that lets an admin alter site colors. Apply constants in CSS/code; do not load or apply a persisted color palette.
 - Keep other appearance settings (loading-screen copy/image and dashboard brand) if present in the current settings UI; they are not color customization.
-- Do not add payment gateways, order tables, customer registration, stock reservation, an invented hero/banner, extra navigation, or a new frontend framework.
+- Do not add payment gateways, sales/order tables, customer registration, stock reservation, an invented hero/banner, or a new frontend framework.
 
 ## 2. Stack, dependencies, and setup
 
@@ -383,6 +383,7 @@ Remove Sales-only tables and APIs. Storefront/admin data uses:
 | `access_requests` (if retaining self-service admin request) | `id uuid PK`, `user_id uuid FK auth.users ON DELETE CASCADE`, email, status pending/approved/rejected, requested/reviewed times, reviewer FK; one pending request per user. Keep only admin access workflow; no Sales role. |
 | `workspace_drafts` (if retaining current draft UX) | `(user_id,draft_type,draft_key)` composite PK, JSON payload, created/updated; draft types only `product`, `site-content`, `site-appearance` (non-color admin brand/loading), `site-assets`. No `sale` draft type. |
 | `product_inventory` (if preserving admin stock editor) | `product_id text PK FK products ON DELETE CASCADE`, integer `quantity >= 0`, default 0. No Sales stock-deduction triggers or customer-facing stock check. |
+| `invoices` | Admin-only invoice records with a unique invoice number, configurable business header visibility, customer details, catalog/custom line items, dates, notes, subtotal/tax/total, creator, and timestamps. RLS permits authenticated Petify admins only. |
 
 Current settings defaults include `brand_title='Pëtify'`, `tagline='Pure love, premium care'`, `whatsapp_number='919745001101'`, `phone_display='+91 97450 01101'`, `email='petify.shopping@gmail.com'`, `location='Kerala, India'`, footer `Petify Group`, copyright `© Petify Group. All rights reserved.`, disclaimer `*Not for human consumption. Store in a cool, dry place.`, version `1.0.0`, coming-soon `Something big is coming soon`. Defaults and copy are configurable in the admin; they must not be substituted with invented text.
 
@@ -399,7 +400,7 @@ Default features:
 - `is_petify_admin()` is a stable role predicate; admin-only RLS policies protect write operations. Client-side gate does not replace RLS.
 - Storage bucket `product-images` is public-read; admin-only insert/update/delete. Product, logo, favicon, loading assets share the bucket.
 - Supabase Auth email/password. First admin is added through privileged SQL Editor/service-side procedure; never allow public signup to self-assign admin.
-- Avoid bringing over Sales tables/functions/triggers, Sales role policies, invoice/payment/customer data, or `get_sales_dashboard_metrics`.
+- Avoid bringing over Sales tables/functions/triggers, Sales role policies, Sales payment/customer data, or `get_sales_dashboard_metrics`. The separate `invoices` table is admin-only and stores no payment transaction.
 
 ### Query inventory
 
@@ -570,6 +571,7 @@ Only fix issues that are necessary for parity, security or the allowed scope; do
 - [ ] About content, feature cards, footer contacts and visibility toggles match.
 - [ ] Admin login/request/approval/reset/session expiration and admin-only authorization match; forgot label is visible.
 - [ ] Products CRUD, sections, stock, images/crops, drafts, filters, mobile admin nav and five-second deletion undo match.
+- [ ] Admin invoices are available at `/#admin-invoice`; live preview is user-toggleable beside the editor, full-page view is optional, header/logo controls are inside Invoice settings, catalog/custom lines can be added below current lines, and records save/reopen, print to PDF, and share as an image.
 - [ ] Site settings retain brand/content/assets/navigation/loading/admin branding/team access except Sales and palette editing.
 - [ ] No Sales dashboard route, screen, menu, settings, table, RPC, service, stylesheet or Sales-specific access role.
 - [ ] Breakpoints: product grid two columns <640, three >=640, four >=1100, five >=1440; admin mobile switch <=760; 420px admin width rule.

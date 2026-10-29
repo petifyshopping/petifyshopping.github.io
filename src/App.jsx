@@ -134,6 +134,7 @@ export default function App() {
   const isAdminRoute = routeHash === "#admin"
     || routeHash === "#admin-settings"
     || routeHash === "#admin-products"
+    || routeHash === "#admin-invoice"
     || routeHash === "#admin-forgot-password";
   const isAboutRoute = routeHash === "#about";
   const isSalesPortalRoute = routePath === "/petify-dashboard"
@@ -682,11 +683,16 @@ export default function App() {
             brandTitle: settings?.brandTitle,
             tagline: settings?.tagline,
             logoUrl: settings?.logoUrl,
+            phone: settings?.contact?.phoneDisplay,
+            email: settings?.contact?.email,
+            address: settings?.contact?.location,
           }}
           initialView={
             routeHash === "#admin-settings"
               ? "site-settings"
-              : routeHash === "#admin-products" ? "products" : undefined
+              : routeHash === "#admin-products"
+                ? "products"
+                : routeHash === "#admin-invoice" ? "invoices" : undefined
           }
         />
       </Suspense>

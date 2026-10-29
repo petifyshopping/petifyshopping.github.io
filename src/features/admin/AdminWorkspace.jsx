@@ -52,6 +52,7 @@ function loadSiteSettingsManager() {
 const SiteSettingsManager = lazy(loadSiteSettingsManager);
 const ProductEditor = lazy(() => import("./products/ProductEditor.jsx"));
 const CustomerManagement = lazy(() => import("./CustomerManagement.jsx"));
+const InvoiceManager = lazy(() => import("./invoices/InvoiceManager.jsx"));
 
 export default function ProductManager({
   session,
@@ -549,6 +550,11 @@ export default function ProductManager({
     const nextView = normalizeAdminView(view);
     if (isSiteSettingsView(nextView)) setSettingsVisited(true);
     setWorkspace((current) => ({ ...current, activeView: nextView }));
+    if (nextView === "invoices" && window.location.hash !== "#admin-invoice") {
+      window.location.hash = "#admin-invoice";
+    } else if (initialView && nextView !== initialView) {
+      window.location.hash = "#admin";
+    }
   }
 
   return (
@@ -557,7 +563,7 @@ export default function ProductManager({
       <AdminTopbar
         brand={adminBrand}
         storefrontBrand={storefrontBrand}
-        pageTitle={editorProduct ? (editorProduct.id ? "Edit product" : "Add product") : SITE_SETTINGS_VIEWS.find(({ id }) => id === activeView)?.label ?? (isSettingsView ? "Site settings" : activeView === "profile" ? "Profile" : activeView === "customers" ? "Customers" : "Products")}
+        pageTitle={editorProduct ? (editorProduct.id ? "Edit product" : "Add product") : SITE_SETTINGS_VIEWS.find(({ id }) => id === activeView)?.label ?? (isSettingsView ? "Site settings" : activeView === "profile" ? "Profile" : activeView === "customers" ? "Customers" : activeView === "invoices" ? "Invoices" : "Products")}
         searchValue={productSearch}
         onSearchChange={setProductSearch}
         showSearch={activeView === "products" && !editorProduct}
@@ -624,6 +630,11 @@ export default function ProductManager({
           {activeView === "customers" && (
             <Suspense fallback={<p className="admin-muted">Loading customers and orders...</p>}>
               <CustomerManagement />
+            </Suspense>
+          )}
+          {activeView === "invoices" && (
+            <Suspense fallback={<p className="admin-muted">Loading invoices...</p>}>
+              <InvoiceManager products={products} storefrontBrand={storefrontBrand} />
             </Suspense>
           )}
           <div hidden={activeView !== "products"}>
@@ -979,6 +990,7 @@ export default function ProductManager({
       <AdminBottomNav items={[
         { id: "products", label: "Products", icon: "▦", active: activeView === "products", onClick: () => selectWorkspaceView("products") },
         { id: "customers", label: "Customers", icon: "♙", active: activeView === "customers", onClick: () => selectWorkspaceView("customers") },
+        { id: "invoices", label: "Invoices", icon: "▤", active: activeView === "invoices", onClick: () => selectWorkspaceView("invoices") },
         { id: "settings", label: "Settings", icon: "⚙", active: isSettingsView, onClick: () => selectWorkspaceView("site-settings") },
         { id: "profile", label: "Profile", icon: "☺", active: activeView === "profile", onClick: () => selectWorkspaceView("profile") },
       ]} />

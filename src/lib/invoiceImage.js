@@ -66,9 +66,14 @@ export async function createInvoiceImage(invoice, totals) {
         : []
     )),
   ];
+  const mottoLines = invoice.businessDetails.visible.tagline && invoice.businessDetails.values.tagline
+    ? wrapText(measureContext, invoice.businessDetails.values.tagline, 510)
+    : [];
   const invoiceCustomer = invoice.customerDetails.source === "saved"
     ? invoice.customerDetails.savedCustomer ?? {}
-    : invoice.customerDetails.manualCustomer ?? invoice.customerDetails;
+    : invoice.customerDetails.source === "invoice"
+      ? invoice.customerDetails.invoiceCustomer ?? {}
+      : invoice.customerDetails.manualCustomer ?? invoice.customerDetails;
   const customerLines = invoice.customerDetails.enabled
     ? [
       ...["name", "phone", "address"].flatMap((key) => (
@@ -88,7 +93,7 @@ export async function createInvoiceImage(invoice, totals) {
   const headerHeight = Math.max(
     175,
     70 + businessLines.length * 32,
-    logo ? 162 + businessLines.length * 32 : 0,
+    logo ? 162 + mottoLines.length * 26 + businessLines.length * 32 : 70 + mottoLines.length * 26 + businessLines.length * 32,
   );
   const plannedHeight = pageMargin * 2 + headerHeight + customerBlockHeight + 68
     + itemRows.reduce((height, row) => height + row.height, 0)
@@ -111,6 +116,13 @@ export async function createInvoiceImage(invoice, totals) {
     }
     drawContainedImage(context, logo, pageMargin + 14, pageMargin + 14, 256, 102);
     businessY = pageMargin + 162;
+  }
+  if (mottoLines.length) {
+    businessY = drawWrappedText(context, mottoLines, pageMargin, businessY, {
+      color: "#526579",
+      font: "italic 20px Arial, sans-serif",
+      line: 26,
+    });
   }
   if (business.visible.businessName && business.values.businessName) {
     const lines = wrapText(context, business.values.businessName, 510);
@@ -190,6 +202,9 @@ export async function createInvoiceImage(invoice, totals) {
   const totalLabelX = totalX - 360;
   const totalRows = [
     ["Subtotal", formatProductPrice(totals.subtotal)],
+    ...(totals.discountRate > 0
+      ? [[`Discount (${totals.discountRate}%)`, `-${formatProductPrice(totals.discountAmount)}`]]
+      : []),
     ...(totals.taxRate > 0 ? [[`Tax (${totals.taxRate}%)`, formatProductPrice(totals.taxAmount)]] : []),
     ["Total", formatProductPrice(totals.total)],
   ];

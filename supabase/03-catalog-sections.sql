@@ -153,8 +153,8 @@ alter table public.site_settings
   add column if not exists favicon_url text,
   add column if not exists color_palette jsonb not null default '{"preset":"petify","colors":{"primary":"#1d4ed8","primaryDark":"#1e3a8a","accent":"#f59e0b","background":"#f8fafc","text":"#0f172a","muted":"#475569","card":"#ffffff"}}'::jsonb,
   add column if not exists loading_screen jsonb not null default '{"kicker":"STORE CATALOG","title":"Getting the shop ready","message":"Fetching the latest products for you.","imageUrl":"/images/bird.png"}'::jsonb,
-  add column if not exists admin_brand jsonb not null default '{"name":"Pëtify","label":"Catalog"}'::jsonb,
-  add column if not exists brand_title text not null default 'Pëtify',
+  add column if not exists admin_brand jsonb not null default '{"name":"Petify","label":"Catalog"}'::jsonb,
+  add column if not exists brand_title text not null default 'Petify',
   add column if not exists tagline text not null default 'Pure love, premium care',
   add column if not exists whatsapp_number text not null default '919745001101',
   add column if not exists phone_display text not null default '+91 97450 01101',
@@ -168,10 +168,10 @@ alter table public.site_settings
   ]'::jsonb,
   add column if not exists about_content jsonb not null default '{
     "title":"Thoughtful care for extraordinary companions",
-    "introduction":"Pëtify brings together thoughtfully selected pet essentials, specialized nutrition, and habitat products to support the everyday wellbeing of the animals we love.",
+    "introduction":"Petify brings together thoughtfully selected pet essentials, specialized nutrition, and habitat products to support the everyday wellbeing of the animals we love.",
     "mission":"To make thoughtful pet care easier by bringing useful products and caring guidance together in one place.",
     "vision":"A world where every companion, big or small, feathered or finned, has the care, nutrition, and environment it needs to thrive.",
-    "whoWeAre":"Pëtify is a pet-care store for people who want to make informed, caring choices for their companions. Our collection brings everyday essentials together with specialist products for a range of pets. Have a question about a product? Our team is here to help."
+    "whoWeAre":"Petify is a pet-care store for people who want to make informed, caring choices for their companions. Our collection brings everyday essentials together with specialist products for a range of pets. Have a question about a product? Our team is here to help."
   }'::jsonb,
   add column if not exists footer_title text not null default 'Petify Group',
   add column if not exists footer_legal text not null default '© Petify Group. All rights reserved. *Not for human consumption. Store in a cool, dry place.',

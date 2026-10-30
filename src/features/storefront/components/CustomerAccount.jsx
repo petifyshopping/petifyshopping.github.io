@@ -304,7 +304,7 @@ export default function CustomerAccount({
       >
         <header className="customer-account-header">
           <div className="customer-account-header-copy">
-            {/* <p className="customer-account-eyebrow">PËTIFY</p> */}
+            {/* <p className="customer-account-eyebrow">Petify</p> */}
             <h2 id="customer-account-title">{session ? "Your account" : confirmationEmail ? "Confirm your email" : mode === "signup" ? "Create your account" : "Welcome back"}</h2>
             {!session && !confirmationEmail && (
               <p className="customer-account-header-description">
@@ -351,7 +351,7 @@ export default function CustomerAccount({
               <form className="customer-account-form customer-account-profile-form" onSubmit={saveProfile}>
                 <p className="customer-account-section-label">ACCOUNT DETAILS</p>
                 <label>
-                  Full name
+                  Name
                   <input value={profileDraft?.full_name ?? profile.full_name} onChange={(event) => changeProfileField("full_name", event.target.value)} autoComplete="name" required maxLength={120} />
                 </label>
                 <label>
@@ -633,7 +633,7 @@ export default function CustomerAccount({
             </div>
             {mode === "signup" && (
               <label>
-                Full name
+                Name
                 <input value={form.fullName} onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))} autoComplete="name" required maxLength={120} />
               </label>
             )}
@@ -687,8 +687,8 @@ export default function CustomerAccount({
                     onChange={(event) => setSignupAddressOpen(event.target.checked)}
                   />
                   <span className="customer-signup-address-toggle-copy">
-                    <strong>Add my address now</strong>
-                    <span>Optional — you can add it later before ordering.</span>
+                    <strong>Add address now</strong>
+                    <span>Or you can add it later before ordering items.</span>
                   </span>
                   <span className="customer-signup-address-chevron" aria-hidden="true">⌄</span>
                 </label>
@@ -759,7 +759,7 @@ export default function CustomerAccount({
             </button>
             {mode === "signin" && <button className="customer-account-text-button" type="button" onClick={requestPasswordReset} disabled={busy}>Forgot password?</button>}
             <p className="customer-account-switch">
-              {mode === "signup" ? "Already have an account?" : "New to Pëtify?"}
+              {mode === "signup" ? "Already have an account?" : "New to Petify?"}
               <button type="button" onClick={() => { setMode(mode === "signup" ? "signin" : "signup"); setError(""); setNotice(""); onClearMessage(); }}>
                 {mode === "signup" ? "Sign in" : "Create account"}
               </button>

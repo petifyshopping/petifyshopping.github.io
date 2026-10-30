@@ -19,7 +19,7 @@ export const DEFAULT_LOADING_SCREEN = {
 };
 
 export const DEFAULT_ADMIN_BRAND = {
-  name: "Pëtify",
+  name: "Petify",
   label: "Catalog",
 };
 

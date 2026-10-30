@@ -60,7 +60,7 @@ function createInvoiceNumber() {
 function invoiceBusinessDetails(storefrontBrand, savedSettings) {
   const defaults = {
     values: {
-      businessName: storefrontBrand?.brandTitle || "Pëtify",
+      businessName: storefrontBrand?.brandTitle || "Petify",
       phone: storefrontBrand?.phone || "",
       email: storefrontBrand?.email || "",
       address: storefrontBrand?.address || "",

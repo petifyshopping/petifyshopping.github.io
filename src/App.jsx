@@ -32,7 +32,7 @@ const CustomerAccount = lazy(() => import("./features/storefront/components/Cust
 const StoreCart = lazy(() => import("./features/storefront/components/StoreCart.jsx"));
 const ProductDetailsDialog = lazy(() => import("./features/storefront/components/ProductDetailsDialog.jsx"));
 const CART_STORAGE_KEY = "petify-store-cart";
-const DEFAULT_DOCUMENT_TITLE = "Pëtify | Pure love, premium care";
+const DEFAULT_DOCUMENT_TITLE = "Petify | Pure love, premium care";
 
 function isPasswordResetLocation(search, hash) {
   const queryParams = new URLSearchParams(search);

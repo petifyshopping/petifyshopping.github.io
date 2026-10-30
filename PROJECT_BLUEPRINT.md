@@ -44,14 +44,14 @@ Petify is a product catalog for pet-care goods. Customers browse categories, sea
 
 ### Current project baseline
 
-| Package | Manifest range | Locked version | Use |
-|---|---:|---:|---|
-| `react` | `^19.1.1` | `19.3.0` | Component UI and hooks. |
-| `react-dom` | `^19.1.1` | `19.3.0` | Browser mount and portals. |
-| `@supabase/supabase-js` | `^2.57.0` | `2.117.2` | Auth, PostgREST, Storage. |
-| `vite` | `^8.3.1` | `8.3.1` | Dev server/build. |
-| `@vitejs/plugin-react` | `^6.1.1` | `6.1.1` | JSX/React Vite support. |
-| `gh-pages` | `^6.3.0` | `6.3.0` | GitHub Pages deployment. |
+| Package                 | Manifest range | Locked version | Use                        |
+| ----------------------- | -------------: | -------------: | -------------------------- |
+| `react`                 |      `^19.1.1` |       `19.3.0` | Component UI and hooks.    |
+| `react-dom`             |      `^19.1.1` |       `19.3.0` | Browser mount and portals. |
+| `@supabase/supabase-js` |      `^2.57.0` |      `2.117.2` | Auth, PostgREST, Storage.  |
+| `vite`                  |       `^8.3.1` |        `8.3.1` | Dev server/build.          |
+| `@vitejs/plugin-react`  |       `^6.1.1` |        `6.1.1` | JSX/React Vite support.    |
+| `gh-pages`              |       `^6.3.0` |        `6.3.0` | GitHub Pages deployment.   |
 
 No router, icon package, CSS framework, query cache, or component library is used. Icons are inline SVG/text. Keep those characteristics unless implementation requires a change that does not alter the output.
 
@@ -59,8 +59,8 @@ No router, icon package, CSS framework, query cache, or component library is use
 
 ### Browser metadata
 
-- Initial title: `Pëtify | Pure love, premium care`
-- Initial description: `Pëtify — pure love, premium care for your pets.`
+- Initial title: `Petify | Pure love, premium care`
+- Initial description: `Petify — pure love, premium care for your pets.`
 - Initial theme-color: `#102a43`
 - Initial favicon: `/images/favicon.png` (`#favicon`)
 - Apple icon: `images/logo.png`
@@ -175,17 +175,17 @@ Target structure for the faithful rebuild; do not copy/remove source files from 
 
 The current app uses `location.hash`, `location.pathname`, search parameters, `hashchange`, and `popstate`; it does not use a routing package. Preserve URLs and browser history. Sales routes below are intentionally **not** included.
 
-| URL/state | Screen | Access | Exact behavior |
-|---|---|---|---|
-| `/` | Storefront | Public | Header, catalog, “coming soon” heading, feature cards, footer; cart/product dialogs as state. |
-| `/#about` | About page | Public | Same header shell without search; About content; footer. Title `About us | <brand title>`. |
-| `/#admin` | Admin | Admin login/access gate | Default workspace view is Products. |
-| `/#admin-products` | Admin Products | Admin | Opens Products view. |
-| `/#admin-settings` | Admin Site settings | Admin | Opens Site settings view. |
-| `/?view=reset-password` | Password reset | Supabase recovery session | New-password form. |
-| `/#reset-password` or Supabase recovery hash (`type=recovery`) | Password reset | Supabase recovery session | Same reset view. |
-| `/?product=<id>[&variant=<id>]` | Product details overlay on storefront | Public | Opens product detail; optional variant preselected. Direct link fetches a product not in the first catalog page. |
-| `/petify-dashboard` or Sales dashboard hashes | Storefront fallback/not found | Public | **Do not build Sales UI.** Remove Sales navigation/access paths. A legacy path must not expose a Sales screen. |
+| URL/state                                                      | Screen                                | Access                    | Exact behavior                                                                                                   |
+| -------------------------------------------------------------- | ------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------- | --------------- |
+| `/`                                                            | Storefront                            | Public                    | Header, catalog, “coming soon” heading, feature cards, footer; cart/product dialogs as state.                    |
+| `/#about`                                                      | About page                            | Public                    | Same header shell without search; About content; footer. Title `About us                                         | <brand title>`. |
+| `/#admin`                                                      | Admin                                 | Admin login/access gate   | Default workspace view is Products.                                                                              |
+| `/#admin-products`                                             | Admin Products                        | Admin                     | Opens Products view.                                                                                             |
+| `/#admin-settings`                                             | Admin Site settings                   | Admin                     | Opens Site settings view.                                                                                        |
+| `/?view=reset-password`                                        | Password reset                        | Supabase recovery session | New-password form.                                                                                               |
+| `/#reset-password` or Supabase recovery hash (`type=recovery`) | Password reset                        | Supabase recovery session | Same reset view.                                                                                                 |
+| `/?product=<id>[&variant=<id>]`                                | Product details overlay on storefront | Public                    | Opens product detail; optional variant preselected. Direct link fetches a product not in the first catalog page. |
+| `/petify-dashboard` or Sales dashboard hashes                  | Storefront fallback/not found         | Public                    | **Do not build Sales UI.** Remove Sales navigation/access paths. A legacy path must not expose a Sales screen.   |
 
 Admin gate order: if Supabase is unconfigured, show setup prompt; while session/access is checked, show loading; without session, show sign-in/request-access; signed-in non-admin sees access status/request and sign-out actions; approved admin sees workspace. The browser gate is UX only; RLS and RPC checks enforce access.
 
@@ -195,43 +195,43 @@ Props below are the JavaScript shapes in the current implementation; types are n
 
 ### Storefront
 
-| Component/file | Inputs/state | Rendered pieces and interactions |
-|---|---|---|
-| `App` — `src/App.jsx` | No props. Uses `useStorefrontCatalog`; owns route hash/path, cart, cart notices/validation, search input/query, selected product/variant, scroll state, store-menu visibility. | Renders `StoreHeader`, loading/error/catalog/About, coming-soon heading, `FeatureList`, `StoreFooter`, floating cart, `StoreCart`, `ProductDetailsDialog`, `ScrollToTop`. Search is debounced 250ms. URL query controls product dialog. |
-| `useStorefrontCatalog` | No props. State: product pages/count, section lists, settings, initial/loading-more/error states. | `getCatalog()` then pagination via `getMoreCatalogProducts()`; retry restarts initial request. Initial result has 24 products; server pages are 24. |
-| `StoreHeader` | Brand/tagline/logo strings; hero pill list; visibility map; cart count and callbacks; About flag; controlled search string/onChange. | Centered branding, search, upper-right cart/menu, optional hero pills. Menu closes on outside pointer/Escape; menu About link switches between `About us`/`Visit store`. |
-| `StoreCartButton` | `itemCount:number`, click callback, CSS class. | Inline bag SVG, `Cart` label, animated count and accessible live count. Header and floating version share component. |
-| `CatalogSections` | Main/subsection/product arrays, WhatsApp number, cart items, query, server pagination state/callbacks and product callbacks. | Category filtering/search, breadcrumbs/count, grouped sections, 12-at-a-time local reveal then server Load more, empty/error states, product cards. Search fields: title/description/badge/saveTag/section/main-section. |
-| `CategoryNav` | Main/subsection arrays, selected IDs, select-all/main/section callbacks. | “All products”, main-category chips, standalone-section chips; selected main shows its subcategory row. |
-| `ProductCard` | Product object, WhatsApp number, cart items, add/change/details callbacks. | Product image, title, badge/save tag, Details, size selection, current/old price, discount, Add-to-cart or quantity stepper, WhatsApp order. Combo adds `combo-card`. |
-| `ProductOrderLink` | Product, WhatsApp number, combo flag, optional selected variant, compact flag. | Opens `wa.me` in new tab; labels `WhatsApp order`, `Order directly via WhatsApp`, `Order Combo via WhatsApp`, or `WhatsApp unavailable`. |
-| `ProductDetailsDialog` | Product, WhatsApp, add/close callbacks, optional variant ID. | Overlay with header `Product details`, Share/close, gallery, product description/specs, size/price radio list, Add to cart, WhatsApp, share status. Escape/backdrop close, focus trap/restore, body scroll lock. |
-| `ProductGallery` | Product image array. | Main image, thumbnails, previous/next, touch swipe, zoom overlay; Escape and focus management. |
-| `StoreCart` | Items, WhatsApp, brand title, checkout validation/message/retry and item callbacks. | Right drawer; quantity/remove/remove-all, optional name/address/note, total, WhatsApp checkout; focus trap/restore and body scroll lock. |
-| `QuantityStepper` | Value, accessible label, decrease/increase callbacks. | Minus/plus control shared by product card and cart. |
-| `CatalogLoading` | `{kicker,title,message,imageUrl}`. | Loading illustration and copy, progress bar, six skeleton cards. |
-| `FeatureList` | `{title,description}[]`. | `.features-grid` with `.feature-item` cards. |
-| `AboutPage` | `{title,introduction,mission,vision,whoWeAre}`. | “A LITTLE ABOUT US”, title/introduction, mission/vision, who-we-are, “Talk with our team →”, “Explore the store”. |
-| `StoreFooter` | Footer strings, `{whatsappNumber,phoneDisplay,email,location}`, visibility map. | Location, `tel:` and `mailto:` contacts; independently visible copyright/disclaimer/version. WhatsApp footer link is commented out in source; don't add it. |
-| `ScrollToTop` | Click callback and `hasFloatingCart:boolean`. | Back-to-top after scroll exceeds 320px; offset changes when floating cart exists. |
+| Component/file         | Inputs/state                                                                                                                                                                   | Rendered pieces and interactions                                                                                                                                                                                                        |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `App` — `src/App.jsx`  | No props. Uses `useStorefrontCatalog`; owns route hash/path, cart, cart notices/validation, search input/query, selected product/variant, scroll state, store-menu visibility. | Renders `StoreHeader`, loading/error/catalog/About, coming-soon heading, `FeatureList`, `StoreFooter`, floating cart, `StoreCart`, `ProductDetailsDialog`, `ScrollToTop`. Search is debounced 250ms. URL query controls product dialog. |
+| `useStorefrontCatalog` | No props. State: product pages/count, section lists, settings, initial/loading-more/error states.                                                                              | `getCatalog()` then pagination via `getMoreCatalogProducts()`; retry restarts initial request. Initial result has 24 products; server pages are 24.                                                                                     |
+| `StoreHeader`          | Brand/tagline/logo strings; hero pill list; visibility map; cart count and callbacks; About flag; controlled search string/onChange.                                           | Centered branding, search, upper-right cart/menu, optional hero pills. Menu closes on outside pointer/Escape; menu About link switches between `About us`/`Visit store`.                                                                |
+| `StoreCartButton`      | `itemCount:number`, click callback, CSS class.                                                                                                                                 | Inline bag SVG, `Cart` label, animated count and accessible live count. Header and floating version share component.                                                                                                                    |
+| `CatalogSections`      | Main/subsection/product arrays, WhatsApp number, cart items, query, server pagination state/callbacks and product callbacks.                                                   | Category filtering/search, breadcrumbs/count, grouped sections, 12-at-a-time local reveal then server Load more, empty/error states, product cards. Search fields: title/description/badge/saveTag/section/main-section.                |
+| `CategoryNav`          | Main/subsection arrays, selected IDs, select-all/main/section callbacks.                                                                                                       | “All products”, main-category chips, standalone-section chips; selected main shows its subcategory row.                                                                                                                                 |
+| `ProductCard`          | Product object, WhatsApp number, cart items, add/change/details callbacks.                                                                                                     | Product image, title, badge/save tag, Details, size selection, current/old price, discount, Add-to-cart or quantity stepper, WhatsApp order. Combo adds `combo-card`.                                                                   |
+| `ProductOrderLink`     | Product, WhatsApp number, combo flag, optional selected variant, compact flag.                                                                                                 | Opens `wa.me` in new tab; labels `WhatsApp order`, `Order directly via WhatsApp`, `Order Combo via WhatsApp`, or `WhatsApp unavailable`.                                                                                                |
+| `ProductDetailsDialog` | Product, WhatsApp, add/close callbacks, optional variant ID.                                                                                                                   | Overlay with header `Product details`, Share/close, gallery, product description/specs, size/price radio list, Add to cart, WhatsApp, share status. Escape/backdrop close, focus trap/restore, body scroll lock.                        |
+| `ProductGallery`       | Product image array.                                                                                                                                                           | Main image, thumbnails, previous/next, touch swipe, zoom overlay; Escape and focus management.                                                                                                                                          |
+| `StoreCart`            | Items, WhatsApp, brand title, checkout validation/message/retry and item callbacks.                                                                                            | Right drawer; quantity/remove/remove-all, optional name/address/note, total, WhatsApp checkout; focus trap/restore and body scroll lock.                                                                                                |
+| `QuantityStepper`      | Value, accessible label, decrease/increase callbacks.                                                                                                                          | Minus/plus control shared by product card and cart.                                                                                                                                                                                     |
+| `CatalogLoading`       | `{kicker,title,message,imageUrl}`.                                                                                                                                             | Loading illustration and copy, progress bar, six skeleton cards.                                                                                                                                                                        |
+| `FeatureList`          | `{title,description}[]`.                                                                                                                                                       | `.features-grid` with `.feature-item` cards.                                                                                                                                                                                            |
+| `AboutPage`            | `{title,introduction,mission,vision,whoWeAre}`.                                                                                                                                | “A LITTLE ABOUT US”, title/introduction, mission/vision, who-we-are, “Talk with our team →”, “Explore the store”.                                                                                                                       |
+| `StoreFooter`          | Footer strings, `{whatsappNumber,phoneDisplay,email,location}`, visibility map.                                                                                                | Location, `tel:` and `mailto:` contacts; independently visible copyright/disclaimer/version. WhatsApp footer link is commented out in source; don't add it.                                                                             |
+| `ScrollToTop`          | Click callback and `hasFloatingCart:boolean`.                                                                                                                                  | Back-to-top after scroll exceeds 320px; offset changes when floating cart exists.                                                                                                                                                       |
 
 ### Admin
 
-| Component/file | Inputs/state | Rendered pieces and interactions |
-|---|---|---|
-| `AdminDashboard` | Optional admin brand and initial view; consumes workspace access. | Supabase setup/loading/login/request/access status or lazy `AdminWorkspace`. |
-| `AdminLogin` | Admin brand, signed-in callback, optional title/description/back link. | Tabs `Sign in` / `Request access`; email/password/show-password, confirm password in request mode; forgot/reset handler, success/error notice, back to store. Current forgot button has no visible label: fix it to display `Forgot password?`. |
-| `PasswordReset` | No props. | Supabase recovery session validation and new/confirm password update. |
-| `WorkspaceAccessProvider` / `useWorkspaceAccess` | Provider wraps admin route; context exposes session, role, loading/errors, refresh/sign-out. | Auth subscription, cached access and periodic/focus recheck. Hook must remain inside provider. |
-| `WorkspaceAccessStatus` | Status, error, request/refresh/sign-out callbacks. | Pending/rejected/no-access message and actions. |
-| `ProductManager` (`AdminWorkspace.jsx`) | Session, admin-brand callbacks, optional initial view. | Products/settings views, product/section filters, sorting/search, section CRUD/order/grouping/visibility, product editor, draft recovery, delete undo, mobile filter/nav, confirmations. |
-| `SiteSettingsManager` | Admin brand/callback, user ID, main/subsections/products. | Accordion groups for branding/storefront, colors/appearance, and remaining settings. Keep all existing non-color forms and remove palette editing only. |
-| `StorefrontContentEditor` | User ID. | Editable store copy, contacts, About copy, features, visibility and footer settings with draft controls. |
-| `AppearanceSettingsEditor` | Admin brand, update callback, user ID. | Keep dashboard brand and loading-screen copy/image editing. Replace palette controls with a non-editable fixed theme display or omit color subsection; never save/apply a custom palette. |
-| `ProductEditor` | Product/draft, products/section arrays, user ID, cancel/draft/save callbacks. | Product ID/title/type/category/order/stock/description/specs/variants/prices/WhatsApp message/photo/active fields; image upload, crop/order/remove, validation, publish/draft. |
-| `ProductListItem` | Product/category title/status and edit/delete/toggle/price/stock callbacks. | Compact product card and quick price/stock/visibility changes. |
-| `TeamAccessPanel` | No props. | Admin access request review and role changes. Remove all Sales-role options; preserve only admin access operations if retained in the rebuilt backend. |
-| Shared admin controls | Existing prop-driven controls. | `AdminButton`, `AdminNotice`, `AdminState`, `AdminTopbar`, `AdminBottomNav`, `WorkspaceSidebar`, `ConfirmDialog`, `FilterSheet`, `ImageUploadField`, `WorkspaceDraftControls`, `AccountMenu`. Preserve focus/keyboard/error semantics. |
+| Component/file                                   | Inputs/state                                                                                 | Rendered pieces and interactions                                                                                                                                                                                                                |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AdminDashboard`                                 | Optional admin brand and initial view; consumes workspace access.                            | Supabase setup/loading/login/request/access status or lazy `AdminWorkspace`.                                                                                                                                                                    |
+| `AdminLogin`                                     | Admin brand, signed-in callback, optional title/description/back link.                       | Tabs `Sign in` / `Request access`; email/password/show-password, confirm password in request mode; forgot/reset handler, success/error notice, back to store. Current forgot button has no visible label: fix it to display `Forgot password?`. |
+| `PasswordReset`                                  | No props.                                                                                    | Supabase recovery session validation and new/confirm password update.                                                                                                                                                                           |
+| `WorkspaceAccessProvider` / `useWorkspaceAccess` | Provider wraps admin route; context exposes session, role, loading/errors, refresh/sign-out. | Auth subscription, cached access and periodic/focus recheck. Hook must remain inside provider.                                                                                                                                                  |
+| `WorkspaceAccessStatus`                          | Status, error, request/refresh/sign-out callbacks.                                           | Pending/rejected/no-access message and actions.                                                                                                                                                                                                 |
+| `ProductManager` (`AdminWorkspace.jsx`)          | Session, admin-brand callbacks, optional initial view.                                       | Products/settings views, product/section filters, sorting/search, section CRUD/order/grouping/visibility, product editor, draft recovery, delete undo, mobile filter/nav, confirmations.                                                        |
+| `SiteSettingsManager`                            | Admin brand/callback, user ID, main/subsections/products.                                    | Accordion groups for branding/storefront, colors/appearance, and remaining settings. Keep all existing non-color forms and remove palette editing only.                                                                                         |
+| `StorefrontContentEditor`                        | User ID.                                                                                     | Editable store copy, contacts, About copy, features, visibility and footer settings with draft controls.                                                                                                                                        |
+| `AppearanceSettingsEditor`                       | Admin brand, update callback, user ID.                                                       | Keep dashboard brand and loading-screen copy/image editing. Replace palette controls with a non-editable fixed theme display or omit color subsection; never save/apply a custom palette.                                                       |
+| `ProductEditor`                                  | Product/draft, products/section arrays, user ID, cancel/draft/save callbacks.                | Product ID/title/type/category/order/stock/description/specs/variants/prices/WhatsApp message/photo/active fields; image upload, crop/order/remove, validation, publish/draft.                                                                  |
+| `ProductListItem`                                | Product/category title/status and edit/delete/toggle/price/stock callbacks.                  | Compact product card and quick price/stock/visibility changes.                                                                                                                                                                                  |
+| `TeamAccessPanel`                                | No props.                                                                                    | Admin access request review and role changes. Remove all Sales-role options; preserve only admin access operations if retained in the rebuilt backend.                                                                                          |
+| Shared admin controls                            | Existing prop-driven controls.                                                               | `AdminButton`, `AdminNotice`, `AdminState`, `AdminTopbar`, `AdminBottomNav`, `WorkspaceSidebar`, `ConfirmDialog`, `FilterSheet`, `ImageUploadField`, `WorkspaceDraftControls`, `AccountMenu`. Preserve focus/keyboard/error semantics.          |
 
 ## 6. Visual specification and fixed theme
 
@@ -239,15 +239,15 @@ Props below are the JavaScript shapes in the current implementation; types are n
 
 **This table overrides the current admin-selectable palette.** Hard-code the values in the rebuilt theme and remove all color customization UI/data flow.
 
-| Purpose | Fixed value |
-|---|---|
-| Main brand blue | `#1d4ed8` |
-| Dark brand blue | `#1e3a8a` |
-| White/cards | `#ffffff` |
-| Page background | `#ffffff` |
-| Main text | `#0f172a` |
-| Muted text | `#475569` |
-| Borders | `#dbe3ea` |
+| Purpose               | Fixed value                                                                                          |
+| --------------------- | ---------------------------------------------------------------------------------------------------- |
+| Main brand blue       | `#1d4ed8`                                                                                            |
+| Dark brand blue       | `#1e3a8a`                                                                                            |
+| White/cards           | `#ffffff`                                                                                            |
+| Page background       | `#ffffff`                                                                                            |
+| Main text             | `#0f172a`                                                                                            |
+| Muted text            | `#475569`                                                                                            |
+| Borders               | `#dbe3ea`                                                                                            |
 | Pale blue backgrounds | use blue tint mixed with white, e.g. existing `color-mix(in srgb, var(--primary) 5–8%, white)` rules |
 
 Use blue and white as the visual identity. Do not retain the current amber `#f59e0b` as a configurable accent, or expose `ocean`, `forest`, `sunset`, or `custom`. Where existing CSS uses `--accent` for highlight/focus/discount, use the fixed brand blue or a blue-tinted neutral; do not introduce an orange/yellow accent. Keep neutral red only for destructive/error states.
@@ -302,14 +302,14 @@ The seven CSS variables remain useful as implementation tokens, but are constant
 
 ### Responsive behavior to match
 
-| Width | Required appearance |
-|---|---|
-| `<640px` | Store product grid has two columns. Header logo max-height 88px in mobile override; category chips horizontally scroll; product actions stack; fixed cart/back-to-top respect bottom safe-area. |
-| `>=640px` | Three product columns. Product actions use the stylesheet's wider-card treatment; ensure no clipping/overflow. |
-| `>=1100px` | Four product columns. |
-| `>=1440px` | Five product columns. |
-| `<=760px` admin | Admin layout changes to mobile: sticky 58px topbar, mobile cards/filter sheet and bottom navigation; desktop sidebar/table treatment changes. |
-| `<=420px` admin | Admin content width `calc(100% - 1rem)`; product card padding `0.8rem`. |
+| Width           | Required appearance                                                                                                                                                                             |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `<640px`        | Store product grid has two columns. Header logo max-height 88px in mobile override; category chips horizontally scroll; product actions stack; fixed cart/back-to-top respect bottom safe-area. |
+| `>=640px`       | Three product columns. Product actions use the stylesheet's wider-card treatment; ensure no clipping/overflow.                                                                                  |
+| `>=1100px`      | Four product columns.                                                                                                                                                                           |
+| `>=1440px`      | Five product columns.                                                                                                                                                                           |
+| `<=760px` admin | Admin layout changes to mobile: sticky 58px topbar, mobile cards/filter sheet and bottom navigation; desktop sidebar/table treatment changes.                                                   |
+| `<=420px` admin | Admin content width `calc(100% - 1rem)`; product card padding `0.8rem`.                                                                                                                         |
 
 Use CSS safe-area insets. Inputs in mobile forms must avoid iOS focus zoom (existing form rules use 16px where needed). Do not set generic breakpoints that alter these listed column counts.
 
@@ -373,19 +373,19 @@ The source stylesheet has repeated generations of selectors. For pixel matching,
 
 Remove Sales-only tables and APIs. Storefront/admin data uses:
 
-| Table | Fields and constraints |
-|---|---|
-| `products` | `id text PK`, `type text CHECK ('single','combo')`, `section_id text FK catalog_sections.id ON UPDATE CASCADE ON DELETE RESTRICT`, `badge/title/description text`, `specs/images/variants jsonb` default `[]`, variants JSON array check, `save_tag/price/old_price/default_whatsapp_msg text`, `is_active boolean default true`, `display_order integer default 0`, created/updated timestamps. Admin writes; public selects active products. |
-| `catalog_main_sections` | `id text PK`, `title text NOT NULL`, `display_order integer default 0`, timestamps. Public read; admin CRUD. |
-| `catalog_sections` | `id text PK`, `title text NOT NULL`, `display_order integer default 0`, `is_active boolean default true`, nullable `main_section_id` FK to main section (`ON UPDATE CASCADE ON DELETE SET NULL`), timestamps. Public read active; admin CRUD. |
-| `site_settings` | Singleton `id text PK CHECK(id='storefront')`; logo/favicon URLs, brand title/tagline, WhatsApp/phone/email/location, features/About/hero pills/visibility JSON, loading-screen/admin-brand JSON, footer and coming-soon text, updated timestamp. **Do not use color_palette** in the rebuild. |
-| `admin_users` | `user_id uuid PK FK auth.users ON DELETE CASCADE`, created timestamp. Bootstrap and role changes are privileged/admin-only. |
-| `access_requests` (if retaining self-service admin request) | `id uuid PK`, `user_id uuid FK auth.users ON DELETE CASCADE`, email, status pending/approved/rejected, requested/reviewed times, reviewer FK; one pending request per user. Keep only admin access workflow; no Sales role. |
-| `workspace_drafts` (if retaining current draft UX) | `(user_id,draft_type,draft_key)` composite PK, JSON payload, created/updated; draft types only `product`, `site-content`, `site-appearance` (non-color admin brand/loading), `site-assets`. No `sale` draft type. |
-| `product_inventory` (if preserving admin stock editor) | `product_id text PK FK products ON DELETE CASCADE`, integer `quantity >= 0`, default 0. No Sales stock-deduction triggers or customer-facing stock check. |
-| `invoices` | Admin-only invoice records with a unique invoice number, configurable business header visibility, customer details, catalog/custom line items, dates, draft/sent/paid status, percentage discount, notes, subtotal/tax/total, creator, and timestamps. RLS permits authenticated Petify admins only. |
+| Table                                                       | Fields and constraints                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `products`                                                  | `id text PK`, `type text CHECK ('single','combo')`, `section_id text FK catalog_sections.id ON UPDATE CASCADE ON DELETE RESTRICT`, `badge/title/description text`, `specs/images/variants jsonb` default `[]`, variants JSON array check, `save_tag/price/old_price/default_whatsapp_msg text`, `is_active boolean default true`, `display_order integer default 0`, created/updated timestamps. Admin writes; public selects active products. |
+| `catalog_main_sections`                                     | `id text PK`, `title text NOT NULL`, `display_order integer default 0`, timestamps. Public read; admin CRUD.                                                                                                                                                                                                                                                                                                                                   |
+| `catalog_sections`                                          | `id text PK`, `title text NOT NULL`, `display_order integer default 0`, `is_active boolean default true`, nullable `main_section_id` FK to main section (`ON UPDATE CASCADE ON DELETE SET NULL`), timestamps. Public read active; admin CRUD.                                                                                                                                                                                                  |
+| `site_settings`                                             | Singleton `id text PK CHECK(id='storefront')`; logo/favicon URLs, brand title/tagline, WhatsApp/phone/email/location, features/About/hero pills/visibility JSON, loading-screen/admin-brand JSON, footer and coming-soon text, updated timestamp. **Do not use color_palette** in the rebuild.                                                                                                                                                 |
+| `admin_users`                                               | `user_id uuid PK FK auth.users ON DELETE CASCADE`, created timestamp. Bootstrap and role changes are privileged/admin-only.                                                                                                                                                                                                                                                                                                                    |
+| `access_requests` (if retaining self-service admin request) | `id uuid PK`, `user_id uuid FK auth.users ON DELETE CASCADE`, email, status pending/approved/rejected, requested/reviewed times, reviewer FK; one pending request per user. Keep only admin access workflow; no Sales role.                                                                                                                                                                                                                    |
+| `workspace_drafts` (if retaining current draft UX)          | `(user_id,draft_type,draft_key)` composite PK, JSON payload, created/updated; draft types only `product`, `site-content`, `site-appearance` (non-color admin brand/loading), `site-assets`. No `sale` draft type.                                                                                                                                                                                                                              |
+| `product_inventory` (if preserving admin stock editor)      | `product_id text PK FK products ON DELETE CASCADE`, integer `quantity >= 0`, default 0. No Sales stock-deduction triggers or customer-facing stock check.                                                                                                                                                                                                                                                                                      |
+| `invoices`                                                  | Admin-only invoice records with a unique invoice number, configurable business header visibility, customer details, catalog/custom line items, dates, draft/sent/paid status, percentage discount, notes, subtotal/tax/total, creator, and timestamps. RLS permits authenticated Petify admins only.                                                                                                                                           |
 
-Current settings defaults include `brand_title='Pëtify'`, `tagline='Pure love, premium care'`, `whatsapp_number='919745001101'`, `phone_display='+91 97450 01101'`, `email='petify.shopping@gmail.com'`, `location='Kerala, India'`, footer `Petify Group`, copyright `© Petify Group. All rights reserved.`, disclaimer `*Not for human consumption. Store in a cool, dry place.`, version `1.0.0`, coming-soon `Something big is coming soon`. Defaults and copy are configurable in the admin; they must not be substituted with invented text.
+Current settings defaults include `brand_title='Petify'`, `tagline='Pure love, premium care'`, `whatsapp_number='919745001101'`, `phone_display='+91 97450 01101'`, `email='petify.shopping@gmail.com'`, `location='Kerala, India'`, footer `Petify Group`, copyright `© Petify Group. All rights reserved.`, disclaimer `*Not for human consumption. Store in a cool, dry place.`, version `1.0.0`, coming-soon `Something big is coming soon`. Defaults and copy are configurable in the admin; they must not be substituted with invented text.
 
 Default features:
 
@@ -404,33 +404,33 @@ Default features:
 
 ### Query inventory
 
-| Source | Query and use |
-|---|---|
-| `services/catalog.js:getCatalog` | Parallel active `products` first range (0–23, ordered), active `catalog_sections`, all `catalog_main_sections`, and `site_settings` singleton; About content compatibility read. |
-| `getMoreCatalogProducts(offset,pageSize=24)` | Next range of active products, same order and exact count. |
-| `getCatalogProductsByIds(ids)` | Active product lookup for saved-cart revalidation/shared deep link. |
-| `services/admin.js:getAdminProducts` | All products ordered by display order plus `product_inventory` quantities. |
-| `getAdminSections/getAdminMainSections` | Full section rows for admin, ordered by display order. |
-| Site settings getters | Read storefront logo/favicon, hero pills, content, appearance loading/admin brand. Do not read color_palette in rebuilt frontend. |
-| Admin service mutations | Insert/update/delete product/section/main-section; update product visibility/price/stock/order/group; update singleton settings; upload/delete objects in `product-images`. |
-| `services/access.js` | Request current user access and admin review/team operations using guarded access RPCs/tables. |
-| `services/workspaceDrafts.js` | Read/upsert/delete user-owned permitted non-Sales drafts. |
+| Source                                       | Query and use                                                                                                                                                                    |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `services/catalog.js:getCatalog`             | Parallel active `products` first range (0–23, ordered), active `catalog_sections`, all `catalog_main_sections`, and `site_settings` singleton; About content compatibility read. |
+| `getMoreCatalogProducts(offset,pageSize=24)` | Next range of active products, same order and exact count.                                                                                                                       |
+| `getCatalogProductsByIds(ids)`               | Active product lookup for saved-cart revalidation/shared deep link.                                                                                                              |
+| `services/admin.js:getAdminProducts`         | All products ordered by display order plus `product_inventory` quantities.                                                                                                       |
+| `getAdminSections/getAdminMainSections`      | Full section rows for admin, ordered by display order.                                                                                                                           |
+| Site settings getters                        | Read storefront logo/favicon, hero pills, content, appearance loading/admin brand. Do not read color_palette in rebuilt frontend.                                                |
+| Admin service mutations                      | Insert/update/delete product/section/main-section; update product visibility/price/stock/order/group; update singleton settings; upload/delete objects in `product-images`.      |
+| `services/access.js`                         | Request current user access and admin review/team operations using guarded access RPCs/tables.                                                                                   |
+| `services/workspaceDrafts.js`                | Read/upsert/delete user-owned permitted non-Sales drafts.                                                                                                                        |
 
 ### Admin access RPCs retained (admin-only role model)
 
 The original `07-admin-access-requests.sql` combines Sales authorization with admin access approval. Preserve approval UX but narrow valid workspace roles to `admin` only:
 
-| RPC/trigger | Required behavior |
-|---|---|
-| `is_petify_admin()` | Stable SECURITY DEFINER predicate for the current authenticated user in `admin_users`; restricted search path; authenticated execution only. |
-| `get_my_access()` | Return current user's `is_admin` and request status (`approved`, `pending`, `rejected`, or `none`). |
-| `request_access()` | Require authenticated email; idempotently create or return the current user's pending admin-access request. |
-| `get_access_team()` | Admin-only pending requests and current admins, with IDs/emails/timestamps. No Sales list. |
-| `approve_access_request(uuid,text)` | Admin-only; accept only role `admin`; approve the pending request and add `admin_users` record transactionally. Reject other role strings. |
-| `approve_access_by_email(text,text)` | Admin-only wrapper around request approval; admin role only. |
-| `reject_access_request(uuid)` | Admin-only pending request rejection. |
-| `revoke_admin(uuid)` | Admin-only; prevent self-revocation and removal of the last admin. |
-| `create_access_request_for_auth_user()` | Auth signup trigger creates a pending request; never grants admin automatically. |
+| RPC/trigger                             | Required behavior                                                                                                                            |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `is_petify_admin()`                     | Stable SECURITY DEFINER predicate for the current authenticated user in `admin_users`; restricted search path; authenticated execution only. |
+| `get_my_access()`                       | Return current user's `is_admin` and request status (`approved`, `pending`, `rejected`, or `none`).                                          |
+| `request_access()`                      | Require authenticated email; idempotently create or return the current user's pending admin-access request.                                  |
+| `get_access_team()`                     | Admin-only pending requests and current admins, with IDs/emails/timestamps. No Sales list.                                                   |
+| `approve_access_request(uuid,text)`     | Admin-only; accept only role `admin`; approve the pending request and add `admin_users` record transactionally. Reject other role strings.   |
+| `approve_access_by_email(text,text)`    | Admin-only wrapper around request approval; admin role only.                                                                                 |
+| `reject_access_request(uuid)`           | Admin-only pending request rejection.                                                                                                        |
+| `revoke_admin(uuid)`                    | Admin-only; prevent self-revocation and removal of the last admin.                                                                           |
+| `create_access_request_for_auth_user()` | Auth signup trigger creates a pending request; never grants admin automatically.                                                             |
 
 Do not copy Sales predicates (`has_sales_access`, `is_petify_sales_user`), Sales-user tables, role branches, or policies. Build and test fresh-project SQL for only the tables/policies and RPC contracts in this section.
 
@@ -472,6 +472,7 @@ Do not copy Sales predicates (`has_sales_access`, `is_petify_sales_user`), Sales
   ```
 
   Variant parentheses and empty customer lines are omitted. Phone is stripped to digits and URL encoded as `https://wa.me/{phone}?text={encodeURIComponent(message)}`.
+
 - Direct item message:
 
   ```text
@@ -490,11 +491,12 @@ Do not copy Sales predicates (`has_sales_access`, `is_petify_sales_user`), Sales
 
   ```text
   Title: Thoughtful care for extraordinary companions
-  Introduction: Pëtify brings together thoughtfully selected pet essentials, specialized nutrition, and habitat products to support the everyday wellbeing of the animals we love.
+  Introduction: Petify brings together thoughtfully selected pet essentials, specialized nutrition, and habitat products to support the everyday wellbeing of the animals we love.
   Mission: To make thoughtful pet care easier by bringing useful products and caring guidance together in one place.
   Vision: A world where every companion, big or small, feathered or finned, has the care, nutrition, and environment it needs to thrive.
-  Who we are: Pëtify is a pet-care store for people who want to make informed, caring choices for their companions. Our collection brings everyday essentials together with specialist products for a range of pets. Have a question about a product? Our team is here to help.
+  Who we are: Petify is a pet-care store for people who want to make informed, caring choices for their companions. Our collection brings everyday essentials together with specialist products for a range of pets. Have a question about a product? Our team is here to help.
   ```
+
 - About headings/links: `A LITTLE ABOUT US`, `Our mission`, `Our vision`, `THE PEOPLE BEHIND THE CARE`, `Who we are`, `Talk with our team →`, `Explore the store`.
 - Footer shows location, phone/email links and optional legal/version lines; visibility keys `footer`, `footer_copyright`, `footer_disclaimer`, `footer_version`.
 - Loading defaults: kicker `STORE CATALOG`; title `Getting the shop ready`; message `Fetching the latest products for you.`; image `/images/bird.png`.
@@ -511,37 +513,37 @@ Do not copy Sales predicates (`has_sales_access`, `is_petify_sales_user`), Sales
 
 ## 10. Utilities and exact business rules
 
-| Rule/helper | Behavior |
-|---|---|
-| `parseProductPrice(value)` | Stringify, remove all except digits/dot/minus, `parseFloat`; non-finite becomes 0. |
-| `formatProductPrice(value)` | `Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",minimumFractionDigits:0,maximumFractionDigits:2})`. |
-| `productOptions(product)` | Use non-empty `variants`; else if `price` is truthy return one default option with empty ID/label and parsed current/old prices; else return `[]`. |
-| Discount | Only when old price > current price > 0; `Math.round((1-current/old)*100)`. |
-| `slugify(title)` | Lowercase; Unicode NFKD; remove combining marks U+0300–036F; non-ASCII alphanumeric runs → `-`; trim edge hyphens. |
-| Product direct phone | `String(whatsappNumber ?? "").replace(/\D/g,"")`; if no digits, disable link and label `WhatsApp unavailable`. |
-| Cart key | `${product.id}:${variant.id ?? ""}`; add increments same key, quantity decrement to 0 removes line. |
-| Session expiration | Ten hours; check on timer and page visibility. |
-| Image compression | Browser bitmap/canvas; resize only above max dimension; optional focal crop; WebP quality `.82`; preserve original if no transform and WebP is not smaller; revoke object URLs on change/unmount. |
-| Product placeholder | Inline 400×300 SVG; rect `#e2e8f0`, text `#94a3b8`, label `No Image`. |
+| Rule/helper                 | Behavior                                                                                                                                                                                          |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `parseProductPrice(value)`  | Stringify, remove all except digits/dot/minus, `parseFloat`; non-finite becomes 0.                                                                                                                |
+| `formatProductPrice(value)` | `Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",minimumFractionDigits:0,maximumFractionDigits:2})`.                                                                                   |
+| `productOptions(product)`   | Use non-empty `variants`; else if `price` is truthy return one default option with empty ID/label and parsed current/old prices; else return `[]`.                                                |
+| Discount                    | Only when old price > current price > 0; `Math.round((1-current/old)*100)`.                                                                                                                       |
+| `slugify(title)`            | Lowercase; Unicode NFKD; remove combining marks U+0300–036F; non-ASCII alphanumeric runs → `-`; trim edge hyphens.                                                                                |
+| Product direct phone        | `String(whatsappNumber ?? "").replace(/\D/g,"")`; if no digits, disable link and label `WhatsApp unavailable`.                                                                                    |
+| Cart key                    | `${product.id}:${variant.id ?? ""}`; add increments same key, quantity decrement to 0 removes line.                                                                                               |
+| Session expiration          | Ten hours; check on timer and page visibility.                                                                                                                                                    |
+| Image compression           | Browser bitmap/canvas; resize only above max dimension; optional focal crop; WebP quality `.82`; preserve original if no transform and WebP is not smaller; revoke object URLs on change/unmount. |
+| Product placeholder         | Inline 400×300 SVG; rect `#e2e8f0`, text `#94a3b8`, label `No Image`.                                                                                                                             |
 
 ## 11. Known defects and targeted quality fixes
 
 Only fix issues that are necessary for parity, security or the allowed scope; do not turn this rebuild into a redesign.
 
-| Priority | Existing issue | Rebuild action |
-|---|---|---|
-| High | `AdminLogin.jsx` forgot-password button has its text commented out; it is visually blank though handler works. | Render visible accessible text `Forgot password?`; preserve reset flow. |
-| Resolved | Fresh section setup now inserts `singles` and `combos` before assigning existing products in `03-catalog-sections.sql`. | Keep the seed before the product update; validate on a fresh Supabase database. |
-| High | The current app permits admin color changes, contrary to this rebuild request. | Replace dynamic palette with fixed Section 6 constants; remove admin color editor, palette API, DB field usage and draft. |
-| High | Current app includes Sales routes/screens/SQL, contrary to this rebuild request. | Exclude Sales from UI, route, services, CSS, settings, schema, RPCs, storage of drafts and navigation. |
-| Medium | Store search filters products currently loaded; later server pages may contain matches. | Preserve presentation; improve search only if complete results and original loading/empty behavior can be retained. |
-| Medium | Existing active stylesheet is very large with duplicate/overridden selectors. | For first pass keep class names and effective cascade. Cleanup only after screenshot comparisons demonstrate identical output. |
-| Medium | Sales history is unpaginated in original. | Not applicable: Sales is excluded entirely. |
-| Medium | Section reorder and main-section/hero-link cleanup use separate requests, so partial failure can leave inconsistent order/navigation. | Prefer transactional mutation if preserving same success/error UX; otherwise report partial success explicitly. |
-| Medium | Product DB save and stock write are separate; stock failure can follow successful product save. | Preserve explicit partial-save message and editor state. |
-| Low | Root commented mockup and Vite starter styles/assets are not production UI. | Do not copy or use them as design references. |
-| Low | Some dialogs duplicate focus/scroll-lock code; mobile filter sheet has less focus management. | May consolidate only if Escape, focus, scroll, backdrop and animation behavior match. |
-| Security | Browser anon key is public; frontend gate alone is not authorization. | Enforce admin restrictions in RLS/RPC and keep service-role key server-only. |
+| Priority | Existing issue                                                                                                                        | Rebuild action                                                                                                                 |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| High     | `AdminLogin.jsx` forgot-password button has its text commented out; it is visually blank though handler works.                        | Render visible accessible text `Forgot password?`; preserve reset flow.                                                        |
+| Resolved | Fresh section setup now inserts `singles` and `combos` before assigning existing products in `03-catalog-sections.sql`.               | Keep the seed before the product update; validate on a fresh Supabase database.                                                |
+| High     | The current app permits admin color changes, contrary to this rebuild request.                                                        | Replace dynamic palette with fixed Section 6 constants; remove admin color editor, palette API, DB field usage and draft.      |
+| High     | Current app includes Sales routes/screens/SQL, contrary to this rebuild request.                                                      | Exclude Sales from UI, route, services, CSS, settings, schema, RPCs, storage of drafts and navigation.                         |
+| Medium   | Store search filters products currently loaded; later server pages may contain matches.                                               | Preserve presentation; improve search only if complete results and original loading/empty behavior can be retained.            |
+| Medium   | Existing active stylesheet is very large with duplicate/overridden selectors.                                                         | For first pass keep class names and effective cascade. Cleanup only after screenshot comparisons demonstrate identical output. |
+| Medium   | Sales history is unpaginated in original.                                                                                             | Not applicable: Sales is excluded entirely.                                                                                    |
+| Medium   | Section reorder and main-section/hero-link cleanup use separate requests, so partial failure can leave inconsistent order/navigation. | Prefer transactional mutation if preserving same success/error UX; otherwise report partial success explicitly.                |
+| Medium   | Product DB save and stock write are separate; stock failure can follow successful product save.                                       | Preserve explicit partial-save message and editor state.                                                                       |
+| Low      | Root commented mockup and Vite starter styles/assets are not production UI.                                                           | Do not copy or use them as design references.                                                                                  |
+| Low      | Some dialogs duplicate focus/scroll-lock code; mobile filter sheet has less focus management.                                         | May consolidate only if Escape, focus, scroll, backdrop and animation behavior match.                                          |
+| Security | Browser anon key is public; frontend gate alone is not authorization.                                                                 | Enforce admin restrictions in RLS/RPC and keep service-role key server-only.                                                   |
 
 ## 12. Implementation order and parity checklist
 

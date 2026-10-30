@@ -14,6 +14,7 @@ const tabs = [
   { id: "header", label: "Header" },
   { id: "products", label: "Custom products" },
   { id: "customers", label: "Invoice customers" },
+  { id: "delivery", label: "Delivery partners" },
 ];
 
 export default function InvoiceSettingsPanel({
@@ -22,6 +23,7 @@ export default function InvoiceSettingsPanel({
   uploadingLogo,
   customProducts,
   customCustomers,
+  deliveryPartners,
   onHeaderChange,
   onLogoSelected,
   onSaveHeader,
@@ -29,6 +31,8 @@ export default function InvoiceSettingsPanel({
   onDeleteProduct,
   onSaveCustomer,
   onDeleteCustomer,
+  onSaveDeliveryPartner,
+  onDeleteDeliveryPartner,
   onBack,
 }) {
   const [activeTab, setActiveTab] = useState("header");
@@ -37,6 +41,8 @@ export default function InvoiceSettingsPanel({
   const [editingProduct, setEditingProduct] = useState(null);
   const [customer, setCustomer] = useState({ name: "", phone: "", address: "" });
   const [editingCustomer, setEditingCustomer] = useState(null);
+  const [deliveryPartner, setDeliveryPartner] = useState({ name: "", deliveryCharge: "" });
+  const [editingDeliveryPartner, setEditingDeliveryPartner] = useState(null);
   const [savingHeader, setSavingHeader] = useState(false);
   const [savingRecord, setSavingRecord] = useState(false);
   const [busyRecordId, setBusyRecordId] = useState("");
@@ -108,6 +114,22 @@ export default function InvoiceSettingsPanel({
       setEditingCustomer(null);
     } catch (saveError) {
       setError(saveError.message || "The invoice customer could not be updated.");
+    } finally {
+      setSavingRecord(false);
+    }
+
+  }
+
+  async function saveDeliveryPartner(event, record, reset) {
+    event.preventDefault();
+    setSavingRecord(true);
+    setError("");
+    try {
+      await onSaveDeliveryPartner(record);
+      if (reset) setDeliveryPartner({ name: "", deliveryCharge: "" });
+      else setEditingDeliveryPartner(null);
+    } catch (saveError) {
+      setError(saveError.message || "The delivery partner could not be saved.");
     } finally {
       setSavingRecord(false);
     }
@@ -359,6 +381,48 @@ export default function InvoiceSettingsPanel({
                     <div className="invoice-settings-record-actions">
                       <button className="admin-secondary-button" type="button" disabled={Boolean(busyRecordId) || savingRecord} onClick={() => setEditingCustomer({ ...record })}>Edit</button>
                       <button className="admin-delete-button" type="button" disabled={Boolean(busyRecordId) || savingRecord} onClick={() => void deleteRecord(record.id, onDeleteCustomer)}>
+                        {busyRecordId === record.id ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+      {activeTab === "delivery" && (
+        <section
+          className="invoice-settings-content"
+          id="invoice-settings-panel-delivery"
+          role="tabpanel"
+          aria-labelledby="invoice-settings-tab-delivery"
+        >
+          <h3>Delivery partners</h3>
+          <form className="invoice-settings-create-form" onSubmit={(event) => void saveDeliveryPartner(event, deliveryPartner, true)}>
+            <label>Partner name<input value={deliveryPartner.name} onChange={(event) => setDeliveryPartner({ ...deliveryPartner, name: event.target.value })} required /></label>
+            <label>Default delivery charge<input type="number" min="0" step="0.01" value={deliveryPartner.deliveryCharge} onChange={(event) => setDeliveryPartner({ ...deliveryPartner, deliveryCharge: event.target.value })} required /></label>
+            <button className="admin-primary-button" type="submit" disabled={savingRecord}>{savingRecord ? "Saving..." : "Add partner"}</button>
+          </form>
+          <div className="invoice-settings-record-list">
+            {!deliveryPartners.length && <p className="invoice-customer-hint">No delivery partners saved yet.</p>}
+            {deliveryPartners.map((record) => (
+              <div className="invoice-settings-record" key={record.id}>
+                {editingDeliveryPartner?.id === record.id ? (
+                  <form className="invoice-settings-edit-form" onSubmit={(event) => void saveDeliveryPartner(event, editingDeliveryPartner, false)}>
+                    <label>Partner name<input value={editingDeliveryPartner.name} onChange={(event) => setEditingDeliveryPartner({ ...editingDeliveryPartner, name: event.target.value })} required /></label>
+                    <label>Default delivery charge<input type="number" min="0" step="0.01" value={editingDeliveryPartner.deliveryCharge} onChange={(event) => setEditingDeliveryPartner({ ...editingDeliveryPartner, deliveryCharge: event.target.value })} required /></label>
+                    <div className="invoice-settings-record-actions">
+                      <button className="admin-primary-button" type="submit" disabled={savingRecord}>{savingRecord ? "Saving..." : "Save"}</button>
+                      <button className="admin-secondary-button" type="button" disabled={savingRecord} onClick={() => setEditingDeliveryPartner(null)}>Cancel</button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <span><strong>{record.name}</strong><small>{formatProductPrice(record.deliveryCharge)}</small></span>
+                    <div className="invoice-settings-record-actions">
+                      <button className="admin-secondary-button" type="button" disabled={Boolean(busyRecordId) || savingRecord} onClick={() => setEditingDeliveryPartner({ ...record, deliveryCharge: String(record.deliveryCharge) })}>Edit</button>
+                      <button className="admin-delete-button" type="button" disabled={Boolean(busyRecordId) || savingRecord} onClick={() => void deleteRecord(record.id, onDeleteDeliveryPartner)}>
                         {busyRecordId === record.id ? "Deleting..." : "Delete"}
                       </button>
                     </div>

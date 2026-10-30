@@ -42,7 +42,6 @@ import {
   setCatalogSectionActive,
   setProductPrice,
   setProductActive,
-  setProductStock,
 } from "../../services/admin.js";
 
 function loadSiteSettingsManager() {
@@ -56,6 +55,7 @@ const InvoiceManager = lazy(() => import("./invoices/InvoiceManager.jsx"));
 
 export default function ProductManager({
   session,
+  onSessionChange,
   adminBrand,
   storefrontBrand,
   onAdminBrandChange,
@@ -107,7 +107,6 @@ export default function ProductManager({
   const [productStatusFilter, setProductStatusFilter] = useState("all");
   const [productSectionFilter, setProductSectionFilter] = useState("all");
   const [productSort, setProductSort] = useState("display");
-  const [stockDrafts, setStockDrafts] = useState({});
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [pendingDeleteProduct, setPendingDeleteProduct] = useState(null);
   const [finalizingDelete, setFinalizingDelete] = useState(false);
@@ -474,28 +473,6 @@ export default function ProductManager({
     }
   }
 
-  async function saveQuickStock(product, value) {
-    const quantity = Number(value);
-    if (!/^\d+$/.test(String(value)) || !Number.isSafeInteger(quantity) || quantity < 0 || quantity > 2147483647) {
-      setError("Stock must be a whole number of zero or more.");
-      return false;
-    }
-
-    setSavingVisibilityId(product.id);
-    setError("");
-    try {
-      await setProductStock(product.id, quantity);
-      setProducts((current) => current.map((item) => item.id === product.id ? { ...item, stockQuantity: quantity } : item));
-      setStockDrafts((current) => ({ ...current, [product.id]: String(quantity) }));
-      return true;
-    } catch (stockError) {
-      setError(stockError.message || "Product stock could not be saved.");
-      return false;
-    } finally {
-      setSavingVisibilityId("");
-    }
-  }
-
   async function removeProduct(product) {
     if (!await confirm({
       title: `Delete ${product.title || "Untitled product"}?`,
@@ -622,6 +599,7 @@ export default function ProductManager({
           {activeView === "profile" && (
             <AdminProfile
               user={session.user}
+              onUserChange={(user) => onSessionChange({ ...session, user })}
               onSignOut={signOut}
               onDisplayNameChange={setProfileName}
             />
@@ -875,7 +853,7 @@ export default function ProductManager({
               {loading ? <AdminState kind="loading" description="Loading products..." /> : (
                 <div className="admin-table-wrap">
                   <table className="admin-table">
-                    <thead><tr><th>Product</th><th>Subsection</th><th>Price / varieties</th><th>Stock</th><th>Visibility</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Product</th><th>Subsection</th><th>Price / varieties</th><th>Visibility</th><th>Actions</th></tr></thead>
                     <tbody>
                       {filteredProducts.map((product) => (
                         <tr key={product.id}>
@@ -886,24 +864,6 @@ export default function ProductManager({
                             return section ? `${mainSection ? `${mainSection.title} / ` : ""}${section.title}` : "Unassigned";
                           })()}</td>
                           <td>{productPriceLabel(product)}</td>
-                          <td>
-                            <form className="admin-stock-inline" onSubmit={(event) => {
-                              event.preventDefault();
-                              void saveQuickStock(product, stockDrafts[product.id] ?? String(product.stockQuantity ?? 0));
-                            }}>
-                              <input
-                                type="number"
-                                inputMode="numeric"
-                                min="0"
-                                step="1"
-                                required
-                                aria-label={`Stock quantity for ${product.title || "Untitled product"}`}
-                                value={stockDrafts[product.id] ?? String(product.stockQuantity ?? 0)}
-                                onChange={(event) => setStockDrafts((current) => ({ ...current, [product.id]: event.target.value }))}
-                              />
-                              <AdminButton type="submit" disabled={savingVisibilityId === product.id}>Save</AdminButton>
-                            </form>
-                          </td>
                           <td><label className="admin-inline-switch"><input type="checkbox" role="switch" checked={product.isActive} disabled={Boolean(savingVisibilityId)} aria-label={`${product.isActive ? "Hide" : "Show"} ${product.title || "Untitled product"}`} onChange={() => toggleProductVisibility(product)} /><span>{product.isActive ? "Visible" : "Hidden"}</span></label></td>
                           <td><div className="admin-row-actions"><button type="button" onClick={() => {
                             const editableProduct = asEditableProduct(product);
@@ -911,7 +871,7 @@ export default function ProductManager({
                           }}>Edit</button><AdminButton variant="danger" disabled={Boolean(pendingDeleteProduct)} onClick={() => requestProductDelete(product)}>Delete</AdminButton></div></td>
                         </tr>
                       ))}
-                      {!filteredProducts.length && <tr><AdminState as="td" colSpan="6" description={products.length ? "No products match these search and filter settings." : "No products yet. Add your first product to begin."} /></tr>}
+                      {!filteredProducts.length && <tr><AdminState as="td" colSpan="5" description={products.length ? "No products match these search and filter settings." : "No products yet. Add your first product to begin."} /></tr>}
                     </tbody>
                   </table>
                 </div>
@@ -931,7 +891,6 @@ export default function ProductManager({
                     }}
                     onDelete={() => requestProductDelete(product)}
                     onSavePrice={saveQuickPrice}
-                    onSaveStock={saveQuickStock}
                   />
                 ))}
                 {!filteredProducts.length && (
@@ -983,13 +942,7 @@ export default function ProductManager({
           <AdminButton variant="primary" onClick={() => setFiltersOpen(false)}>Show {filteredProducts.length} products</AdminButton>
         </div>
       </FilterSheet>
-      <AdminBottomNav items={[
-        { id: "products", label: "Products", icon: "▦", active: activeView === "products", onClick: () => selectWorkspaceView("products") },
-        { id: "customers", label: "Customers", icon: "♙", active: activeView === "customers", onClick: () => selectWorkspaceView("customers") },
-        { id: "invoices", label: "Invoices", icon: "▤", active: activeView === "invoices", onClick: () => selectWorkspaceView("invoices") },
-        { id: "settings", label: "Settings", icon: "⚙", active: isSettingsView, onClick: () => selectWorkspaceView("site-settings") },
-        { id: "profile", label: "Profile", icon: "☺", active: activeView === "profile", onClick: () => selectWorkspaceView("profile") },
-      ]} />
+      <AdminBottomNav items={createAdminNavigationItems(activeView, selectWorkspaceView)} />
     </div>
   );
 }

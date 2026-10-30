@@ -171,11 +171,11 @@
   background: transparent;
   color: var(--text-dark);
   text-align: left;
-  cursor: pointer;
+  cursor: default;
 }
 
 .invoice-list-open:focus-visible,
-.invoice-list-delete:focus-visible {
+.invoice-list-options > summary:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--primary) 55%, white);
   outline-offset: 2px;
 }
@@ -292,8 +292,113 @@
   outline-offset: 1px;
 }
 
-.invoice-list-delete {
+.invoice-list-options {
   flex: 0 0 auto;
+  position: relative;
+}
+
+.invoice-list-options > summary {
+  min-height: 42px;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  background: var(--card-bg);
+  color: var(--text-dark);
+  cursor: pointer;
+  list-style: none;
+}
+
+.invoice-list-options > summary::-webkit-details-marker {
+  display: none;
+}
+
+.invoice-list-options > div {
+  position: absolute;
+  z-index: 4;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  display: grid;
+  min-width: 10.5rem;
+  padding: 0.4rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  background: var(--card-bg);
+  box-shadow: var(--admin-shadow);
+}
+
+.invoice-list-options button {
+  min-height: 38px;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.35rem;
+  border: 0;
+  background: transparent;
+  color: var(--text-dark);
+  text-align: left;
+  cursor: pointer;
+}
+
+.invoice-list-options button:hover,
+.invoice-list-options button:focus-visible {
+  background: color-mix(in srgb, var(--primary) 10%, white);
+}
+
+.invoice-list-share-options {
+  position: relative;
+  margin: 0.35rem 0.15rem 0.1rem;
+  border-top: 1px solid color-mix(in srgb, var(--admin-border) 75%, transparent);
+  padding-top: 0.35rem;
+}
+
+.invoice-list-share-options > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 38px;
+  padding: 0.5rem 0.55rem;
+  border-radius: 0.35rem;
+  color: var(--primary-dark);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.invoice-list-share-options > summary::after {
+  content: "›";
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1;
+  transform: rotate(0deg);
+  transition: transform 140ms ease;
+}
+
+.invoice-list-share-options[open] > summary::after {
+  transform: rotate(90deg);
+}
+
+.invoice-list-share-options > summary::-webkit-details-marker {
+  display: none;
+}
+
+.invoice-list-share-options > div {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0.25rem 0.15rem 0.1rem;
+  padding: 0.25rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--admin-border));
+  border-radius: 0.45rem;
+  background: color-mix(in srgb, var(--primary) 4%, var(--card-bg));
+}
+
+.invoice-list-share-options button {
+  min-height: 36px;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.9rem;
+}
+
+.invoice-list-share-options > summary:hover,
+.invoice-list-share-options > summary:focus-visible {
+  background: color-mix(in srgb, var(--primary) 9%, var(--card-bg));
 }
 
 .invoice-list-row small,
@@ -817,6 +922,43 @@
   font-weight: 400;
 }
 
+.invoice-delivery-partner-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+}
+
+.invoice-inline-delivery-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.7fr) auto;
+  align-items: end;
+  gap: 0.65rem;
+  grid-column: 1 / -1;
+  padding: 0.75rem;
+  border: 1px solid var(--admin-border);
+  border-radius: 0.65rem;
+  background: var(--surface-muted, #f8fafc);
+}
+
+.invoice-inline-delivery-form label {
+  display: grid;
+  gap: 0.3rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.invoice-inline-delivery-form input {
+  min-height: 42px;
+}
+
+@media (max-width: 640px) {
+  .invoice-delivery-partner-picker,
+  .invoice-inline-delivery-form {
+    grid-template-columns: 1fr;
+  }
+}
+
 .invoice-customer-picker {
   display: grid;
   gap: 0.65rem;
@@ -867,6 +1009,7 @@
 .invoice-header-field > input,
 .invoice-item-row input,
 .invoice-item-row select,
+.invoice-delivery-fields input,
 .invoice-tax-row input,
 .invoice-notes-field textarea {
   width: 100%;
@@ -1060,6 +1203,36 @@
 
 .invoice-tax-row .invoice-tax-total strong {
   font-size: 1.05rem;
+}
+
+.invoice-delivery-fields {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.7fr) minmax(240px, 1.3fr);
+  align-items: end;
+  gap: 0.75rem;
+}
+
+.invoice-delivery-fields > label:first-child {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.83rem;
+  font-weight: 650;
+}
+
+.invoice-delivery-fields input[type="number"] {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  background: var(--card-bg);
+  color: var(--text-dark);
+  font: inherit;
+}
+
+.invoice-free-delivery-toggle {
+  margin: 0;
 }
 
 .invoice-preview-wrap {
@@ -1456,19 +1629,21 @@
 
   .invoice-bottom-actions .invoice-editor-actions {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     align-items: stretch;
     width: 100%;
   }
 
   .invoice-bottom-actions .invoice-share-actions,
   .invoice-bottom-actions .invoice-more-actions,
+  .invoice-bottom-actions .invoice-go-to-list-button,
   .invoice-bottom-actions .invoice-save-button {
     min-width: 0;
   }
 
   .invoice-bottom-actions .invoice-share-actions > summary,
   .invoice-bottom-actions .invoice-more-actions > summary,
+  .invoice-bottom-actions .invoice-go-to-list-button,
   .invoice-bottom-actions .invoice-save-button {
     width: 100%;
     box-sizing: border-box;
@@ -1480,11 +1655,17 @@
     justify-content: center;
   }
 
+  .invoice-bottom-actions .invoice-go-to-list-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .invoice-toolbar-main > .invoice-back-button,
   .invoice-bottom-actions .invoice-editor-actions > button,
   .invoice-more-actions > summary,
   .invoice-share-actions > summary,
-  .invoice-list-delete,
+  .invoice-list-options > summary,
   .invoice-settings-tabs > button,
   .invoice-settings-page-heading > button,
   .invoice-settings-record-actions > button {
@@ -1604,8 +1785,13 @@
     gap: 0.55rem;
   }
 
-  .invoice-list-delete {
+  .invoice-list-options > summary {
     padding-inline: 0.55rem;
+  }
+
+  .invoice-list-options > div {
+   top: auto;
+   bottom: calc(100% + 0.35rem);
   }
 
   .invoice-item-row button,
@@ -1647,6 +1833,10 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
+  .invoice-delivery-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .invoice-tax-row > p:last-child {
     grid-column: 1 / -1;
     margin-bottom: 0;
@@ -1666,7 +1856,17 @@
 @media print {
   @page {
     size: A4;
-    margin: 14mm;
+    margin: 0;
+  }
+
+  html,
+  body {
+    width: 210mm;
+    max-width: 210mm;
+    min-height: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
   }
 
   body * {
@@ -1678,19 +1878,39 @@
     visibility: visible !important;
   }
 
-  .invoice-preview-wrap {
+  .invoice-layout {
     display: block !important;
     position: absolute !important;
-    inset: 0 auto auto 0;
-    width: 100%;
+    top: 0;
+    left: 0;
+    width: 210mm;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+  }
+
+  .invoice-layout > *:not(.invoice-preview-wrap) {
+    display: none !important;
+  }
+
+  .invoice-preview-wrap {
+    display: block !important;
+    position: static !important;
+    width: 210mm;
+    height: auto;
     overflow: visible !important;
   }
 
   .invoice-paper {
+    width: 210mm;
     min-height: 0;
+    height: auto;
     aspect-ratio: auto;
-    padding: 0;
+    margin: 0;
+    padding: 14mm;
     box-shadow: none;
+    overflow: visible;
+    break-after: auto;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
@@ -1701,4 +1921,30 @@
     print-color-adjust: exact !important;
   }
 
+  .invoice-paper-table tr,
+  .invoice-paper-totals,
+  .invoice-paper-notes {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+}
+
+@media print and (max-width: 600px) {
+  html,
+  body,
+  .invoice-layout,
+  .invoice-preview-wrap,
+  .invoice-paper {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .invoice-layout {
+    position: static !important;
+  }
+
+  .invoice-paper {
+    padding: 10mm;
+  }
 }

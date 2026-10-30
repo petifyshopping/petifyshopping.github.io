@@ -561,7 +561,7 @@ export default function ProductEditor({ product, draft, products, mainSections, 
             <AdminButton type="button" onClick={requestCancel} disabled={!productDraft.loaded || busy}>Cancel</AdminButton>
             <AdminButton type="button" onClick={clearAllData} disabled={busy || !productDraft.loaded}>{isEditing ? "Reset changes" : "Clear all"}</AdminButton>
             {!isEditing && <AdminButton type="button" onClick={async () => { if (await saveProductDraft()) onCancel(); }} disabled={!productDraft.loaded || busy}>{productDraft.saving || busy ? "Saving draft..." : "Save as draft"}</AdminButton>}
-            <AdminButton variant="primary" type="submit" disabled={busy || !productDraft.loaded}>{busy ? "Saving product..." : isEditing ? "Save changes" : "Save product (Publish)"}</AdminButton>
+            <AdminButton variant="primary" type="submit" disabled={busy || !productDraft.loaded}>{busy ? "Saving product..." : isEditing ? "Save changes" : "Save product"}</AdminButton>
           </div>
         </form>
       </section>

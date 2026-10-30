@@ -100,11 +100,17 @@
   }
 
   .admin-bottom-nav-item.active {
-    background: color-mix(in srgb, var(--primary) 10%, transparent);
-    color: var(--primary-dark);
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    color: #fff;
+    box-shadow: 0 8px 18px -10px var(--primary-dark);
+    transform: translateY(-2px);
   }
 
   .admin-bottom-nav-icon {
+    display: grid;
+    place-items: center;
+    width: 21px;
+    height: 21px;
     font-size: 1.1rem;
     line-height: 1.15;
   }
@@ -135,6 +141,10 @@
   .admin-product-list {
     display: grid;
     gap: 0.75rem;
+  }
+
+  .admin-product-overflow {
+    display: none;
   }
 
   .admin-product-card-controls > .admin-primary-button,

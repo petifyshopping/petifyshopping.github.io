@@ -47,6 +47,21 @@
   transition: color 160ms ease, transform 160ms ease;
 }
 
+.workspace-nav-settings-icon {
+  width: 19px;
+  height: 19px;
+  display: grid;
+  place-items: center;
+  color: #7788a2;
+  font-size: 1.15rem;
+  line-height: 1;
+  transition: color 160ms ease, transform 160ms ease;
+}
+
+.workspace-nav-item:hover .workspace-nav-settings-icon {
+  color: #2454aa;
+}
+
 .workspace-nav-toggle:hover,
 .workspace-nav-item:hover,
 .workspace-nav-group-toggle:hover {
@@ -70,6 +85,10 @@
 
 .workspace-nav-item.active svg,
 .workspace-nav-group-header > .workspace-nav-item.active svg {
+  color: #fff;
+}
+
+.workspace-nav-item.active .workspace-nav-settings-icon {
   color: #fff;
 }
 
@@ -202,12 +221,23 @@
 }
 
 .admin-bottom-nav-item.active {
-  background: linear-gradient(145deg, #edf3ff, #e5eeff);
-  color: #214aa5;
+  background: linear-gradient(135deg, #21458f, #315ec4);
+  color: #fff;
+  box-shadow: 0 8px 18px -10px #21458f;
+  transform: translateY(-2px);
 }
 
 .admin-bottom-nav-icon {
+  width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
   font-size: 1.15rem;
+}
+
+.admin-bottom-nav-icon svg {
+  width: 21px;
+  height: 21px;
 }
 
 .admin-shell {
@@ -520,6 +550,115 @@
   padding: clamp(1rem, 2vw, 1.35rem);
 }
 
+.admin-shell .admin-create-menu,
+.admin-shell .admin-section-fab-form {
+  border: 1px solid #dfe7f3;
+  border-radius: 18px;
+  box-shadow: 0 18px 42px -20px rgb(15 35 73 / 38%);
+}
+
+.admin-shell .admin-create-menu-heading {
+  padding-bottom: 0.65rem;
+}
+
+.admin-editor-dialog {
+  border: 1px solid #dfe7f3;
+  border-radius: 22px;
+  box-shadow: 0 26px 72px -28px rgb(15 35 73 / 52%);
+}
+
+.admin-editor-dialog .admin-editor-heading {
+  border-bottom: 1px solid #e4eaf3;
+}
+
+.admin-editor-dialog .admin-form-actions {
+  border-top: 1px solid #e4eaf3;
+  background: rgb(255 255 255 / 96%);
+}
+
+.admin-editor-dialog .admin-editor {
+  color: #17243b;
+}
+
+.admin-editor-dialog .admin-eyebrow {
+  margin-bottom: 0.3rem;
+  color: #315ec4;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.admin-editor-dialog .admin-editor-fields {
+  gap: 1rem;
+}
+
+.admin-editor-dialog .admin-editor-fields > label,
+.admin-editor-dialog .admin-image-upload-field {
+  color: #53647d;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.admin-editor-dialog .admin-editor-fields input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.admin-editor-dialog .admin-editor-fields select,
+.admin-editor-dialog .admin-editor-fields textarea {
+  border-color: #d7e1ef;
+  border-radius: 11px;
+  background: #fbfcff;
+  color: #17243b;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.admin-editor-dialog .admin-editor-fields input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+.admin-editor-dialog .admin-editor-fields select:focus,
+.admin-editor-dialog .admin-editor-fields textarea:focus {
+  border-color: #6d98e5;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgb(49 94 196 / 12%);
+}
+
+.admin-editor-dialog .admin-field-hint {
+  color: #718099;
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.admin-editor-dialog .product-variants-editor {
+  border-color: #d7e1ef;
+  border-radius: 15px;
+  background: linear-gradient(145deg, #f8faff, #f2f6fd);
+}
+
+.admin-editor-dialog .product-variant-row {
+  padding: 0.85rem;
+  border: 1px solid #e1e9f4;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.admin-editor-dialog .admin-image-picker-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0.9rem;
+  border: 1px dashed #b9cceb;
+  border-radius: 15px;
+  background: #f7faff;
+}
+
+.admin-editor-dialog .admin-image-list {
+  padding: 0.9rem;
+  border: 1px solid #dfe7f3;
+  border-radius: 15px;
+  background: #fbfcff;
+}
+
+.admin-editor-dialog .admin-form-actions > button {
+  min-height: 44px;
+  border-radius: 11px;
+  font-weight: 750;
+}
+
 @media (max-width: 760px) {
   .admin-bottom-nav {
     inset: auto 0.75rem calc(0.55rem + env(safe-area-inset-bottom));
@@ -537,6 +676,66 @@
 
   .admin-shell .admin-page-heading h1 {
     font-size: clamp(1.65rem, 7vw, 2.1rem);
+  }
+
+  .admin-shell .admin-product-overflow {
+    display: none !important;
+  }
+
+  .admin-shell .admin-create-fab {
+    right: 0.85rem;
+    bottom: calc(7.6rem + env(safe-area-inset-bottom));
+  }
+
+  .admin-shell .admin-create-menu,
+  .admin-shell .admin-section-fab-form {
+    width: min(22rem, calc(100vw - 1.7rem));
+    max-height: min(62dvh, 30rem);
+    padding: 0.85rem;
+    border-radius: 18px;
+    box-shadow: 0 18px 42px -18px rgb(15 35 73 / 42%);
+  }
+
+  .admin-shell .admin-create-menu > button.admin-create-action {
+    min-height: 64px;
+    border-radius: 14px;
+  }
+
+  .admin-editor-dialog .admin-editor {
+    padding: 0.85rem 0.85rem calc(0.85rem + env(safe-area-inset-bottom));
+  }
+
+  .admin-editor-dialog .admin-editor-heading {
+    margin: -0.85rem -0.85rem 0.85rem;
+    padding: 0.7rem 0.85rem;
+    border-bottom: 1px solid #e4eaf3;
+    box-shadow: 0 6px 16px -16px rgb(15 35 73 / 50%);
+  }
+
+  .admin-editor-fields {
+    gap: 0.85rem;
+  }
+
+  .admin-editor-fields label {
+    gap: 0.35rem;
+  }
+
+  .admin-editor-dialog .admin-form-actions {
+    gap: 0.5rem;
+    margin-inline: -0.85rem;
+    padding-inline: 0.85rem;
+    border-top: 1px solid #e4eaf3;
+    background: rgb(255 255 255 / 96%);
+  }
+
+  .admin-editor-dialog .admin-image-picker-actions {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0.75rem;
+  }
+
+  .admin-editor-dialog .product-variant-row {
+    gap: 0.65rem;
+    padding: 0.75rem;
   }
 }
 

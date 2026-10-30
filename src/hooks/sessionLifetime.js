@@ -1,11 +1,29 @@
 import { useEffect } from "react";
 
-export const SESSION_MAX_AGE_MS = 10 * 60 * 60 * 1000;
+export const DEFAULT_SESSION_HOURS = 10;
+export const MIN_SESSION_HOURS = 0.25;
+export const MAX_SESSION_HOURS = 720;
+const MAX_TIMER_DELAY_MS = 2 ** 31 - 1;
 
 const memoryStarts = new Map();
 
 function storageKey(session) {
   return `petify-session-start:${session.user.id}`;
+}
+
+export function getSessionLifetimeSettings(session) {
+  const metadata = session?.user?.user_metadata ?? {};
+  const enabled = metadata.auto_logout_enabled !== false;
+  const parsedHours = Number(metadata.auto_logout_hours);
+  const hours = Number.isFinite(parsedHours) && parsedHours >= MIN_SESSION_HOURS && parsedHours <= MAX_SESSION_HOURS
+    ? parsedHours
+    : DEFAULT_SESSION_HOURS;
+  return { enabled, hours };
+}
+
+export function getSessionLifetimeMs(session) {
+  const { enabled, hours } = getSessionLifetimeSettings(session);
+  return enabled ? hours * 60 * 60 * 1000 : Infinity;
 }
 
 export function startSessionLifetime(session, signedIn = false) {
@@ -39,7 +57,8 @@ export function startSessionLifetime(session, signedIn = false) {
 }
 
 export function isSessionExpired(session, now = Date.now()) {
-  return now - startSessionLifetime(session) >= SESSION_MAX_AGE_MS;
+  const lifetimeMs = getSessionLifetimeMs(session);
+  return Number.isFinite(lifetimeMs) && now - startSessionLifetime(session) >= lifetimeMs;
 }
 
 export function clearSessionLifetime(session) {
@@ -56,7 +75,9 @@ export function clearSessionLifetime(session) {
 export function useSessionLifetime(session, onExpire) {
   useEffect(() => {
     if (!session?.user?.id) return undefined;
-    const expiresAt = startSessionLifetime(session) + SESSION_MAX_AGE_MS;
+    const lifetimeMs = getSessionLifetimeMs(session);
+    if (!Number.isFinite(lifetimeMs)) return undefined;
+    const expiresAt = startSessionLifetime(session) + lifetimeMs;
     let timer;
 
     function enforceExpiry() {
@@ -64,7 +85,7 @@ export function useSessionLifetime(session, onExpire) {
       if (remaining <= 0) {
         onExpire(session);
       } else {
-        timer = window.setTimeout(enforceExpiry, remaining);
+        timer = window.setTimeout(enforceExpiry, Math.min(remaining, MAX_TIMER_DELAY_MS));
       }
     }
 

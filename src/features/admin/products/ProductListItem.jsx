@@ -10,23 +10,14 @@ export default function ProductListItem({
   onEdit,
   onDelete,
   onSavePrice,
-  onSaveStock,
 }) {
   const [editingPrice, setEditingPrice] = useState(false);
-  const [editingStock, setEditingStock] = useState(false);
   const [price, setPrice] = useState(product.price ?? "");
-  const [stock, setStock] = useState(String(product.stockQuantity ?? 0));
   const productLabel = product.title?.trim() || "Untitled product";
 
   async function submitPrice(event) {
     event.preventDefault();
     if (await onSavePrice(product, price)) setEditingPrice(false);
-  }
-
-  async function submitStock(event) {
-    event.preventDefault();
-    if (!/^\d+$/.test(stock) || !await onSaveStock(product, stock)) return;
-    setEditingStock(false);
   }
 
   return (
@@ -39,7 +30,6 @@ export default function ProductListItem({
           <strong>{productLabel}</strong>
           <span>{sectionTitle || "Unassigned"}</span>
           <span className="admin-product-card-price">{product.priceLabel}</span>
-          <span>Stock: {product.stockQuantity ?? 0}</span>
         </div>
       </div>
       <div className="admin-product-card-controls">
@@ -67,12 +57,6 @@ export default function ProductListItem({
                 {editingPrice ? "Cancel price edit" : "Quick edit price"}
               </AdminButton>
             )}
-            <AdminButton onClick={() => {
-              setStock(String(product.stockQuantity ?? 0));
-              setEditingStock((current) => !current);
-            }}>
-              {editingStock ? "Cancel stock edit" : "Quick edit stock"}
-            </AdminButton>
             <AdminButton variant="danger" disabled={deleting} onClick={onDelete}>Delete product</AdminButton>
           </div>
         </details>
@@ -91,23 +75,6 @@ export default function ProductListItem({
             />
           </label>
           <AdminButton variant="primary" type="submit" disabled={Boolean(saving)}>Save price</AdminButton>
-        </form>
-      )}
-      {editingStock && (
-        <form className="admin-product-quick-price" onSubmit={submitStock}>
-          <label>
-            Stock quantity
-            <input
-              type="number"
-              inputMode="numeric"
-              min="0"
-              step="1"
-              value={stock}
-              onChange={(event) => setStock(event.target.value)}
-              aria-label={`Stock quantity for ${productLabel}`}
-            />
-          </label>
-          <AdminButton variant="primary" type="submit" disabled={Boolean(saving)}>Save stock</AdminButton>
         </form>
       )}
     </article>

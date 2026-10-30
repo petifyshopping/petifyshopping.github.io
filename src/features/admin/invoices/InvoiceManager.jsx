@@ -8,12 +8,15 @@ import {
   deleteInvoice,
   deleteInvoiceCustomCustomer,
   deleteInvoiceCustomProduct,
+  deleteInvoiceDeliveryPartner,
   getInvoiceCustomCustomers,
   getInvoiceCustomProducts,
+  getInvoiceDeliveryPartners,
   getInvoiceHeaderSettings,
   getInvoices,
   saveInvoiceCustomCustomer,
   saveInvoiceCustomProduct,
+  saveInvoiceDeliveryPartner,
   saveInvoice,
   saveInvoiceHeaderSettings,
   updateInvoiceStatus,
@@ -32,6 +35,16 @@ const headerFields = [
   ["email", "Email"],
   ["address", "Address"],
 ];
+
+function invoiceCustomerName(customerDetails) {
+  if (!customerDetails?.enabled) return "";
+  const customer = customerDetails.source === "saved"
+    ? customerDetails.savedCustomer
+    : customerDetails.source === "invoice"
+      ? customerDetails.invoiceCustomer
+      : customerDetails.manualCustomer;
+  return customer?.name?.trim() || "";
+}
 
 function localDate() {
   const date = new Date();
@@ -91,6 +104,7 @@ function newInvoice(storefrontBrand, headerDefaults) {
       invoiceCustomer: { id: "", name: "", phone: "", address: "" },
       manualCustomer: { name: "", phone: "", address: "" },
       deliveryPartner: "",
+      deliveryPartnerId: "",
     },
     items: [],
     issueDate: localDate(),
@@ -98,6 +112,9 @@ function newInvoice(storefrontBrand, headerDefaults) {
     notes: "",
     discountRate: 0,
     taxRate: 0,
+    deliveryChargeEnabled: false,
+    deliveryCharge: 0,
+    freeDelivery: false,
   };
 }
 
@@ -167,6 +184,7 @@ function editableInvoice(invoice, storefrontTagline = "") {
         address: manualCustomer.address ?? "",
       },
       deliveryPartner: customerDetails.deliveryPartner ?? "",
+      deliveryPartnerId: customerDetails.deliveryPartnerId ?? "",
     },
     items: (invoice.items ?? []).map((item) => ({
       ...item,
@@ -178,6 +196,9 @@ function editableInvoice(invoice, storefrontTagline = "") {
     })),
     discountRate: Number(invoice.discountRate ?? 0),
     taxRate: Number(invoice.taxRate ?? 0),
+    deliveryChargeEnabled: invoice.deliveryChargeEnabled === true,
+    deliveryCharge: Number(invoice.deliveryCharge ?? 0),
+    freeDelivery: invoice.freeDelivery === true,
   };
 }
 
@@ -198,6 +219,9 @@ export default function InvoiceManager({ products, storefrontBrand }) {
   const [invoiceSettingsOpen, setInvoiceSettingsOpen] = useState(false);
   const [customProducts, setCustomProducts] = useState([]);
   const [customCustomers, setCustomCustomers] = useState([]);
+  const [deliveryPartners, setDeliveryPartners] = useState([]);
+  const [addingDeliveryPartner, setAddingDeliveryPartner] = useState(false);
+  const [newDeliveryPartner, setNewDeliveryPartner] = useState({ name: "", deliveryCharge: "" });
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -243,13 +267,15 @@ export default function InvoiceManager({ products, storefrontBrand }) {
       getInvoiceHeaderSettings(),
       getInvoiceCustomProducts(),
       getInvoiceCustomCustomers(),
+      getInvoiceDeliveryPartners(),
     ])
-      .then(([records, headerDefaults, savedCustomProducts, savedCustomCustomers]) => {
+      .then(([records, headerDefaults, savedCustomProducts, savedCustomCustomers, savedDeliveryPartners]) => {
         if (!active) return;
         setInvoices(records);
         setInvoiceHeaderDefaults(headerDefaults);
         setCustomProducts(savedCustomProducts);
         setCustomCustomers(savedCustomCustomers);
+        setDeliveryPartners(savedDeliveryPartners);
       })
       .catch((loadError) => {
         if (!active) return;
@@ -267,6 +293,12 @@ export default function InvoiceManager({ products, storefrontBrand }) {
     const taxableSubtotal = Math.max(0, subtotal - discountAmount);
     const taxRate = Math.max(0, Number(invoice?.taxRate) || 0);
     const taxAmount = Math.round(taxableSubtotal * taxRate) / 100;
+    const deliveryChargeEnabled = invoice?.deliveryChargeEnabled === true;
+    const deliveryCharge = deliveryChargeEnabled
+      ? Math.round(Math.max(0, Number(invoice?.deliveryCharge) || 0) * 100) / 100
+      : 0;
+    const freeDelivery = deliveryChargeEnabled && invoice?.freeDelivery === true;
+    const deliveryAmount = freeDelivery ? 0 : deliveryCharge;
     return {
       subtotal,
       discountRate,
@@ -274,7 +306,11 @@ export default function InvoiceManager({ products, storefrontBrand }) {
       taxableSubtotal,
       taxRate,
       taxAmount,
-      total: Math.round((taxableSubtotal + taxAmount) * 100) / 100,
+      deliveryChargeEnabled,
+      deliveryCharge,
+      freeDelivery,
+      deliveryAmount,
+      total: Math.round((taxableSubtotal + taxAmount + deliveryAmount) * 100) / 100,
     };
   }, [invoice]);
 
@@ -425,6 +461,7 @@ export default function InvoiceManager({ products, storefrontBrand }) {
         } catch (shareError) {
           if (shareError.name === "AbortError") return;
         }
+
       }
       downloadImage(file);
       setNotice("The native share sheet was unavailable, so the invoice image was downloaded.");
@@ -438,7 +475,54 @@ export default function InvoiceManager({ products, storefrontBrand }) {
         setInvoiceMode("edit");
         if (!shareCompleted) setNotice("Invoice saved.");
       }
+
     }
+  }
+
+  async function shareSavedInvoice(record) {
+    setError("");
+    setNotice("");
+    try {
+      const savedTotals = {
+        subtotal: record.subtotal,
+        discountRate: record.discountRate,
+        discountAmount: record.discountAmount,
+        taxRate: record.taxRate,
+        taxAmount: record.taxAmount,
+        deliveryChargeEnabled: record.deliveryChargeEnabled,
+        deliveryCharge: record.deliveryCharge,
+        freeDelivery: record.freeDelivery,
+        total: record.total,
+      };
+      const blob = await createInvoiceImage(record, savedTotals);
+      const file = new File([blob], `${record.invoiceNumber.replace(/[^a-z0-9_-]/gi, "-") || "invoice"}.png`, { type: "image/png" });
+      const shareData = { files: [file], title: `Invoice ${record.invoiceNumber}`, text: `Invoice ${record.invoiceNumber}` };
+      if (typeof navigator.share === "function" && (
+        typeof navigator.canShare !== "function" || navigator.canShare(shareData)
+      )) {
+        await navigator.share(shareData);
+        setNotice("Invoice image shared.");
+      } else {
+        downloadImage(file);
+        setNotice("The native share sheet was unavailable, so the invoice image was downloaded.");
+      }
+
+    } catch (shareError) {
+      if (shareError.name !== "AbortError") setError(shareError.message || "The invoice image could not be shared.");
+    }
+  }
+
+  function printSavedInvoice(record) {
+    const printableInvoice = editableInvoice(record, storefrontBrand?.tagline || "");
+    setInvoice(printableInvoice);
+    setInvoiceMode("view");
+    const previousTitle = document.title;
+    document.title = (invoiceCustomerName(record.customerDetails) || record.invoiceNumber)
+      .replace(/[\\/:*?"<>|]+/g, "-").trim() || record.invoiceNumber;
+    window.setTimeout(() => {
+      window.print();
+      window.setTimeout(() => { document.title = previousTitle; }, 1000);
+    }, 0);
   }
 
   async function persistInvoice(overrides = {}) {
@@ -499,6 +583,9 @@ export default function InvoiceManager({ products, storefrontBrand }) {
         discountAmount: totals.discountAmount,
         taxRate: totals.taxRate,
         taxAmount: totals.taxAmount,
+        deliveryChargeEnabled: totals.deliveryChargeEnabled,
+        deliveryCharge: totals.deliveryCharge,
+        freeDelivery: totals.freeDelivery,
         total: totals.total,
       });
       setInvoices((current) => [saved, ...current.filter((record) => record.id !== saved.id)]);
@@ -549,7 +636,11 @@ export default function InvoiceManager({ products, storefrontBrand }) {
     try {
       savedInvoice = await persistInvoice();
       if (!savedInvoice) return;
+      const previousTitle = document.title;
+      const fileName = invoiceCustomerName(savedInvoice.customerDetails) || savedInvoice.invoiceNumber;
+      document.title = fileName.replace(/[\\/:*?"<>|]+/g, "-").trim() || savedInvoice.invoiceNumber;
       window.print();
+      window.setTimeout(() => { document.title = previousTitle; }, 1000);
     } catch (printError) {
       setError(printError.message || "The invoice could not be printed.");
     } finally {
@@ -602,6 +693,42 @@ export default function InvoiceManager({ products, storefrontBrand }) {
   async function removeCustomCustomer(id) {
     await deleteInvoiceCustomCustomer(id);
     setCustomCustomers((current) => current.filter((customer) => customer.id !== id));
+  }
+
+  async function saveDeliveryPartner(partner) {
+    const savedPartner = await saveInvoiceDeliveryPartner(partner);
+    setDeliveryPartners((current) => [
+      ...current.filter((record) => record.id !== savedPartner.id),
+      savedPartner,
+    ].sort((first, second) => first.name.localeCompare(second.name)));
+    return savedPartner;
+  }
+
+  async function addDeliveryPartnerFromInvoice() {
+    setError("");
+    try {
+      const partner = await saveDeliveryPartner(newDeliveryPartner);
+      setInvoice((current) => ({
+        ...current,
+        customerDetails: {
+          ...current.customerDetails,
+          deliveryPartnerId: partner.id,
+          deliveryPartner: partner.name,
+        },
+        deliveryChargeEnabled: true,
+        deliveryCharge: partner.deliveryCharge,
+      }));
+      setNewDeliveryPartner({ name: "", deliveryCharge: "" });
+      setAddingDeliveryPartner(false);
+      setNotice("Delivery partner added and selected.");
+    } catch (saveError) {
+      setError(saveError.message || "The delivery partner could not be saved.");
+    }
+  }
+
+  async function removeDeliveryPartner(id) {
+    await deleteInvoiceDeliveryPartner(id);
+    setDeliveryPartners((current) => current.filter((partner) => partner.id !== id));
   }
 
   async function removeInvoice(record) {
@@ -670,6 +797,7 @@ export default function InvoiceManager({ products, storefrontBrand }) {
           uploadingLogo={uploadingLogo}
           customProducts={customProducts}
           customCustomers={customCustomers}
+          deliveryPartners={deliveryPartners}
           onHeaderChange={setSettingsBusinessDetails}
           onLogoSelected={(files) => void handleInvoiceLogoSelected(files)}
           onSaveHeader={saveHeaderDefaults}
@@ -677,6 +805,8 @@ export default function InvoiceManager({ products, storefrontBrand }) {
           onDeleteProduct={removeCustomProduct}
           onSaveCustomer={saveCustomCustomer}
           onDeleteCustomer={removeCustomCustomer}
+          onSaveDeliveryPartner={saveDeliveryPartner}
+          onDeleteDeliveryPartner={removeDeliveryPartner}
           onBack={() => setInvoiceSettingsOpen(false)}
         />
       ) : !invoice ? (
@@ -686,13 +816,15 @@ export default function InvoiceManager({ products, storefrontBrand }) {
           loadError={loadError}
           deletingInvoiceId={deletingInvoiceId}
           onCreate={startNewInvoice}
-          onOpen={(record) => {
+          onEdit={(record) => {
             setInvoice(editableInvoice(record, storefrontBrand?.tagline || ""));
-            setInvoiceMode("view");
+            setInvoiceMode("edit");
             setError("");
             setNotice("");
           }}
           onDelete={(record) => void removeInvoice(record)}
+          onShare={(record) => void shareSavedInvoice(record)}
+          onPrint={printSavedInvoice}
         />
       ) : (
         <form className={`invoice-layout${invoiceMode === "edit" ? " is-editing" : ""}${livePreviewEnabled ? " has-live-preview" : ""}`} onSubmit={handleSave}>
@@ -891,11 +1023,39 @@ export default function InvoiceManager({ products, storefrontBrand }) {
                   )}
                   <label className="invoice-customer-source">
                     Delivery partner
-                    <input value={invoice.customerDetails.deliveryPartner} onChange={(event) => updateInvoice("customerDetails", {
-                      ...invoice.customerDetails,
-                      deliveryPartner: event.target.value,
-                    })} />
+                    <span className="invoice-delivery-partner-picker">
+                      <select value={invoice.customerDetails.deliveryPartnerId} onChange={(event) => {
+                        const partner = deliveryPartners.find((record) => record.id === event.target.value);
+                        updateInvoice("customerDetails", {
+                          ...invoice.customerDetails,
+                          deliveryPartnerId: event.target.value,
+                          deliveryPartner: partner?.name ?? "",
+                        });
+                        if (partner) {
+                          setInvoice((current) => ({
+                            ...current,
+                            deliveryChargeEnabled: true,
+                            deliveryCharge: partner.deliveryCharge,
+                          }));
+                        }
+                      }}>
+                        <option value="">No delivery partner</option>
+                        {deliveryPartners.map((partner) => (
+                          <option key={partner.id} value={partner.id}>{partner.name}</option>
+                        ))}
+                      </select>
+                      <button className="admin-secondary-button" type="button" onClick={() => setAddingDeliveryPartner((current) => !current)}>
+                        {addingDeliveryPartner ? "Cancel" : "Add delivery partner"}
+                      </button>
+                    </span>
                   </label>
+                  {addingDeliveryPartner && (
+                    <div className="invoice-inline-delivery-form">
+                      <label>Partner name<input value={newDeliveryPartner.name} onChange={(event) => setNewDeliveryPartner({ ...newDeliveryPartner, name: event.target.value })} required /></label>
+                      <label>Delivery charge<input type="number" min="0" step="0.01" value={newDeliveryPartner.deliveryCharge} onChange={(event) => setNewDeliveryPartner({ ...newDeliveryPartner, deliveryCharge: event.target.value })} required /></label>
+                      <button className="admin-primary-button" type="button" onClick={() => void addDeliveryPartnerFromInvoice()}>Add and select</button>
+                    </div>
+                  )}
                 </>
               )}
             </section>
@@ -936,7 +1096,7 @@ export default function InvoiceManager({ products, storefrontBrand }) {
                     <label>Qty<input type="number" min="0.01" step="any" required value={item.quantity} onChange={(event) => updateItem(index, { quantity: event.target.value })} /></label>
                     <label>Unit price<input type="number" min="0" step="0.01" required value={item.unitPrice} onChange={(event) => updateItem(index, { unitPrice: event.target.value })} /></label>
                     <div className="invoice-item-line-total">
-                      <span>Line total</span>
+                      <span>Total</span>
                       <strong>{formatProductPrice(lineTotal(item))}</strong>
                     </div>
                   </div>
@@ -958,8 +1118,29 @@ export default function InvoiceManager({ products, storefrontBrand }) {
                 <p><span>Subtotal</span><strong>{formatProductPrice(totals.subtotal)}</strong></p>
                 {totals.discountRate > 0 && <p><span>Discount ({totals.discountRate}%)</span><strong>−{formatProductPrice(totals.discountAmount)}</strong></p>}
                 {totals.taxRate > 0 && <p><span>Tax ({totals.taxRate}%)</span><strong>{formatProductPrice(totals.taxAmount)}</strong></p>}
+                {totals.deliveryChargeEnabled && <p><span>Delivery charge</span><strong>{formatProductPrice(totals.deliveryCharge)}</strong></p>}
+                {totals.freeDelivery && <p><span>Free delivery</span><strong>−{formatProductPrice(totals.deliveryCharge)}</strong></p>}
                 <p className="invoice-tax-total"><span>Total</span><strong>{formatProductPrice(totals.total)}</strong></p>
               </div>
+            </section>
+            <section className="invoice-editor-section invoice-delivery-section">
+              <label className="invoice-customer-toggle">
+                <input
+                  type="checkbox"
+                  checked={invoice.deliveryChargeEnabled}
+                  onChange={(event) => updateInvoice("deliveryChargeEnabled", event.target.checked)}
+                />
+                <span><strong>Add delivery charge</strong><small>Include delivery pricing in this invoice.</small></span>
+              </label>
+              {invoice.deliveryChargeEnabled && (
+                <div className="invoice-delivery-fields">
+                  <label>Delivery charge<input type="number" min="0" step="0.01" value={invoice.deliveryCharge} onChange={(event) => updateInvoice("deliveryCharge", event.target.value)} /></label>
+                  <label className="invoice-customer-toggle invoice-free-delivery-toggle">
+                    <input type="checkbox" checked={invoice.freeDelivery} onChange={(event) => updateInvoice("freeDelivery", event.target.checked)} />
+                    <span><strong>Free delivery</strong></span>
+                  </label>
+                </div>
+              )}
             </section>
             <section className="invoice-editor-section">
               <label className="invoice-notes-field">Notes<textarea rows="3" placeholder="Payment terms or a note for the customer" value={invoice.notes} onChange={(event) => updateInvoice("notes", event.target.value)} /></label>
@@ -977,6 +1158,18 @@ export default function InvoiceManager({ products, storefrontBrand }) {
           <div className="invoice-bottom-actions">
             <span className="invoice-bottom-actions-label">Invoice actions</span>
             <div className="invoice-editor-actions">
+              <button
+                type="button"
+                className="invoice-back-button invoice-go-to-list-button"
+                onClick={() => {
+                  setInvoice(null);
+                  setInvoiceMode("edit");
+                  setError("");
+                  setNotice("");
+                }}
+              >
+                ← Invoices
+              </button>
               <details className="invoice-share-actions invoice-action-menu" ref={shareActionsRef}>
                 <summary aria-label="Share or export invoice" onClick={handleActionMenuToggle}>Share</summary>
                 <div>
@@ -1019,7 +1212,7 @@ export default function InvoiceManager({ products, storefrontBrand }) {
                   <button type="button" className="invoice-discard-action" onClick={() => { moreActionsRef.current.open = false; void discardInvoiceChanges(); }} disabled={saving || sharing || printing || updatingInvoiceStatus}>Discard</button>
                 </div>
               </details>
-              {invoiceMode === "edit" && <button className="admin-primary-button invoice-save-button" type="submit" disabled={saving || sharing || printing || updatingInvoiceStatus}>{saving ? "Saving..." : "Save invoice"}</button>}
+              {invoiceMode === "edit" && <button className="admin-primary-button invoice-save-button" type="submit" disabled={saving || sharing || printing || updatingInvoiceStatus}>{saving ? "Saving..." : "Save"}</button>}
             </div>
           </div>
         </form>

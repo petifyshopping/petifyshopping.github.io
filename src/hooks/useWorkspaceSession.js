@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { adminSupabase } from "../lib/supabase.js";
 import {
   clearSessionLifetime,
+  getSessionLifetimeSettings,
   isSessionExpired,
   startSessionLifetime,
   useSessionLifetime,
@@ -15,13 +16,14 @@ export default function useWorkspaceSession({ clearErrorOnAuthChange = true } = 
   const expireSession = useCallback(async (expiredSession) => {
     clearSessionLifetime(expiredSession);
     setSession(null);
+    const { hours } = getSessionLifetimeSettings(expiredSession);
     try {
       const { error: signOutError } = await adminSupabase.auth.signOut({ scope: "local" });
       if (signOutError) {
-        setError(`Your 10-hour session expired, but sign-out could not be completed: ${signOutError.message}`);
+        setError(`Your ${hours}-hour session expired, but sign-out could not be completed: ${signOutError.message}`);
       }
     } catch (signOutError) {
-      setError(`Your 10-hour session expired, but sign-out could not be completed: ${signOutError.message}`);
+      setError(`Your ${hours}-hour session expired, but sign-out could not be completed: ${signOutError.message}`);
     }
   }, []);
 

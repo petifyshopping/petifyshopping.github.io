@@ -17,6 +17,11 @@ export default function InvoicePreview({ invoice, totals, storefrontTagline, lin
   const { values, visible } = invoice.businessDetails;
   const customer = selectedCustomerDetails(invoice.customerDetails);
   const tagline = values.tagline || storefrontTagline;
+  const customerLines = [...new Set([
+    customer.name,
+    customer.phone,
+    customer.address,
+  ].map((value) => value?.trim()).filter(Boolean))];
 
   return (
     <article className="invoice-paper" aria-label="Invoice print preview">
@@ -42,9 +47,7 @@ export default function InvoicePreview({ invoice, totals, storefrontTagline, lin
       {invoice.customerDetails.enabled && (
         <section className="invoice-paper-customer">
           <h3>Customer details</h3>
-          {customer.name && <p>{customer.name}</p>}
-          {customer.phone && <p>{customer.phone}</p>}
-          {customer.address && <p>{customer.address}</p>}
+          {customerLines.map((value) => <p key={value}>{value}</p>)}
           {invoice.customerDetails.deliveryPartner && <p>Delivery partner: {invoice.customerDetails.deliveryPartner}</p>}
         </section>
       )}
@@ -67,6 +70,12 @@ export default function InvoicePreview({ invoice, totals, storefrontTagline, lin
         <p><span>Subtotal</span><strong>{formatProductPrice(totals.subtotal)}</strong></p>
         {totals.discountRate > 0 && <p><span>Discount ({totals.discountRate}%)</span><strong>−{formatProductPrice(totals.discountAmount)}</strong></p>}
         {totals.taxRate > 0 && <p><span>Tax ({totals.taxRate}%)</span><strong>{formatProductPrice(totals.taxAmount)}</strong></p>}
+        {totals.deliveryChargeEnabled && (
+          <>
+            <p><span>Delivery charge</span><strong>{formatProductPrice(totals.deliveryCharge)}</strong></p>
+            {totals.freeDelivery && <p><span>Free delivery</span><strong>−{formatProductPrice(totals.deliveryCharge)}</strong></p>}
+          </>
+        )}
         <p className="invoice-paper-grand-total"><span>Total</span><strong>{formatProductPrice(totals.total)}</strong></p>
       </div>
       {invoice.notes && <section className="invoice-paper-notes"><h3>Notes</h3><p>{invoice.notes}</p></section>}

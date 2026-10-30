@@ -46,6 +46,53 @@ function mapCustomCustomer(row) {
   };
 }
 
+function mapDeliveryPartner(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    deliveryCharge: Number(row.delivery_charge ?? 0),
+  };
+}
+
+export async function getInvoiceDeliveryPartners() {
+  const { data, error } = await requireAdminClient()
+    .from("invoice_delivery_partners")
+    .select("id, name, delivery_charge")
+    .order("name");
+  if (error) throw error;
+  return data.map(mapDeliveryPartner);
+}
+
+export async function saveInvoiceDeliveryPartner({ id, name, deliveryCharge }) {
+  const normalizedName = name.trim().toLocaleLowerCase();
+  const parsedCharge = Number(deliveryCharge);
+  if (!normalizedName) throw new Error("Enter a delivery partner name.");
+  if (!Number.isFinite(parsedCharge) || parsedCharge < 0) {
+    throw new Error("Enter a valid delivery charge.");
+  }
+  const values = {
+    normalized_name: normalizedName,
+    name: name.trim(),
+    delivery_charge: parsedCharge,
+    updated_at: new Date().toISOString(),
+  };
+  const client = requireAdminClient();
+  const query = id
+    ? client.from("invoice_delivery_partners").update(values).eq("id", id)
+    : client.from("invoice_delivery_partners").upsert(values, { onConflict: "normalized_name" });
+  const { data, error } = await query.select("id, name, delivery_charge").single();
+  if (error) throw error;
+  return mapDeliveryPartner(data);
+}
+
+export async function deleteInvoiceDeliveryPartner(id) {
+  const { error } = await requireAdminClient()
+    .from("invoice_delivery_partners")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
+}
+
 export async function getInvoiceCustomProducts() {
   const { data, error } = await requireAdminClient()
     .from("invoice_custom_products")
@@ -144,6 +191,9 @@ function mapInvoice(row) {
     subtotal: Number(row.subtotal),
     discountRate: Number(row.discount_rate ?? 0),
     discountAmount: Number(row.discount_amount ?? 0),
+    deliveryChargeEnabled: row.delivery_charge_enabled === true,
+    deliveryCharge: Number(row.delivery_charge ?? 0),
+    freeDelivery: row.free_delivery === true,
     taxRate: Number(row.tax_rate),
     taxAmount: Number(row.tax_amount),
     total: Number(row.total),
@@ -182,6 +232,9 @@ export async function saveInvoice(invoice) {
     subtotal: invoice.subtotal,
     discount_rate: invoice.discountRate ?? 0,
     discount_amount: invoice.discountAmount ?? 0,
+    delivery_charge_enabled: invoice.deliveryChargeEnabled === true,
+    delivery_charge: invoice.deliveryCharge ?? 0,
+    free_delivery: invoice.freeDelivery === true,
     tax_rate: invoice.taxRate,
     tax_amount: invoice.taxAmount,
     total: invoice.total,

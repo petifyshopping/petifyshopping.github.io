@@ -68,6 +68,19 @@
   margin: 0;
 }
 
+#site-header.admin-project-header .admin-header-search input {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: transparent;
+  color: white;
+}
+
+#site-header.admin-project-header .admin-header-search input::placeholder {
+  color: rgba(255, 255, 255, 0.78);
+  opacity: 1;
+}
+
 .store-header-brand {
   grid-area: brand;
   display: grid;
@@ -181,6 +194,20 @@
   grid-area: actions;
   position: static;
   gap: 0.5rem;
+}
+
+#site-header:not(.admin-project-header) .store-header-inner {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, min(560px, 42vw)) minmax(0, 1fr);
+  column-gap: clamp(1rem, 2.5vw, 2rem);
+}
+
+#site-header:not(.admin-project-header) .store-search {
+  width: 100%;
+  margin: 0;
+}
+
+#site-header:not(.admin-project-header) .store-header-actions {
+  justify-self: end;
 }
 
 .store-header-cart,

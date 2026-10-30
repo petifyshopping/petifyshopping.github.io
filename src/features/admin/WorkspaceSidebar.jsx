@@ -17,10 +17,13 @@ const iconPaths = {
   signout: ["M10 17l5-5-5-5", "M15 12H3", "M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7"],
 };
 
-function SidebarIcon({ name }) {
+export function SidebarIcon({ name, size = 20 }) {
+  if (name === "settings") {
+    return <span className="workspace-nav-settings-icon" aria-hidden="true">⚙</span>;
+  }
   const paths = iconPaths[name] ?? iconPaths.overview;
   return (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       {paths.map((path) => <path key={path} d={path} />)}
     </svg>
   );

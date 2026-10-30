@@ -206,6 +206,12 @@ export async function createInvoiceImage(invoice, totals) {
       ? [[`Discount (${totals.discountRate}%)`, `-${formatProductPrice(totals.discountAmount)}`]]
       : []),
     ...(totals.taxRate > 0 ? [[`Tax (${totals.taxRate}%)`, formatProductPrice(totals.taxAmount)]] : []),
+    ...(totals.deliveryChargeEnabled
+      ? [
+        ["Delivery charge", formatProductPrice(totals.deliveryCharge)],
+        ...(totals.freeDelivery ? [["Free delivery", `-${formatProductPrice(totals.deliveryCharge)}`]] : []),
+      ]
+      : []),
     ["Total", formatProductPrice(totals.total)],
   ];
   totalRows.forEach(([label, amount], index) => {

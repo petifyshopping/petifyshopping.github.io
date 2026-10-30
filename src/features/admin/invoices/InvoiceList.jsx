@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatProductPrice } from "../../../lib/productPricing.js";
 import { invoiceStatus } from "./invoiceStatus.js";
 
@@ -32,10 +32,6 @@ function invoiceSubtitle(record) {
     : record.issueDate;
 }
 
-function InvoiceStatusBadge({ status }) {
-  return <span className={`invoice-status-badge is-${status}`}>{status}</span>;
-}
-
 function InvoiceSkeletons() {
   return (
     <div className="invoice-skeleton-list" role="status" aria-label="Loading invoices" aria-busy="true">
@@ -56,11 +52,40 @@ export default function InvoiceList({
   loadError,
   deletingInvoiceId,
   onCreate,
-  onOpen,
+  onEdit,
   onDelete,
+  onShare,
+  onPrint,
 }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  useEffect(() => {
+    function closeOptions(event) {
+      if (event.target.closest(".invoice-list-options")) return;
+      document.querySelectorAll(".invoice-list-options[open]").forEach((menu) => menu.removeAttribute("open"));
+    }
+    document.addEventListener("pointerdown", closeOptions);
+    return () => document.removeEventListener("pointerdown", closeOptions);
+  }, []);
+
+  function toggleOptions(event) {
+    const currentMenu = event.currentTarget.parentElement;
+    document.querySelectorAll(".invoice-list-options[open]").forEach((menu) => {
+      if (menu !== currentMenu) menu.removeAttribute("open");
+    });
+  }
+
+  function closeMenu(event) {
+    event.currentTarget.closest(".invoice-list-options")?.removeAttribute("open");
+  }
+
+  function toggleShareOptions(event) {
+    event.stopPropagation();
+    const currentShareMenu = event.currentTarget.parentElement;
+    currentShareMenu.parentElement.querySelectorAll(".invoice-list-share-options[open]").forEach((menu) => {
+      if (menu !== currentShareMenu) menu.removeAttribute("open");
+    });
+  }
   const filteredInvoices = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
     return invoices.filter((record) => {
@@ -121,33 +146,33 @@ export default function InvoiceList({
       ) : (
         <div className="invoice-list">
           {filteredInvoices.map((record) => {
-            const status = invoiceStatus(record);
             return (
               <article className="invoice-list-row" key={record.id}>
-                <button
-                  className="invoice-list-open"
-                  type="button"
-                  aria-label={`Open invoice for ${invoicePrimary(record)}`}
-                  onClick={() => onOpen(record)}
-                >
+                <div className="invoice-list-open">
                   <span className="invoice-list-customer">
                     <strong>{invoicePrimary(record)}</strong>
                     <small>{invoiceSubtitle(record)}</small>
                   </span>
                   <span className="invoice-list-financial">
-                    <InvoiceStatusBadge status={status} />
                     <strong>{formatProductPrice(record.total)}</strong>
                   </span>
-                </button>
-                <button
-                  className="admin-delete-button invoice-list-delete"
-                  type="button"
-                  aria-label={`Delete invoice ${record.invoiceNumber}`}
-                  disabled={Boolean(deletingInvoiceId)}
-                  onClick={() => onDelete(record)}
-                >
-                  {deletingInvoiceId === record.id ? "Deleting..." : "Delete"}
-                </button>
+                </div>
+                <details className="invoice-list-options">
+                  <summary aria-label={`Options for invoice ${record.invoiceNumber}`} onClick={toggleOptions}>Options</summary>
+                  <div>
+                    <button type="button" onClick={(event) => { closeMenu(event); onEdit(record); }}>Edit</button>
+                    <details className="invoice-list-share-options">
+                      <summary onClick={toggleShareOptions}>Share</summary>
+                      <div>
+                        <button type="button" onClick={(event) => { closeMenu(event); onShare(record); }}>Share image</button>
+                        <button type="button" onClick={(event) => { closeMenu(event); onPrint(record); }}>Print / PDF</button>
+                      </div>
+                    </details>
+                    <button type="button" disabled={Boolean(deletingInvoiceId)} onClick={(event) => { closeMenu(event); onDelete(record); }}>
+                      {deletingInvoiceId === record.id ? "Deleting..." : "Delete"}
+                    </button>
+                  </div>
+                </details>
               </article>
             );
           })}

@@ -74,6 +74,7 @@ export default function AdminDashboard({
     <Suspense fallback={<div className="admin-gate"><p className="admin-muted">Loading admin workspace...</p></div>}>
       <ProductManager
         session={session}
+        onSessionChange={setSession}
         adminBrand={adminBrand}
         storefrontBrand={storefrontBrand}
         onAdminBrandChange={setAdminBrand}

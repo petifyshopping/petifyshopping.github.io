@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatProductPrice } from "../../lib/productPricing.js";
+import { formatDateTime } from "../../lib/formatters.js";
 import {
   getAdminCustomerOrderStats,
   getAdminCustomerOrderContactFields,
@@ -17,13 +18,6 @@ const ORDER_STATUSES = [
   { value: "fulfilled", label: "Completed" },
   { value: "cancelled", label: "Cancelled" },
 ];
-
-function formatDate(value) {
-  return new Intl.DateTimeFormat("en-IN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
 
 export default function CustomerManagement() {
   const [customers, setCustomers] = useState([]);
@@ -240,7 +234,7 @@ export default function CustomerManagement() {
                     <td><strong>{customer.full_name}</strong><span>{customer.email}</span></td>
                     <td>{customer.phone}</td>
                     <td>{customer.address || <span className="customer-management-muted">Not provided</span>}</td>
-                    <td>{formatDate(customer.created_at)}</td>
+                    <td>{formatDateTime(customer.created_at)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -269,7 +263,7 @@ export default function CustomerManagement() {
                   <div><h3>{order.customer_name}</h3><a href={`mailto:${order.customer_email}`}>{order.customer_email}</a></div>
                   <div className="customer-order-admin-total">
                     <strong>{formatProductPrice(order.total)}</strong>
-                    <span>{formatDate(order.created_at)}</span>
+                    <span>{formatDateTime(order.created_at)}</span>
                   </div>
                 </div>
                 <div className="customer-order-admin-contact">

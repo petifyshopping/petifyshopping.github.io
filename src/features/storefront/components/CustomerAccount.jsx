@@ -11,16 +11,10 @@ import {
   signInCustomer,
   signUpCustomer,
 } from "../../../services/customerAuth.js";
+import { formatDateTime } from "../../../lib/formatters.js";
 import { formatProductPrice } from "../../../lib/productPricing.js";
 import { getCustomerAddressEntries, parseCustomerAddress, serializeCustomerAddress } from "../../../lib/customerAddress.js";
 import "./customerAccounts.css";
-
-function formatOrderDate(value) {
-  return new Intl.DateTimeFormat("en-IN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
 
 function getProfileDraft(profile) {
   return {
@@ -595,7 +589,7 @@ export default function CustomerAccount({
                       <article className="customer-order-card" key={order.id}>
                         <div className="customer-order-card-heading">
                           <strong>{formatProductPrice(order.total)}</strong>
-                          <span>{formatOrderDate(order.created_at)}</span>
+                          <span>{formatDateTime(order.created_at)}</span>
                         </div>
                         <ul>
                           {order.items.map((item, index) => (

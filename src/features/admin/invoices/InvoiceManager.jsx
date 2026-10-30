@@ -444,12 +444,16 @@ export default function InvoiceManager({ products, storefrontBrand }) {
         discountAmount: savedInvoice.discountAmount,
         taxRate: savedInvoice.taxRate,
         taxAmount: savedInvoice.taxAmount,
+        deliveryChargeEnabled: savedInvoice.deliveryChargeEnabled,
+        deliveryCharge: savedInvoice.deliveryCharge,
+        freeDelivery: savedInvoice.freeDelivery,
         total: savedInvoice.total,
       };
       const blob = await createInvoiceImage(savedInvoice, savedTotals);
       const safeNumber = savedInvoice.invoiceNumber.replace(/[^a-z0-9_-]/gi, "-") || "invoice";
       const file = new File([blob], `${safeNumber}.png`, { type: "image/png" });
-      const shareData = { files: [file], title: `Invoice ${savedInvoice.invoiceNumber}`, text: `Invoice ${savedInvoice.invoiceNumber}` };
+      const shareLabel = invoiceCustomerName(savedInvoice.customerDetails) || savedInvoice.invoiceNumber;
+      const shareData = { files: [file], title: shareLabel, text: shareLabel };
       if (typeof navigator.share === "function" && (
         typeof navigator.canShare !== "function" || navigator.canShare(shareData)
       )) {
@@ -496,7 +500,8 @@ export default function InvoiceManager({ products, storefrontBrand }) {
       };
       const blob = await createInvoiceImage(record, savedTotals);
       const file = new File([blob], `${record.invoiceNumber.replace(/[^a-z0-9_-]/gi, "-") || "invoice"}.png`, { type: "image/png" });
-      const shareData = { files: [file], title: `Invoice ${record.invoiceNumber}`, text: `Invoice ${record.invoiceNumber}` };
+      const shareLabel = invoiceCustomerName(record.customerDetails) || record.invoiceNumber;
+      const shareData = { files: [file], title: shareLabel, text: shareLabel };
       if (typeof navigator.share === "function" && (
         typeof navigator.canShare !== "function" || navigator.canShare(shareData)
       )) {

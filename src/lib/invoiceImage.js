@@ -4,6 +4,7 @@ const pageWidth = 1240;
 const pageMargin = 88;
 const contentWidth = pageWidth - pageMargin * 2;
 const lineHeight = 32;
+const imageScale = 2;
 
 function wrapText(context, value, maxWidth) {
   const paragraphs = String(value ?? "").split(/\r?\n/);
@@ -99,12 +100,13 @@ export async function createInvoiceImage(invoice, totals) {
     + itemRows.reduce((height, row) => height + row.height, 0)
     + 230 + (notesLines.length ? 110 + notesLines.length * 32 : 0);
   const canvas = document.createElement("canvas");
-  canvas.width = pageWidth;
-  canvas.height = Math.max(1754, plannedHeight);
+  canvas.width = pageWidth * imageScale;
+  canvas.height = Math.max(1754, plannedHeight) * imageScale;
   const context = canvas.getContext("2d");
   if (!context) throw new Error("This browser could not prepare the invoice image.");
+  context.scale(imageScale, imageScale);
   context.fillStyle = "#ffffff";
-  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillRect(0, 0, pageWidth, canvas.height / imageScale);
   context.textBaseline = "alphabetic";
 
   const business = invoice.businessDetails;
@@ -241,8 +243,8 @@ export async function createInvoiceImage(invoice, totals) {
   }
 
   const outputCanvas = document.createElement("canvas");
-  outputCanvas.width = pageWidth;
-  outputCanvas.height = Math.max(1754, y + pageMargin);
+  outputCanvas.width = pageWidth * imageScale;
+  outputCanvas.height = Math.max(1754, y + pageMargin) * imageScale;
   const outputContext = outputCanvas.getContext("2d");
   if (!outputContext) throw new Error("This browser could not export the invoice image.");
   outputContext.fillStyle = "#ffffff";

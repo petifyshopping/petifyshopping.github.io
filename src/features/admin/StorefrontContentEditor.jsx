@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getStorefrontContent, saveStorefrontContent } from "../../services/admin.js";
-import { DEFAULT_ABOUT_CONTENT } from "../../config/siteContent.js";
+import { DEFAULT_ABOUT_CONTENT, DEFAULT_FOOTER_SOCIAL_URLS } from "../../config/siteContent.js";
 import useWorkspaceDraft from "../../hooks/useWorkspaceDraft.js";
 import WorkspaceDraftControls from "./WorkspaceDraftControls.jsx";
 import AdminNotice from "./components/AdminNotice.jsx";
@@ -20,7 +20,9 @@ const storefrontVisibilityOptions = [
 
 const footerVisibilityOptions = [
   ["footer", "Contact and footer"],
-  ["footer_brand", "Footer title and location"],
+  ["footer_logo", "Footer brand logo"],
+  ["footer_title", "Footer brand name", false],
+  ["footer_location", "Footer location"],
   ["footer_contact", "Contact details"],
   ["footer_copyright", "Copyright note"],
   ["footer_disclaimer", "Store disclaimer"],
@@ -32,16 +34,16 @@ function VisibilityControls({ title, description, options, visibility, onChange 
     <fieldset className="admin-visibility-list">
       <legend>{title}</legend>
       <p className="admin-content-section-description">{description}</p>
-      {options.map(([field, label]) => (
+      {options.map(([field, label, defaultVisible = true]) => (
         <label className="admin-visibility-switch" key={field}>
           <input
             type="checkbox"
             role="switch"
-            checked={visibility[field] ?? true}
+            checked={visibility[field] ?? defaultVisible}
             onChange={(event) => onChange(field, event.target.checked)}
           />
           <span>{label}</span>
-          <small>{visibility[field] ?? true ? "Visible" : "Hidden"}</small>
+          <small>{visibility[field] ?? defaultVisible ? "Visible" : "Hidden"}</small>
         </label>
       ))}
     </fieldset>
@@ -101,7 +103,12 @@ export default function StorefrontContentEditor({ section, userId }) {
   function updateVisibility(field, isVisible) {
     setContent((current) => ({
       ...current,
-      visibility: { ...current.visibility, [field]: isVisible },
+      visibility: {
+        ...current.visibility,
+        [field]: isVisible,
+        ...(isVisible && field === "footer_logo" ? { footer_title: false } : {}),
+        ...(isVisible && field === "footer_title" ? { footer_logo: false } : {}),
+      },
     }));
     setNotice("");
   }
@@ -209,33 +216,52 @@ export default function StorefrontContentEditor({ section, userId }) {
             </div>
             <VisibilityControls
               title="Footer visibility"
-              description="Choose which footer content appears in the store."
+              description="Choose which footer content appears. Show either the logo or brand name, not both; the location stays aligned beneath it."
               options={footerVisibilityOptions}
               visibility={content.visibility}
               onChange={updateVisibility}
             />
-            <div className="admin-content-section-grid admin-footer-layout-controls">
-              <label>Footer alignment
-                <select
-                  value={content.visibility.footer_alignment ?? "left"}
-                  onChange={(event) => updateVisibility("footer_alignment", event.target.value)}
-                >
-                  <option value="left">Left</option>
-                  <option value="center">Center</option>
-                  <option value="right">Right</option>
-                </select>
-              </label>
-              <label>Footer order
-                <select
-                  value={content.visibility.footer_order ?? "brand-first"}
-                  onChange={(event) => updateVisibility("footer_order", event.target.value)}
-                >
-                  <option value="brand-first">Store details first</option>
-                  <option value="contact-first">Contact details first</option>
-                </select>
-              </label>
-            </div>
-          </section>
+              <div className="admin-footer-social-settings">
+                <div className="admin-content-section-heading">
+                  <h3>Social links</h3>
+                  <p>Choose which social icons appear and update each destination.</p>
+                </div>
+                {[
+                  ["instagram", "Instagram"],
+                  ["facebook", "Facebook"],
+                  ["whatsapp", "WhatsApp"],
+                  ["youtube", "YouTube"],
+                ].map(([name, label]) => {
+                  const visibilityKey = `footer_${name}`;
+                  const urlKey = `footer_${name}_url`;
+                  const defaultVisible = name === "instagram"
+                    || (name === "whatsapp" && Boolean(content.whatsappNumber));
+                  return (
+                    <div className="admin-footer-social-row" key={name}>
+                      <label className="admin-visibility-switch">
+                        <input
+                          type="checkbox"
+                          role="switch"
+                          checked={content.visibility[visibilityKey] ?? defaultVisible}
+                          onChange={(event) => updateVisibility(visibilityKey, event.target.checked)}
+                        />
+                        <span>{label}</span>
+                        <small>{(content.visibility[visibilityKey] ?? defaultVisible) ? "Visible" : "Hidden"}</small>
+                      </label>
+                      <label>
+                        {label} link
+                        <input
+                          type="url"
+                          value={content.visibility[urlKey] ?? DEFAULT_FOOTER_SOCIAL_URLS[name]}
+                          onChange={(event) => updateVisibility(urlKey, event.target.value)}
+                          placeholder={name === "whatsapp" ? "Uses the store WhatsApp number by default" : "https://"}
+                        />
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
           )}
           {section === "storefront" && (
           <section className="admin-content-section admin-span-two">

@@ -12,6 +12,9 @@ export async function signUpCustomer({
   phone,
   address = "",
 }) {
+  const emailRedirectUrl = new URL(window.location.href);
+  emailRedirectUrl.searchParams.set("email-confirmed", "1");
+  emailRedirectUrl.hash = "";
   const { data, error } = await requireSupabase().auth.signUp({
     email: email.trim(),
     password,
@@ -22,7 +25,7 @@ export async function signUpCustomer({
         phone: phone.trim(),
         address: address.trim(),
       },
-      emailRedirectTo: window.location.origin,
+      emailRedirectTo: emailRedirectUrl.toString(),
     },
   });
   if (error) throw error;

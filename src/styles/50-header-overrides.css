@@ -4,6 +4,7 @@
   z-index: 100;
   display: grid;
   gap: 0.55rem;
+  border-radius: 0 0 16px 16px;
   padding: max(0.6rem, env(safe-area-inset-top)) clamp(1rem, 4vw, 2.5rem) 0.6rem;
   border-bottom: 1px solid rgb(255 255 255 / 24%);
   background:
@@ -247,6 +248,7 @@ body:has(#site-header) #site-footer {
   display: grid;
   gap: 0.75rem;
   overflow: hidden;
+  border-radius: 16px 16px 0 0;
   padding: 1.35rem clamp(1rem, 4vw, 2.5rem) 0.8rem;
   border-top: 1px solid rgb(255 255 255 / 26%);
   background:
@@ -264,10 +266,34 @@ body:has(#site-header) #site-footer {
 }
 
 .store-footer-main {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem 2.5rem;
+  gap: 0.75rem 1.5rem;
+}
+
+.store-footer-brand {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  justify-items: start;
+  gap: 0.2rem;
+}
+
+.store-footer-brand-heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.store-footer-logo {
+  display: block;
+  width: 96px;
+  height: 40px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  object-position: left center;
 }
 
 body:has(#site-header) #site-footer h3 {
@@ -279,7 +305,8 @@ body:has(#site-header) #site-footer h3 {
 }
 
 body:has(#site-header) #site-footer .footer-location {
-  margin-top: 0.25rem;
+  grid-column: auto;
+  margin: 0;
   color: rgb(255 255 255 / 72%);
   font-size: 0.8rem;
   line-height: 1.4;
@@ -288,8 +315,59 @@ body:has(#site-header) #site-footer .footer-location {
 .store-footer-contact {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+}
+
+.store-footer-socials {
+  display: flex;
+  align-items: center;
   justify-content: flex-end;
-  gap: 0.5rem clamp(1rem, 2.5vw, 2rem);
+  gap: 0.45rem;
+}
+
+body:has(#site-header) #site-footer .store-footer-socials a {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 10%);
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.store-footer-socials a:hover {
+  transform: translateY(-2px);
+  background: rgb(255 255 255 / 20%);
+  text-decoration: none !important;
+}
+
+.store-footer-socials svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+
+.store-footer-socials svg rect,
+.store-footer-socials svg circle {
+  fill: none;
+}
+
+.store-footer-socials svg circle:last-child {
+  fill: currentColor;
+  stroke: none;
+}
+
+.store-footer-socials .store-footer-youtube-play {
+  fill: var(--primary);
+  stroke: none;
+}
+
+.store-footer-socials a[aria-label="WhatsApp"] svg {
+  stroke: none;
 }
 
 body:has(#site-header) #site-footer a {
@@ -309,8 +387,8 @@ body:has(#site-header) #site-footer a:hover {
 
 .store-footer-bottom {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  align-items: center;
   gap: 0.3rem 1rem;
   padding-top: 0.65rem;
   border-top: 1px solid rgb(255 255 255 / 22%);
@@ -321,56 +399,6 @@ body:has(#site-header) #site-footer .footer-legal {
   color: rgb(255 255 255 / 68%);
   font-size: 0.7rem;
   line-height: 1.45;
-}
-
-.store-footer-main.is-contact-first .store-footer-contact {
-  order: -1;
-}
-
-#site-footer.is-align-center .store-footer-main {
-  flex-direction: column;
-  align-items: center;
-  gap: 0.55rem;
-  text-align: center;
-}
-
-#site-footer.is-align-center .store-footer-contact {
-  justify-content: center;
-}
-
-#site-footer.is-align-center .store-footer-bottom {
-  grid-template-columns: minmax(0, 1fr);
-  justify-items: center;
-  text-align: center;
-}
-
-#site-footer.is-align-center .store-footer-bottom .footer-legal:last-child {
-  grid-column: auto;
-  grid-row: auto;
-  justify-self: center;
-}
-
-#site-footer.is-align-right .store-footer-main {
-  justify-content: flex-end;
-  text-align: right;
-}
-
-#site-footer.is-align-right .store-footer-contact {
-  justify-content: flex-end;
-}
-
-#site-footer.is-align-right .store-footer-bottom {
-  text-align: right;
-}
-
-#site-footer.is-align-right .store-footer-bottom .footer-legal:last-child {
-  justify-self: end;
-}
-
-.store-footer-bottom .footer-legal:last-child {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  justify-self: end;
 }
 
 @media (max-width: 760px) {
@@ -491,42 +519,52 @@ body:has(#site-header) #site-footer .footer-legal {
   }
 
   body:has(#site-header) #site-footer {
+    width: 100%;
+    min-width: 0;
     gap: 0.7rem;
     padding: 1.05rem 1rem 0.7rem;
   }
 
+  #site-header {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #site-header .hero-pills {
+    min-width: 0;
+  }
+
+  .store-footer-main,
+  .store-footer-bottom {
+    min-width: 0;
+  }
+
   .store-footer-main {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 0.55rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 0.75rem;
   }
 
-  #site-footer.is-align-center .store-footer-main {
-    align-items: center;
-  }
-
-  #site-footer.is-align-right .store-footer-main {
-    align-items: flex-end;
+  .store-footer-brand {
+    grid-column: 1 / -1;
   }
 
   .store-footer-contact {
     justify-content: flex-start;
-    flex-wrap: wrap;
     gap: 0.35rem 1rem;
   }
 
-  #site-footer.is-align-right .store-footer-contact {
-    justify-content: flex-end;
+  .store-footer-socials {
+    justify-content: flex-start;
+  }
+
+  body:has(#site-header) #site-footer .store-footer-socials a {
+    width: 34px;
+    height: 34px;
   }
 
   .store-footer-bottom {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.3rem 0.75rem;
-  }
-
-  .store-footer-bottom .footer-legal:last-child {
-    grid-column: 2;
-    grid-row: 1 / span 2;
   }
 }
 

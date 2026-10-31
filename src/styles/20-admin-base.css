@@ -1938,6 +1938,20 @@ td.admin-state-empty {
   font-weight: 500;
 }
 
+.admin-footer-social-settings {
+  display: grid;
+  gap: 0.8rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid #dbe3ea;
+}
+
+.admin-footer-social-row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  align-items: end;
+  gap: 0.75rem 1rem;
+}
+
 .admin-span-two {
   grid-column: span 2;
 }
@@ -2111,26 +2125,27 @@ td.admin-state-empty {
   bottom: 1.25rem;
   z-index: 10;
   display: grid;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   place-items: center;
+  padding: 0;
   border: 0;
-  border-radius: 50%;
-  background: var(--primary-dark);
-  color: white;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.28);
+  background: transparent;
+  color: var(--primary);
+  filter: drop-shadow(0 2px 3px rgb(255 255 255 / 90%));
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition: transform 0.2s ease;
 }
 
 .back-to-top span {
-  font-size: 1.7rem;
+  z-index: 1;
+  font-size: 2rem;
+  font-weight: 850;
   line-height: 1;
 }
 
 .back-to-top:hover {
   transform: translateY(-3px);
-  background: var(--primary);
 }
 
 .back-to-top:focus-visible {
@@ -2186,6 +2201,11 @@ td.admin-state-empty {
 
   .about-contact-link {
     grid-column: 1;
+  }
+
+  .about-instagram-card {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .back-to-top {
@@ -2369,6 +2389,10 @@ td.admin-state-empty {
   }
 
   .admin-content-section-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-footer-social-row {
     grid-template-columns: minmax(0, 1fr);
   }
 

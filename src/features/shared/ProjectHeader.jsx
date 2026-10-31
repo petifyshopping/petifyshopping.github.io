@@ -152,7 +152,7 @@ export default function ProjectHeader({
           </div>
         </div>
       </div>
-      {showPills && heroPills.length > 0 && (
+      {!isAboutRoute && showPills && heroPills.length > 0 && (
         <nav className="hero-pills" aria-label="Store links">
           {heroPills.map((pill) => pill.target
             ? <a className="pill" href={pill.target} key={pill.id} onClick={(event) => onPillClick(event, pill.target)}>{pill.label}</a>

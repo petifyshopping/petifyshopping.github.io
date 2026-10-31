@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { formatProductPrice } from "../../../lib/productPricing.js";
 import { getCustomerOrderContactDetails } from "../../../lib/customerOrderDetails.js";
+import { serializeCustomerAddress } from "../../../lib/customerAddress.js";
 import QuantityStepper from "./QuantityStepper.jsx";
+import WhatsAppIcon from "./WhatsAppIcon.jsx";
 
 function cartOrderLink(items, whatsappNumber, total, customer, profile, enabledContactFields) {
   const lines = items.map((item) => {
@@ -48,6 +50,7 @@ export default function StoreCart({
   onOpenAccount,
   onCheckout,
   onOrderHandoff,
+  onSaveAddress,
   customerOrderContactFields,
 }) {
   const dialogRef = useRef(null);
@@ -55,21 +58,39 @@ export default function StoreCart({
   const [customer, setCustomer] = useState({ note: "" });
   const [checkoutError, setCheckoutError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [addressMode, setAddressMode] = useState("auto");
+  const [showAddressChooser, setShowAddressChooser] = useState(false);
+  const [addressDraft, setAddressDraft] = useState({
+    label: "Home",
+    address: "",
+    pincode: "",
+    place: "",
+    district: "",
+    state: "",
+  });
+  const [saveAddressForLater, setSaveAddressForLater] = useState(true);
   const totalQuantity = items.reduce((total, item) => total + item.quantity, 0);
   const totalPrice = items.reduce((total, item) => total + item.price * item.quantity, 0);
   const deliveryAddress = profile?.addresses?.find((address) => address.id === selectedAddressId);
-  const customerDetails = { ...customer, address: deliveryAddress?.address ?? "" };
-  const whatsappDetails = [
-    profile?.full_name ? { label: "Name", value: profile.full_name } : null,
-    ...getCustomerOrderContactDetails(profile, deliveryAddress?.address, customerOrderContactFields)
-      .map((detail) => {
-        const separatorIndex = detail.indexOf(":");
-        return {
-          label: detail.slice(0, separatorIndex),
-          value: detail.slice(separatorIndex + 1).trim(),
-        };
-      }),
-  ].filter(Boolean);
+  const resolvedAddressMode = addressMode === "auto"
+    ? deliveryAddress ? "saved" : "new"
+    : addressMode;
+  const isNewAddressComplete = Boolean(
+    addressDraft.address.trim().length >= 5
+    && addressDraft.pincode.trim()
+    && addressDraft.place.trim()
+    && addressDraft.district.trim()
+    && addressDraft.state.trim()
+    && (!saveAddressForLater || addressDraft.label.trim()),
+  );
+  const addressText = resolvedAddressMode === "saved"
+    ? deliveryAddress?.address ?? ""
+    : serializeCustomerAddress(addressDraft);
+  const hasValidAddress = resolvedAddressMode === "saved"
+    ? Boolean(deliveryAddress && addressText.trim().length >= 5)
+    : isNewAddressComplete && addressText.trim().length >= 5;
+  const canSaveAddress = (profile?.addresses?.length ?? 0) < 3;
+  const customerDetails = { ...customer, address: addressText };
   const checkoutLink = cartOrderLink(items, whatsappNumber, totalPrice, customerDetails, profile, customerOrderContactFields);
 
   useEffect(() => {
@@ -117,8 +138,8 @@ export default function StoreCart({
       onOpenAccount("Sign in or create an account before placing an order.");
       return;
     }
-    if (!deliveryAddress) {
-      setCheckoutError("Add and select a delivery address before ordering.");
+    if (!hasValidAddress) {
+      setCheckoutError("Enter a delivery address to continue.");
       return;
     }
     const whatsappWindow = window.open("about:blank", "_blank");
@@ -129,7 +150,24 @@ export default function StoreCart({
     whatsappWindow.opener = null;
     setSubmitting(true);
     try {
-      await onCheckout({ items, addressId: deliveryAddress.id, note: customer.note.trim() });
+      let addressId = resolvedAddressMode === "saved" ? deliveryAddress?.id ?? null : null;
+      const temporaryAddress = resolvedAddressMode === "new" && !saveAddressForLater ? addressText : null;
+      if (resolvedAddressMode === "new" && saveAddressForLater) {
+        if (!canSaveAddress) throw new Error("You can save up to three delivery addresses. Choose a one-time address or manage saved addresses in your account.");
+        const savedAddress = await onSaveAddress({
+          label: addressDraft.label.trim(),
+          address: addressText,
+        });
+        addressId = savedAddress.id;
+        setAddressMode("saved");
+        onAddressSelect(addressId);
+      }
+      await onCheckout({
+        items,
+        addressId,
+        temporaryAddress,
+        note: customer.note.trim(),
+      });
       whatsappWindow.location.href = cartOrderLink(
         items,
         whatsappNumber,
@@ -227,70 +265,139 @@ export default function StoreCart({
             </div>
 
             <div className="store-cart-footer">
-              <div className="store-cart-subtotal">
-                <span>Grand total</span>
-                <strong>{formatProductPrice(totalPrice)}</strong>
-              </div>
-              <p className="store-cart-note">Shipping and availability are confirmed by our team on WhatsApp.</p>
-              <section className="store-cart-delivery-card" aria-label="Delivery details">
-                <div className="store-cart-delivery-heading">
-                  <div>
-                    <span>WHATSAPP ORDER MESSAGE</span>
-                    <strong>{authenticated ? "Details shared with the store" : "Sign in to add delivery details"}</strong>
-                  </div>
-                  {authenticated && profile?.addresses?.length > 0 && (
-                    <label className="store-cart-address-select">
-                      <span className="visually-hidden">Choose delivery address</span>
-                      <select
-                        value={deliveryAddress?.id ?? ""}
-                        onChange={(event) => {
-                          onAddressSelect(event.target.value);
-                          setCheckoutError("");
-                        }}
-                        disabled={authLoading || submitting}
-                      >
-                        {profile.addresses.map((address) => (
-                          <option value={address.id} key={address.id}>{address.label}</option>
-                        ))}
-                      </select>
-                    </label>
-                  )}
+              <div className="store-cart-footer-details">
+                <p className="store-cart-note">Delivery and availability are confirmed on WhatsApp.</p>
+                <div className="store-cart-customer-fields">
+                  <label>
+                    {/* <span>Order note (optional)</span> */}
+                    <input
+                      value={customer.note}
+                      onChange={(event) => setCustomer((current) => ({ ...current, note: event.target.value }))}
+                      placeholder="Add a delivery note (Optional)"
+                      maxLength={500}
+                    />
+                  </label>
                 </div>
-                {deliveryAddress ? (
-                  <dl className="store-cart-delivery-address">
-                    {whatsappDetails.map((entry) => (
-                      <div key={entry.label}>
-                        <dt>{entry.label}</dt>
-                        <dd>{entry.value}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                ) : (
-                  <div className="store-cart-no-address">
-                    <p>{authenticated ? "Add a saved delivery address to continue." : "Sign in to choose a saved delivery address."}</p>
+                <section className="store-cart-delivery-card" aria-label="Delivery address">
+                  {!authenticated ? (
                     <button
+                      className="store-cart-address-action"
                       type="button"
-                      onClick={() => onOpenAccount(authenticated
-                        ? "Save a delivery address to continue with your order."
-                        : "Sign in or create an account to save a delivery address.")}
+                      onClick={() => onOpenAccount("Sign in or create an account before placing an order.")}
                       disabled={authLoading || submitting}
                     >
-                      {authenticated ? "Add address" : "Sign in"}
+                      <WhatsAppIcon />
+                      Sign in to order
                     </button>
+                  ) : resolvedAddressMode === "saved" && deliveryAddress ? (
+                    <>
+                      <button
+                        className="store-cart-selected-address"
+                        type="button"
+                        onClick={() => setShowAddressChooser((visible) => !visible)}
+                        aria-expanded={showAddressChooser}
+                        disabled={authLoading || submitting}
+                      >
+                        <span>Delivering to - {deliveryAddress.label}.</span>
+                        <span>Choose another</span>
+                      </button>
+                      {showAddressChooser && (
+                        <label className="store-cart-address-select">
+                          <span className="visually-hidden">Choose or add a delivery address</span>
+                          <select
+                            autoFocus
+                            value={deliveryAddress.id}
+                            onChange={(event) => {
+                              if (event.target.value === "new") {
+                                setAddressMode("new");
+                                setSaveAddressForLater(canSaveAddress);
+                                setAddressDraft((current) => ({ ...current, label: "Home" }));
+                              } else {
+                                setAddressMode("saved");
+                                onAddressSelect(event.target.value);
+                                setShowAddressChooser(false);
+                              }
+                              setCheckoutError("");
+                            }}
+                            disabled={authLoading || submitting}
+                          >
+                            {(profile?.addresses ?? []).map((address) => (
+                              <option value={address.id} key={address.id}>{address.label}</option>
+                            ))}
+                            <option value="new">Add address…</option>
+                          </select>
+                        </label>
+                      )}
+                    </>
+                  ) : authenticated && (
+                  <div className="store-cart-address-editor">
+                    <label>
+                      Address
+                      <textarea
+                        value={addressDraft.address}
+                        onChange={(event) => setAddressDraft((current) => ({ ...current, address: event.target.value }))}
+                        autoComplete="address-line1"
+                        rows="2"
+                        minLength={5}
+                        maxLength={250}
+                        required
+                      />
+                    </label>
+                    <div className="store-cart-address-fields">
+                      <label>
+                        Pincode
+                        <input
+                          value={addressDraft.pincode}
+                          onChange={(event) => setAddressDraft((current) => ({ ...current, pincode: event.target.value }))}
+                          autoComplete="postal-code"
+                          inputMode="numeric"
+                          maxLength={20}
+                          required
+                        />
+                      </label>
+                      <label>
+                        Place
+                        <input
+                          value={addressDraft.place}
+                          onChange={(event) => setAddressDraft((current) => ({ ...current, place: event.target.value }))}
+                          autoComplete="address-level3"
+                          maxLength={60}
+                          required
+                        />
+                      </label>
+                      <label>
+                        District
+                        <input
+                          value={addressDraft.district}
+                          onChange={(event) => setAddressDraft((current) => ({ ...current, district: event.target.value }))}
+                          autoComplete="address-level2"
+                          maxLength={60}
+                          required
+                        />
+                      </label>
+                      <label>
+                        State
+                        <input
+                          value={addressDraft.state}
+                          onChange={(event) => setAddressDraft((current) => ({ ...current, state: event.target.value }))}
+                          autoComplete="address-level1"
+                          maxLength={60}
+                          required
+                        />
+                      </label>
+                    </div>
+                    <label className="store-cart-save-address">
+                      <input
+                        type="checkbox"
+                        checked={canSaveAddress && saveAddressForLater}
+                        onChange={(event) => setSaveAddressForLater(event.target.checked)}
+                        disabled={!canSaveAddress || submitting}
+                      />
+                      <span>{canSaveAddress ? "Save this address for future orders" : "Address limit reached; this address will be used once"}</span>
+                    </label>
                   </div>
-                )}
-              </section>
-              <div className="store-cart-customer-fields">
-                <label>
-                  <span>Order note (optional)</span>
-                  <input
-                    value={customer.note}
-                    onChange={(event) => setCustomer((current) => ({ ...current, note: event.target.value }))}
-                    placeholder="Add a delivery note"
-                    maxLength={500}
-                  />
-                </label>
-              </div>
+                  )}
+                </section>
               {checkoutError && <p className="store-cart-phone-error" role="alert">{checkoutError}</p>}
               {!canCheckout ? (
                 <div className="store-cart-validation" role="status" aria-live="polite">
@@ -299,16 +406,38 @@ export default function StoreCart({
                     <button type="button" onClick={onRetryValidation}>Retry validation</button>
                   )}
                 </div>
-              ) : checkoutLink ? (
-                <button className="store-cart-checkout" type="button" onClick={beginCheckout} disabled={authLoading || submitting || !authenticated || !deliveryAddress}>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M20.5 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.2-4.6A8.5 8.5 0 1 1 20.5 11.5Z" />
-                  <path d="M8.5 8.2c.5 2.7 2.1 4.3 4.8 5" />
-                </svg>
-                  <span>{submitting ? "Saving order…" : authenticated ? "Order via WhatsApp" : "Sign in to order"}</span>
+              ) : !checkoutLink ? <p className="store-cart-phone-error" role="alert">WhatsApp checkout is unavailable because a contact number has not been configured.</p> : null}
+              <p className="store-cart-secure-note">Your order request opens directly in WhatsApp.</p>
+              </div>
+              <div className="store-cart-checkout-summary">
+                <div className="store-cart-subtotal">
+                  <span>Total for {totalQuantity} {totalQuantity === 1 ? "item" : "items"}</span>
+                  <strong>{formatProductPrice(totalPrice)}</strong>
+                </div>
+                <button
+                  className="store-cart-checkout"
+                  type="button"
+                  onClick={beginCheckout}
+                  disabled={authLoading || submitting || !authenticated || !hasValidAddress || !canCheckout || !checkoutLink}
+                >
+                  <WhatsAppIcon />
+                  <span>
+                    {submitting
+                      ? "Saving order…"
+                      : !authenticated
+                        ? "Sign in to order"
+                        : !canCheckout
+                          ? "Checkout unavailable"
+                          : !checkoutLink
+                            ? "WhatsApp unavailable"
+                            : !hasValidAddress
+                              ? "Add address to order"
+                              : resolvedAddressMode === "new" && saveAddressForLater
+                                ? "Save address & order"
+                                : "Order via WhatsApp"}
+                  </span>
                 </button>
-              ) : <p className="store-cart-phone-error" role="alert">WhatsApp checkout is unavailable because a contact number has not been configured.</p>}
-              <p className="store-cart-secure-note">Your order request opens directly in WhatsApp. No online payment is taken here.</p>
+              </div>
             </div>
           </>
         )}

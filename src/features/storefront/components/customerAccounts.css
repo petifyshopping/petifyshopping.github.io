@@ -40,6 +40,18 @@
   text-align: left;
 }
 
+.customer-account-dialog.is-profile .customer-account-header {
+  justify-content: flex-end;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #172033;
+  text-align: left;
+  animation: none;
+}
+
 .customer-account-header,
 .customer-account-orders-heading,
 .customer-order-card-heading {
@@ -156,6 +168,13 @@
   line-height: 1.12;
 }
 
+.customer-account-dialog:not(.is-auth) .customer-account-header h2 {
+  color: #152038;
+  font-size: 1.15rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
 .customer-account-header-description {
   margin: 0.5rem 0 0;
   color: #68758d;
@@ -256,14 +275,31 @@
 }
 
 .customer-account-form .customer-signup-address-toggle > input {
+  appearance: auto;
   width: 18px;
+  height: 18px;
   min-height: 18px;
   flex: 0 0 18px;
+  align-self: center;
   margin: 0;
   padding: 0;
+  border: 0;
   border-radius: 5px;
+  background: #fff;
   accent-color: #1d4ed8;
   box-shadow: none;
+  cursor: pointer;
+}
+
+.customer-account-form .customer-signup-address-toggle > input:focus {
+  outline: none;
+  background: #fff;
+  box-shadow: none;
+}
+
+.customer-account-form .customer-signup-address-toggle > input:focus-visible {
+  outline: 3px solid #7495ed;
+  outline-offset: 3px;
 }
 
 .customer-signup-address-toggle-copy {
@@ -287,13 +323,27 @@
 }
 
 .customer-signup-address-chevron {
-  color: #637493;
-  font-size: 1.2rem;
-  transition: transform 160ms ease;
+  flex: 0 0 auto;
 }
 
 .customer-signup-address.is-open .customer-signup-address-chevron {
   transform: rotate(180deg);
+}
+
+.customer-disclosure-chevron {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: #53627a;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.8;
+  transition: transform 180ms ease;
+}
+
+.customer-signup-address-chevron {
+  margin-left: auto;
 }
 
 .customer-signup-address-fields {
@@ -325,7 +375,8 @@
 }
 
 .customer-account-form input,
-.customer-account-form textarea {
+.customer-account-form textarea,
+.customer-phone-input select {
   width: 100%;
   min-height: 48px;
   box-sizing: border-box;
@@ -346,7 +397,8 @@
 }
 
 .customer-account-form input:focus,
-.customer-account-form textarea:focus {
+.customer-account-form textarea:focus,
+.customer-phone-input select:focus {
   border-color: #4774d6;
   outline: none;
   background: #fff;
@@ -356,6 +408,63 @@
 .customer-account-form input[readonly] {
   background: #f5f7fa;
   color: #67748b;
+}
+
+.customer-phone-input {
+  display: flex;
+  min-width: 0;
+  gap: 0.45rem;
+}
+
+.customer-account-form label > .customer-phone-input {
+  color: #2a3854;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.customer-phone-country {
+  position: relative;
+  width: 5rem;
+  min-width: 5rem;
+  flex: 0 0 5rem;
+}
+
+.customer-phone-input .customer-phone-country select {
+  max-width: none;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  flex: 1 1 auto;
+  padding: 0.65rem 0.55rem;
+  border: 1px solid #dbe3f0;
+  border-radius: 13px;
+  background: rgb(255 255 255 / 88%);
+  color: transparent;
+  font: inherit;
+  font-size: 0.82rem;
+  text-shadow: none;
+  cursor: pointer;
+}
+
+.customer-phone-country-code {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 0.65rem;
+  color: #172033;
+  font-size: 0.82rem;
+  font-weight: 600;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.customer-phone-country select option {
+  color: #172033;
+}
+
+.customer-phone-input input {
+  min-width: 0;
+  flex: 1 1 0;
 }
 
 .customer-password-control {
@@ -652,6 +761,14 @@
   padding-top: 1rem;
 }
 
+.customer-account-dialog.is-profile .customer-account-content {
+  padding-top: 0.25rem;
+}
+
+.customer-account-dialog.is-profile .customer-account-loading {
+  margin-top: 0.25rem;
+}
+
 .customer-account-content > .customer-account-profile-form {
   gap: 0.7rem;
 }
@@ -671,6 +788,25 @@
 .customer-account-orders {
   padding-top: 0.9rem;
   border-top: 1px solid #e8ebf1;
+}
+
+.customer-account-orders > summary {
+  align-items: center;
+  list-style: none;
+  cursor: pointer;
+}
+
+.customer-account-orders > summary:focus-visible {
+  outline: 3px solid #7495ed;
+  outline-offset: 3px;
+}
+
+.customer-account-orders > summary::-webkit-details-marker {
+  display: none;
+}
+
+.customer-account-orders[open] > summary .customer-disclosure-chevron {
+  transform: rotate(180deg);
 }
 
 .customer-account-orders h3 {
@@ -771,7 +907,7 @@
   justify-self: start;
 }
 
-.customer-account-orders-heading > span {
+.customer-account-orders-count {
   display: grid;
   min-width: 30px;
   height: 30px;
@@ -781,6 +917,10 @@
   color: #244fc4;
   font-size: 0.78rem;
   font-weight: 800;
+}
+
+.customer-account-orders-heading .customer-disclosure-chevron {
+  margin-left: 0.2rem;
 }
 
 .customer-order-list {

@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { formatProductPrice, parseProductPrice, productOptions } from "../../../lib/productPricing.js";
 import ProductGallery from "./ProductGallery.jsx";
 import ProductOrderLink from "./ProductOrderLink.jsx";
+import QuantityStepper from "./QuantityStepper.jsx";
 
-export default function ProductDetailsDialog({ product, whatsappNumber, onAddToCart, onDirectOrder, onClose, initialVariantId }) {
+export default function ProductDetailsDialog({ product, whatsappNumber, cartItems, onAddToCart, onUpdateQuantity, onDirectOrder, onClose, initialVariantId }) {
   const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
   const combo = product.type === "combo";
@@ -22,6 +23,8 @@ export default function ProductDetailsDialog({ product, whatsappNumber, onAddToC
   const oldPrice = isVariantProduct ? selectedVariant?.oldPrice : parseProductPrice(product.oldPrice);
   const discount = currentPrice > 0 && oldPrice > currentPrice ? Math.round((1 - currentPrice / oldPrice) * 100) : 0;
   const canAddToCart = Boolean(selectedVariant && selectedVariant.price > 0);
+  const cartKey = `${product.id}:${selectedVariant?.id ?? ""}`;
+  const cartItem = cartItems.find((item) => item.key === cartKey);
   const titleId = `product-details-title-${product.id}`;
 
   async function copyProductLink() {
@@ -164,19 +167,28 @@ export default function ProductDetailsDialog({ product, whatsappNumber, onAddToC
             </div>
           )}
           <div className="card-actions">
-            <button
-              className="btn btn-add-to-cart"
-              type="button"
-              disabled={!canAddToCart}
-              onClick={() => onAddToCart(product, selectedVariant)}
-              title={canAddToCart ? `Add ${product.title} to cart` : "Price unavailable; order directly via WhatsApp"}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M6 7h12l1 14H5L6 7Z" />
-                <path d="M9 8V6a3 3 0 0 1 6 0v2" />
-              </svg>
-              <span>Add to cart</span>
-            </button>
+            {cartItem ? (
+              <QuantityStepper
+                value={cartItem.quantity}
+                label={`${product.title} quantity`}
+                onDecrease={() => onUpdateQuantity(cartKey, -1)}
+                onIncrease={() => onUpdateQuantity(cartKey, 1)}
+              />
+            ) : (
+              <button
+                className="btn btn-add-to-cart"
+                type="button"
+                disabled={!canAddToCart}
+                onClick={() => onAddToCart(product, selectedVariant)}
+                title={canAddToCart ? `Add ${product.title} to cart` : "Price unavailable; order directly via WhatsApp"}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 7h12l1 14H5L6 7Z" />
+                  <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+                </svg>
+                <span>Add to cart</span>
+              </button>
+            )}
             <ProductOrderLink
               product={product}
               whatsappNumber={whatsappNumber}

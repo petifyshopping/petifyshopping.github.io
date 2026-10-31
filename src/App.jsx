@@ -13,6 +13,7 @@ import { getCustomerOrderContactDetails } from "./lib/customerOrderDetails.js";
 import { WorkspaceAccessProvider } from "./hooks/WorkspaceAccessProvider.jsx";
 import { supabase } from "./lib/supabase.js";
 import {
+  createCustomerAddress,
   createCustomerOrder,
   getCustomerAccount,
   saveCustomerCart,
@@ -31,6 +32,7 @@ const PasswordReset = lazy(() => import("./features/admin/auth/PasswordReset.jsx
 const CustomerAccount = lazy(() => import("./features/storefront/components/CustomerAccount.jsx"));
 const StoreCart = lazy(() => import("./features/storefront/components/StoreCart.jsx"));
 const ProductDetailsDialog = lazy(() => import("./features/storefront/components/ProductDetailsDialog.jsx"));
+const EmailVerifiedNotice = lazy(() => import("./features/storefront/components/EmailVerifiedNotice.jsx"));
 const CART_STORAGE_KEY = "petify-store-cart";
 const DEFAULT_DOCUMENT_TITLE = "Petify | Pure love, premium care";
 
@@ -44,6 +46,16 @@ function isPasswordResetLocation(search, hash) {
     || hash === "#reset-password"
     || hashParams.get("type") === "recovery"
     || hashParams.get("error_code") === "otp_expired";
+}
+
+function hasSuccessfulEmailConfirmationRedirect() {
+  const url = new URL(window.location.href);
+  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+  return url.searchParams.get("email-confirmed") === "1"
+    && !url.searchParams.has("error")
+    && !url.searchParams.has("error_code")
+    && !hashParams.has("error")
+    && !hashParams.has("error_code");
 }
 
 function readStoredCart() {
@@ -131,6 +143,7 @@ export default function App() {
   const [customerAccountErrorUserId, setCustomerAccountErrorUserId] = useState("");
   const [customerAccountMessage, setCustomerAccountMessage] = useState("");
   const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [showEmailVerifiedNotice, setShowEmailVerifiedNotice] = useState(hasSuccessfulEmailConfirmationRedirect);
   const isAdminRoute = routeHash === "#admin"
     || routeHash === "#admin-settings"
     || routeHash === "#admin-products"
@@ -140,7 +153,7 @@ export default function App() {
   const isSalesPortalRoute = routePath === "/petify-dashboard"
     || (routePath === "/" && (routeHash === "#sales-dashb" || routeHash.startsWith("#petify-dashboard")));
   const isPasswordResetRoute = isPasswordResetLocation(window.location.search, routeHash);
-  const [showScrollTop, setShowScrollTop] = useState(window.scrollY > 320);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const [storedCart] = useState(readStoredCart);
   const [cart, setCart] = useState(storedCart.items);
   const cartRef = useRef(storedCart.items);
@@ -161,6 +174,13 @@ export default function App() {
   const previousAuthUserId = useRef(null);
   const activeCustomerId = useRef(null);
   cartRef.current = cart;
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("email-confirmed") !== "1") return;
+    url.searchParams.delete("email-confirmed");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  }, []);
 
   useEffect(() => {
     if (!supabase) return undefined;
@@ -377,10 +397,12 @@ export default function App() {
       animationFrame = window.requestAnimationFrame(() => {
         const currentY = window.scrollY;
         const movement = currentY - previousY;
-        if (currentY <= 320 || movement < -5) {
+        if (currentY <= 320) {
           setShowScrollTop(false);
-        } else if (movement > 5) {
+        } else if (movement < -5) {
           setShowScrollTop(true);
+        } else if (movement > 5) {
+          setShowScrollTop(false);
         }
         previousY = currentY;
         animationFrame = 0;
@@ -516,6 +538,7 @@ export default function App() {
     setIsAccountOpen(false);
     setCustomerAccountMessage("");
   }, []);
+  const closeEmailVerifiedNotice = useCallback(() => setShowEmailVerifiedNotice(false), []);
   const handleProfileChange = useCallback((profile) => {
     setCustomerProfile(profile);
     setSelectedCustomerAddressId((current) => (
@@ -535,14 +558,25 @@ export default function App() {
     }
     await signOutCustomer();
   }, [customerCartUserId, customerProfile, customerSession]);
-  const handleCartOrder = useCallback(async ({ items, addressId, note }) => {
+  const handleCartOrder = useCallback(async ({ items, addressId, temporaryAddress, note }) => {
     if (!customerSession) {
       openAccount("Sign in or create an account before placing an order.");
       throw new Error("Sign in to continue to WhatsApp.");
     }
     if (!customerProfile) throw new Error("Your customer profile is still loading. Please try again.");
-    await createCustomerOrder({ items, addressId, note });
+    await createCustomerOrder({ items, addressId, temporaryAddress, note });
   }, [customerProfile, customerSession, openAccount]);
+  const handleCartSaveAddress = useCallback(async ({ label, address }) => {
+    if (!customerSession || !customerProfile) {
+      throw new Error("Sign in before saving a delivery address.");
+    }
+    const savedAddress = await createCustomerAddress(customerSession.user.id, { label, address });
+    setCustomerProfile((current) => current
+      ? { ...current, addresses: [...(current.addresses ?? []), savedAddress] }
+      : current);
+    setSelectedCustomerAddressId(savedAddress.id);
+    return savedAddress;
+  }, [customerProfile, customerSession]);
   const handleCartOrderHandoff = useCallback(async () => {
     const userId = customerSession?.user.id;
     setCart([]);
@@ -770,7 +804,16 @@ export default function App() {
         )}
       </main>
       {!loading && !error && settings && (settings.visibility.footer ?? true) && (
-        <StoreFooter footerTitle={settings.footerTitle} footerCopyright={settings.footerCopyright} footerDisclaimer={settings.footerDisclaimer} footerVersion={settings.footerVersion} contact={settings.contact} visibility={settings.visibility} />
+        <StoreFooter
+          brandTitle={settings.brandTitle}
+          logoUrl={settings.logoUrl}
+          footerTitle={settings.footerTitle}
+          footerCopyright={settings.footerCopyright}
+          footerDisclaimer={settings.footerDisclaimer}
+          footerVersion={settings.footerVersion}
+          contact={settings.contact}
+          visibility={settings.visibility}
+        />
       )}
       {!loading && !error && settings && isCartOpen && (
         <Suspense fallback={<div className="store-cart-overlay" role="status"><p className="store-cart-drawer">Loading your cart…</p></div>}>
@@ -793,6 +836,7 @@ export default function App() {
             onOpenAccount={openAccount}
             onCheckout={handleCartOrder}
             onOrderHandoff={handleCartOrderHandoff}
+            onSaveAddress={handleCartSaveAddress}
             customerOrderContactFields={settings.customerOrderContactFields}
           />
         </Suspense>
@@ -802,7 +846,9 @@ export default function App() {
           <ProductDetailsDialog
             product={detailProduct}
             whatsappNumber={settings.contact.whatsappNumber}
+            cartItems={cart}
             onAddToCart={addToCart}
+            onUpdateQuantity={updateCartQuantity}
             onDirectOrder={handleDirectOrder}
             onClose={closeProductDetails}
             initialVariantId={detailVariantId}
@@ -810,6 +856,11 @@ export default function App() {
         </Suspense>
       )}
       {showScrollTop && <ScrollToTop onClick={scrollToTop} />}
+      {showEmailVerifiedNotice && (
+        <Suspense fallback={null}>
+          <EmailVerifiedNotice onClose={closeEmailVerifiedNotice} />
+        </Suspense>
+      )}
       {isAccountOpen && (
         <Suspense fallback={<div className="admin-gate"><p className="admin-muted">Loading customer account...</p></div>}>
           <CustomerAccount

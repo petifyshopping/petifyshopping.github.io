@@ -95,7 +95,7 @@ export async function deleteCustomerAddress(userId, addressId) {
   if (error) throw error;
 }
 
-export async function createCustomerOrder({ items, addressId, note }) {
+export async function createCustomerOrder({ items, addressId, temporaryAddress, note }) {
   const client = requireSupabase();
   const orderItems = items.map((item) => ({
     product_id: String(item.productId),
@@ -106,10 +106,11 @@ export async function createCustomerOrder({ items, addressId, note }) {
     expected_title: item.title ?? "",
     expected_variant_label: item.variantLabel ?? "",
   }));
-  const { data, error } = await client.rpc("create_customer_order_for_address", {
+  const { data, error } = await client.rpc("create_customer_order_for_delivery", {
     p_items: orderItems,
     p_address_id: addressId,
     p_order_note: note,
+    p_temporary_address: temporaryAddress ?? null,
   });
   if (error) throw error;
   return data;

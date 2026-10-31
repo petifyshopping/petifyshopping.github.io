@@ -290,6 +290,16 @@ html {
   box-shadow: none;
 }
 
+.btn-direct-order .whatsapp-icon {
+  flex: 0 0 auto;
+  fill: none;
+  stroke: none;
+}
+
+.btn-direct-order .whatsapp-icon path {
+  stroke: none;
+}
+
 .pill:active {
   transform: translateY(0) scale(0.98);
 }
@@ -483,7 +493,6 @@ html {
 }
 
 .product-tile-image-button:focus-visible,
-.product-tile-details:focus-visible,
 .product-tile-variant select:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 2px;
@@ -514,20 +523,40 @@ html {
 
 .product-tile-title-group {
   display: grid;
+  flex: 1;
   min-width: 0;
   gap: 0.25rem;
 }
 
 .product-tile-title-group h3 {
-  display: -webkit-box;
-  overflow: hidden;
   margin: 0;
+  min-height: 2.4em;
   color: var(--text-dark);
   font-size: 0.95rem;
   line-height: 1.2;
+}
+
+.product-tile-title {
+  display: -webkit-box;
+  width: 100%;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
   overflow-wrap: anywhere;
+  font-weight: inherit;
+  text-align: left;
+  cursor: pointer;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.product-tile-title:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 .product-tile-labels {
@@ -550,18 +579,6 @@ html {
 
 .product-tile-savings {
   color: #087653;
-}
-
-.product-tile-details {
-  flex: 0 0 auto;
-  padding: 0.2rem 0;
-  border: 0;
-  background: transparent;
-  color: var(--primary);
-  font: inherit;
-  font-size: 0.72rem;
-  font-weight: 750;
-  cursor: pointer;
 }
 
 .product-tile-variant {
@@ -642,6 +659,17 @@ html {
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.8;
+}
+
+.product-tile-actions .product-tile-whatsapp svg {
+  color: #25d366;
+  fill: currentColor;
+  stroke: none;
+}
+
+.product-details-dialog .btn-direct-order .whatsapp-icon {
+  width: 1.3rem;
+  height: 1.3rem;
 }
 
 .product-tile-actions .btn-direct-order {
@@ -1264,20 +1292,20 @@ html {
 
 .store-cart-item {
   display: grid;
-  grid-template-columns: 76px minmax(0, 1fr) auto;
+  grid-template-columns: 60px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.85rem;
-  padding: 0.8rem;
+  gap: 0.65rem;
+  padding: 0.65rem;
   border: 1px solid color-mix(in srgb, var(--primary-dark) 10%, white);
-  border-radius: 18px;
+  border-radius: 14px;
   background: color-mix(in srgb, var(--bg-light) 64%, white);
 }
 
 .store-cart-item-image {
   display: block;
-  width: 76px;
-  height: 82px;
-  border-radius: 13px;
+  width: 60px;
+  height: 64px;
+  border-radius: 10px;
   background: color-mix(in srgb, var(--primary) 8%, white);
   object-fit: cover;
 }
@@ -1424,8 +1452,24 @@ html {
 }
 
 .store-cart-footer {
-  padding: 1.2rem clamp(1.1rem, 5vw, 1.75rem) max(1.2rem, env(safe-area-inset-bottom));
+  flex: 0 0 auto;
+  padding: 0;
   border-top: 1px solid color-mix(in srgb, var(--primary-dark) 10%, white);
+  background: color-mix(in srgb, var(--bg-light) 60%, white);
+}
+
+.store-cart-footer-details {
+  max-height: min(36dvh, 340px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.6rem clamp(1rem, 4vw, 1.5rem) 0.2rem;
+}
+
+.store-cart-checkout-summary {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.7rem clamp(1rem, 4vw, 1.5rem) max(0.7rem, env(safe-area-inset-bottom));
+  border-top: 1px solid color-mix(in srgb, var(--primary-dark) 9%, white);
   background: color-mix(in srgb, var(--bg-light) 60%, white);
 }
 
@@ -1441,7 +1485,7 @@ html {
 
 .store-cart-subtotal strong {
   color: var(--primary-dark);
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   font-weight: 900;
 }
 
@@ -1453,12 +1497,12 @@ html {
 }
 
 .store-cart-note {
-  margin: 0.2rem 0 1rem;
+  margin: 0.15rem 0 0.55rem;
 }
 
 .store-cart-checkout {
   display: flex;
-  min-height: 52px;
+  min-height: 48px;
   align-items: center;
   justify-content: center;
   gap: 0.65rem;
@@ -1488,12 +1532,120 @@ html {
 }
 
 .store-cart-checkout svg {
-  width: 1.3rem;
-  height: 1.3rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  flex: 0 0 auto;
+}
+
+.store-cart-checkout .whatsapp-icon,
+.store-cart-address-action .whatsapp-icon {
+  box-sizing: content-box;
+  width: 1.15rem;
+  height: 1.15rem;
+  padding: 0.12rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: white;
+  fill: none;
+  stroke: none;
+}
+
+.store-cart-checkout .whatsapp-icon path,
+.store-cart-address-action .whatsapp-icon path {
+  stroke: none;
+}
+
+.store-cart-address-details summary {
+  width: fit-content;
+  color: var(--primary);
+  font-size: 0.76rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.store-cart-address-details .store-cart-delivery-address {
+  margin-top: 0.4rem;
+}
+
+.store-cart-address-editor {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.store-cart-address-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.store-cart-address-editor label {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.store-cart-address-editor input,
+.store-cart-address-editor textarea {
+  width: 100%;
+  min-height: 36px;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--text-muted) 24%, white);
+  border-radius: 8px;
+  background: white;
+  color: var(--text-dark);
+  font: inherit;
+  font-size: 0.78rem;
+}
+
+.store-cart-address-editor textarea {
+  min-height: 55px;
+  resize: vertical;
+}
+
+.store-cart-address-editor :focus-visible,
+.store-cart-address-select select:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.store-cart-save-address {
+  display: flex !important;
+  align-items: center;
+  gap: 0.5rem !important;
+  color: var(--text-dark) !important;
+  font-weight: 600 !important;
+}
+
+.store-cart-save-address input {
+  width: 1rem;
+  min-height: 1rem;
+  height: 1rem;
+  accent-color: var(--primary);
+}
+
+.store-cart-address-action {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.7rem;
+  border: 0;
+  border-radius: 8px;
+  background: var(--primary);
+  color: white;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 750;
+  cursor: pointer;
 }
 
 .store-cart-secure-note {
-  margin-top: 0.7rem;
+  margin-top: 0.4rem;
   text-align: center;
 }
 

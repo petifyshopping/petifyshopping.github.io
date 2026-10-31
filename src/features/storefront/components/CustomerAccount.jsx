@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { getCountries, getCountryCallingCode, parsePhoneNumberFromString } from "libphonenumber-js";
 import {
   createCustomerAddress,
   deleteCustomerAddress,
@@ -15,6 +16,15 @@ import { formatDateTime } from "../../../lib/formatters.js";
 import { formatProductPrice } from "../../../lib/productPricing.js";
 import { getCustomerAddressEntries, parseCustomerAddress, serializeCustomerAddress } from "../../../lib/customerAddress.js";
 import "./customerAccounts.css";
+
+const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
+const signupCountries = getCountries()
+  .map((country) => ({
+    code: country,
+    name: countryNames.of(country) ?? country,
+    callingCode: getCountryCallingCode(country),
+  }))
+  .sort((first, second) => first.name.localeCompare(second.name));
 
 function getProfileDraft(profile) {
   return {
@@ -45,6 +55,8 @@ export default function CustomerAccount({
   const closeButtonRef = useRef(null);
   const [mode, setMode] = useState("signin");
   const [showPassword, setShowPassword] = useState(false);
+  const [signupCountry, setSignupCountry] = useState("IN");
+  const selectedSignupCountry = signupCountries.find((country) => country.code === signupCountry);
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -141,8 +153,13 @@ export default function CustomerAccount({
     onClearMessage();
     try {
       if (mode === "signup") {
+        const parsedPhone = parsePhoneNumberFromString(form.phone, signupCountry);
+        if (!parsedPhone?.isValid()) {
+          throw new Error("Enter a valid phone number for the selected country.");
+        }
         const result = await signUpCustomer({
           ...form,
+          phone: parsedPhone.number,
           address: signupAddressOpen ? serializeCustomerAddress(signupAddress) : "",
         });
         if (!result.session) {
@@ -289,7 +306,7 @@ export default function CustomerAccount({
     <div className="customer-account-overlay">
       <button className="customer-account-backdrop" type="button" onClick={onClose} aria-label="Close account" />
       <section
-        className={`customer-account-dialog${!session ? " is-auth" : ""}`}
+        className={`customer-account-dialog${!session ? " is-auth" : " is-profile"}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="customer-account-title"
@@ -299,7 +316,7 @@ export default function CustomerAccount({
         <header className="customer-account-header">
           <div className="customer-account-header-copy">
             {/* <p className="customer-account-eyebrow">Petify</p> */}
-            <h2 id="customer-account-title">{session ? "Your account" : confirmationEmail ? "Confirm your email" : mode === "signup" ? "Create your account" : "Welcome back"}</h2>
+            <h2 id="customer-account-title" className={session ? "visually-hidden" : undefined}>{session ? "Profile" : confirmationEmail ? "Confirm your email" : mode === "signup" ? "Create your account" : "Welcome back"}</h2>
             {!session && !confirmationEmail && (
               <p className="customer-account-header-description">
                 {mode === "signup"
@@ -576,11 +593,14 @@ export default function CustomerAccount({
                 )}
               </section>
 
-              <section className="customer-account-orders" aria-labelledby="customer-orders-title">
-                <div className="customer-account-orders-heading">
-                  <div><p className="customer-account-section-label">PURCHASES</p><h3 id="customer-orders-title">Your orders</h3></div>
-                  <span>{orders.length}</span>
-                </div>
+              <details className="customer-account-orders">
+                <summary className="customer-account-orders-heading">
+                  <div><p className="customer-account-section-label">PURCHASES</p><h3 id="customer-orders-title">Orders</h3></div>
+                  <span className="customer-account-orders-count">{orders.length}</span>
+                  <svg className="customer-disclosure-chevron" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </summary>
                 {loadingOrders ? <p className="customer-account-muted">Loading your orders…</p> : orders.length === 0 ? (
                   <p className="customer-account-muted">Your WhatsApp order requests will appear here after you continue to WhatsApp.</p>
                 ) : (
@@ -603,7 +623,7 @@ export default function CustomerAccount({
                     ))}
                   </div>
                 )}
-              </section>
+              </details>
             </div>
           )
         ) : (
@@ -638,7 +658,35 @@ export default function CustomerAccount({
             {mode === "signup" && (
               <label>
                 Phone number
-                <input value={form.phone} onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))} type="tel" autoComplete="tel" required maxLength={40} />
+                <span className="customer-phone-input">
+                  <span className="customer-phone-country">
+                    <span className="customer-phone-country-code" aria-hidden="true">
+                      +{selectedSignupCountry?.callingCode}
+                    </span>
+                    <select
+                      value={signupCountry}
+                      onChange={(event) => setSignupCountry(event.target.value)}
+                      aria-label="Country and calling code"
+                      autoComplete="country"
+                    >
+                      {signupCountries.map((country) => (
+                        <option key={country.code} value={country.code}>
+                          {country.name} (+{country.callingCode})
+                        </option>
+                      ))}
+                    </select>
+                  </span>
+                  <input
+                    value={form.phone}
+                    onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+                    type="tel"
+                    autoComplete="tel-national"
+                    inputMode="tel"
+                    required
+                    maxLength={40}
+                    placeholder="Phone number"
+                  />
+                </span>
               </label>
             )}
             <label>
@@ -684,7 +732,9 @@ export default function CustomerAccount({
                     <strong>Add address now</strong>
                     <span>Or you can add it later before ordering items.</span>
                   </span>
-                  <span className="customer-signup-address-chevron" aria-hidden="true">⌄</span>
+                  <svg className="customer-disclosure-chevron customer-signup-address-chevron" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
                 </label>
                 {signupAddressOpen && (
                   <div className="customer-signup-address-fields">

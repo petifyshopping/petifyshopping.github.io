@@ -48,7 +48,17 @@ export default function ProductCard({ product, whatsappNumber, cartItems, onAddT
         <div className="product-tile-content">
           <div className="product-tile-heading">
             <div className="product-tile-title-group">
-              <h3>{product.title}</h3>
+              <h3>
+                <button
+                  className="product-tile-title"
+                  type="button"
+                  onClick={() => onOpenDetails(product, selectedVariant?.id)}
+                  aria-haspopup="dialog"
+                  aria-label={`View details for ${product.title}`}
+                >
+                  {product.title}
+                </button>
+              </h3>
               {(product.badge || combo) && (
                 <div className="product-tile-labels">
                   {product.badge && <span className="product-summary-badge">{product.badge}</span>}
@@ -60,15 +70,6 @@ export default function ProductCard({ product, whatsappNumber, cartItems, onAddT
                 </div>
               )}
             </div>
-            <button
-              className="product-tile-details"
-              type="button"
-              onClick={() => onOpenDetails(product, selectedVariant?.id)}
-              aria-label={`More details about ${product.title}`}
-              aria-haspopup="dialog"
-            >
-              Details <span aria-hidden="true">›</span>
-            </button>
           </div>
           {isVariantProduct && variants.length > 1 && (
             <label className="product-tile-variant">

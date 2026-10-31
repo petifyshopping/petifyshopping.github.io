@@ -1,3 +1,12 @@
+export const INSTAGRAM_PROFILE_URL = "https://www.instagram.com/petify.shopping/";
+
+export const DEFAULT_FOOTER_SOCIAL_URLS = {
+  instagram: INSTAGRAM_PROFILE_URL,
+  facebook: "",
+  whatsapp: "",
+  youtube: "",
+};
+
 export const DEFAULT_ABOUT_CONTENT = {
   title: "Thoughtful care for extraordinary companions",
   introduction: "Petify brings together thoughtfully selected pet essentials, specialized nutrition, and habitat products to support the everyday wellbeing of the animals we love.",

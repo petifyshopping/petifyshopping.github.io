@@ -71,6 +71,7 @@ export default function StoreCart({
   const [submitting, setSubmitting] = useState(false);
   const [addressMode, setAddressMode] = useState("auto");
   const [addressEditorOpen, setAddressEditorOpen] = useState(() => !selectedAddressId);
+  const [showAddressRequirements, setShowAddressRequirements] = useState(false);
   const [showAddressChooser, setShowAddressChooser] = useState(false);
   const [addressDraft, setAddressDraft] = useState(emptyAddressDraft);
   const [saveAddressForLater, setSaveAddressForLater] = useState(true);
@@ -198,6 +199,7 @@ export default function StoreCart({
 
   async function saveAddressDraft() {
     setCheckoutError("");
+    setShowAddressRequirements(true);
     if (!isNewAddressComplete) {
       setCheckoutError(`Complete these required fields before saving: ${missingAddressFields.join(", ")}.`);
       return;
@@ -215,6 +217,7 @@ export default function StoreCart({
       });
       setAddressMode("saved");
       setAddressEditorOpen(false);
+      setShowAddressRequirements(false);
       onAddressSelect(savedAddress.id);
       setShowAddressChooser(false);
     } catch (saveError) {
@@ -319,15 +322,7 @@ export default function StoreCart({
                 </div>
                 <section className="store-cart-delivery-card" aria-label="Delivery address">
                   {!authenticated ? (
-                    <button
-                      className="store-cart-address-action"
-                      type="button"
-                      onClick={() => onOpenAccount("Sign in or create an account before placing an order.")}
-                      disabled={authLoading || submitting}
-                    >
-                      <WhatsAppIcon />
-                      Sign in to order
-                    </button>
+                    <p className="store-cart-address-hint">Sign in to add a delivery address.</p>
                   ) : resolvedAddressMode === "saved" && deliveryAddress ? (
                     <>
                       <button
@@ -350,6 +345,7 @@ export default function StoreCart({
                               if (event.target.value === "new") {
                                 setAddressMode("new");
                                 setAddressEditorOpen(true);
+                                setShowAddressRequirements(false);
                                 setSaveAddressForLater(canSaveAddress);
                                 setAddressDraft(emptyAddressDraft());
                               } else {
@@ -372,15 +368,17 @@ export default function StoreCart({
                     </>
                   ) : authenticated && resolvedAddressMode === "new" && addressEditorOpen ? (
                   <div className="store-cart-address-editor">
-                    <label>
-                      Address name
-                      <input
-                        value={addressDraft.label}
-                        onChange={(event) => setAddressDraft((current) => ({ ...current, label: event.target.value }))}
-                        maxLength={40}
-                        placeholder={newAddressLabel}
-                      />
-                    </label>
+                    {canSaveAddress && saveAddressForLater && (
+                      <label>
+                        Address name
+                        <input
+                          value={addressDraft.label}
+                          onChange={(event) => setAddressDraft((current) => ({ ...current, label: event.target.value }))}
+                          maxLength={40}
+                          placeholder={newAddressLabel}
+                        />
+                      </label>
+                    )}
                     <label>
                       Address
                       <textarea
@@ -436,7 +434,7 @@ export default function StoreCart({
                         />
                       </label>
                     </div>
-                    {!isNewAddressComplete && (
+                    {showAddressRequirements && !isNewAddressComplete && (
                       <p className="store-cart-address-hint" role="status">
                         Still needed: {missingAddressFields.join(", ")}.
                       </p>
@@ -468,6 +466,7 @@ export default function StoreCart({
                           setAddressDraft(emptyAddressDraft());
                           setAddressMode(deliveryAddress ? "saved" : "empty");
                           setAddressEditorOpen(false);
+                          setShowAddressRequirements(false);
                           setShowAddressChooser(false);
                           setCheckoutError("");
                         }}
@@ -485,6 +484,7 @@ export default function StoreCart({
                         setAddressDraft(emptyAddressDraft());
                         setAddressMode("new");
                         setAddressEditorOpen(true);
+                        setShowAddressRequirements(false);
                         setSaveAddressForLater(canSaveAddress);
                         setCheckoutError("");
                       }}
@@ -514,7 +514,7 @@ export default function StoreCart({
                   className="store-cart-checkout"
                   type="button"
                   onClick={beginCheckout}
-                  disabled={authLoading || submitting || !authenticated || !canCheckout || !checkoutLink}
+                  disabled={authLoading || submitting || (authenticated && (!canCheckout || !checkoutLink))}
                 >
                   <WhatsAppIcon />
                   <span>

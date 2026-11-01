@@ -1655,6 +1655,13 @@ html {
   resize: vertical;
 }
 
+.store-cart-address-hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
 .store-cart-address-editor :focus-visible,
 .store-cart-address-select select:focus-visible {
   outline: 3px solid var(--accent);
@@ -1692,6 +1699,32 @@ html {
   font-size: 0.76rem;
   font-weight: 750;
   cursor: pointer;
+}
+
+.store-cart-address-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.store-cart-address-cancel {
+  min-height: 36px;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 28%, white);
+  border-radius: 8px;
+  background: white;
+  color: var(--primary);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.store-cart-address-action:disabled,
+.store-cart-address-cancel:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 .store-cart-secure-note {

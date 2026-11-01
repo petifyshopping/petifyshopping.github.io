@@ -573,7 +573,20 @@ export default function App() {
     if (!customerSession || !customerProfile) {
       throw new Error("Sign in before saving a delivery address.");
     }
-    const savedAddress = await createCustomerAddress(customerSession.user.id, { label, address });
+    const normalizedLabel = label.trim();
+    const normalizedAddress = address.trim();
+    const existingAddress = customerProfile.addresses?.find((savedAddress) => (
+      savedAddress.label === normalizedLabel && savedAddress.address === normalizedAddress
+    ));
+    if (existingAddress) {
+      setSelectedCustomerAddressId(existingAddress.id);
+      return existingAddress;
+    }
+
+    const savedAddress = await createCustomerAddress(customerSession.user.id, {
+      label: normalizedLabel,
+      address: normalizedAddress,
+    });
     setCustomerProfile((current) => current
       ? { ...current, addresses: [...(current.addresses ?? []), savedAddress] }
       : current);

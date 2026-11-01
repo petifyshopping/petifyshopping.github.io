@@ -5,6 +5,17 @@ import { serializeCustomerAddress } from "../../../lib/customerAddress.js";
 import QuantityStepper from "./QuantityStepper.jsx";
 import WhatsAppIcon from "./WhatsAppIcon.jsx";
 
+function emptyAddressDraft() {
+  return {
+    label: "",
+    address: "",
+    pincode: "",
+    place: "",
+    district: "",
+    state: "",
+  };
+}
+
 function cartOrderLink(items, whatsappNumber, total, customer, profile, enabledContactFields) {
   const lines = items.map((item) => {
     const option = item.variantLabel ? ` (${item.variantLabel})` : "";
@@ -59,15 +70,9 @@ export default function StoreCart({
   const [checkoutError, setCheckoutError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [addressMode, setAddressMode] = useState("auto");
+  const [addressEditorOpen, setAddressEditorOpen] = useState(() => !selectedAddressId);
   const [showAddressChooser, setShowAddressChooser] = useState(false);
-  const [addressDraft, setAddressDraft] = useState({
-    label: "Home",
-    address: "",
-    pincode: "",
-    place: "",
-    district: "",
-    state: "",
-  });
+  const [addressDraft, setAddressDraft] = useState(emptyAddressDraft);
   const [saveAddressForLater, setSaveAddressForLater] = useState(true);
   const totalQuantity = items.reduce((total, item) => total + item.quantity, 0);
   const totalPrice = items.reduce((total, item) => total + item.price * item.quantity, 0);
@@ -75,21 +80,24 @@ export default function StoreCart({
   const resolvedAddressMode = addressMode === "auto"
     ? deliveryAddress ? "saved" : "new"
     : addressMode;
-  const isNewAddressComplete = Boolean(
-    addressDraft.address.trim().length >= 5
-    && addressDraft.pincode.trim()
-    && addressDraft.place.trim()
-    && addressDraft.district.trim()
-    && addressDraft.state.trim()
-    && (!saveAddressForLater || addressDraft.label.trim()),
-  );
+  const missingAddressFields = [
+    ...(addressDraft.address.trim().length < 5 ? ["street address (at least 5 characters)"] : []),
+    ...(!addressDraft.pincode.trim() ? ["pincode"] : []),
+    ...(!addressDraft.place.trim() ? ["place"] : []),
+    ...(!addressDraft.district.trim() ? ["district"] : []),
+    ...(!addressDraft.state.trim() ? ["state"] : []),
+  ];
+  const isNewAddressComplete = missingAddressFields.length === 0;
   const addressText = resolvedAddressMode === "saved"
     ? deliveryAddress?.address ?? ""
-    : serializeCustomerAddress(addressDraft);
+    : resolvedAddressMode === "new"
+      ? serializeCustomerAddress(addressDraft)
+      : "";
   const hasValidAddress = resolvedAddressMode === "saved"
     ? Boolean(deliveryAddress && addressText.trim().length >= 5)
-    : isNewAddressComplete && addressText.trim().length >= 5;
+    : resolvedAddressMode === "new" && isNewAddressComplete && addressText.trim().length >= 5;
   const canSaveAddress = (profile?.addresses?.length ?? 0) < 3;
+  const newAddressLabel = addressDraft.label.trim() || `Address ${(profile?.addresses?.length ?? 0) + 1}`;
   const customerDetails = { ...customer, address: addressText };
   const checkoutLink = cartOrderLink(items, whatsappNumber, totalPrice, customerDetails, profile, customerOrderContactFields);
 
@@ -139,7 +147,9 @@ export default function StoreCart({
       return;
     }
     if (!hasValidAddress) {
-      setCheckoutError("Enter a delivery address to continue.");
+      setCheckoutError(resolvedAddressMode === "new"
+        ? `Complete these required fields to order: ${missingAddressFields.join(", ")}.`
+        : "Choose or add a delivery address to continue.");
       return;
     }
     const whatsappWindow = window.open("about:blank", "_blank");
@@ -155,7 +165,7 @@ export default function StoreCart({
       if (resolvedAddressMode === "new" && saveAddressForLater) {
         if (!canSaveAddress) throw new Error("You can save up to three delivery addresses. Choose a one-time address or manage saved addresses in your account.");
         const savedAddress = await onSaveAddress({
-          label: addressDraft.label.trim(),
+          label: newAddressLabel,
           address: addressText,
         });
         addressId = savedAddress.id;
@@ -181,6 +191,35 @@ export default function StoreCart({
       whatsappWindow.close();
       console.error("Could not save the cart order.", orderError);
       setCheckoutError(orderError.message || "Your order could not be saved. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function saveAddressDraft() {
+    setCheckoutError("");
+    if (!isNewAddressComplete) {
+      setCheckoutError(`Complete these required fields before saving: ${missingAddressFields.join(", ")}.`);
+      return;
+    }
+    if (!canSaveAddress) {
+      setCheckoutError("You can save up to three delivery addresses. Use this address for one order or manage saved addresses in your profile.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const savedAddress = await onSaveAddress({
+        label: newAddressLabel,
+        address: addressText,
+      });
+      setAddressMode("saved");
+      setAddressEditorOpen(false);
+      onAddressSelect(savedAddress.id);
+      setShowAddressChooser(false);
+    } catch (saveError) {
+      console.error("Could not save the cart delivery address.", saveError);
+      setCheckoutError(saveError.message || "The address could not be saved. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -273,7 +312,7 @@ export default function StoreCart({
                     <input
                       value={customer.note}
                       onChange={(event) => setCustomer((current) => ({ ...current, note: event.target.value }))}
-                      placeholder="Add a delivery note (Optional)"
+                      placeholder="Note (Optional)"
                       maxLength={500}
                     />
                   </label>
@@ -310,10 +349,12 @@ export default function StoreCart({
                             onChange={(event) => {
                               if (event.target.value === "new") {
                                 setAddressMode("new");
+                                setAddressEditorOpen(true);
                                 setSaveAddressForLater(canSaveAddress);
-                                setAddressDraft((current) => ({ ...current, label: "Home" }));
+                                setAddressDraft(emptyAddressDraft());
                               } else {
                                 setAddressMode("saved");
+                                setAddressEditorOpen(false);
                                 onAddressSelect(event.target.value);
                                 setShowAddressChooser(false);
                               }
@@ -329,8 +370,17 @@ export default function StoreCart({
                         </label>
                       )}
                     </>
-                  ) : authenticated && (
+                  ) : authenticated && resolvedAddressMode === "new" && addressEditorOpen ? (
                   <div className="store-cart-address-editor">
+                    <label>
+                      Address name
+                      <input
+                        value={addressDraft.label}
+                        onChange={(event) => setAddressDraft((current) => ({ ...current, label: event.target.value }))}
+                        maxLength={40}
+                        placeholder={newAddressLabel}
+                      />
+                    </label>
                     <label>
                       Address
                       <textarea
@@ -386,6 +436,11 @@ export default function StoreCart({
                         />
                       </label>
                     </div>
+                    {!isNewAddressComplete && (
+                      <p className="store-cart-address-hint" role="status">
+                        Still needed: {missingAddressFields.join(", ")}.
+                      </p>
+                    )}
                     <label className="store-cart-save-address">
                       <input
                         type="checkbox"
@@ -395,8 +450,49 @@ export default function StoreCart({
                       />
                       <span>{canSaveAddress ? "Save this address for future orders" : "Address limit reached; this address will be used once"}</span>
                     </label>
+                    <div className="store-cart-address-editor-actions">
+                      {canSaveAddress && saveAddressForLater && (
+                        <button
+                          className="store-cart-address-action"
+                          type="button"
+                          onClick={saveAddressDraft}
+                          disabled={authLoading || submitting}
+                        >
+                          {submitting ? "Saving address…" : "Save address"}
+                        </button>
+                      )}
+                      <button
+                        className="store-cart-address-cancel"
+                        type="button"
+                        onClick={() => {
+                          setAddressDraft(emptyAddressDraft());
+                          setAddressMode(deliveryAddress ? "saved" : "empty");
+                          setAddressEditorOpen(false);
+                          setShowAddressChooser(false);
+                          setCheckoutError("");
+                        }}
+                        disabled={submitting}
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
-                  )}
+                  ) : authenticated && (resolvedAddressMode === "new" || resolvedAddressMode === "empty") ? (
+                    <button
+                      className="store-cart-address-action"
+                      type="button"
+                      onClick={() => {
+                        setAddressDraft(emptyAddressDraft());
+                        setAddressMode("new");
+                        setAddressEditorOpen(true);
+                        setSaveAddressForLater(canSaveAddress);
+                        setCheckoutError("");
+                      }}
+                      disabled={authLoading || submitting}
+                    >
+                      Add delivery address
+                    </button>
+                  ) : null}
                 </section>
               {checkoutError && <p className="store-cart-phone-error" role="alert">{checkoutError}</p>}
               {!canCheckout ? (
@@ -418,7 +514,7 @@ export default function StoreCart({
                   className="store-cart-checkout"
                   type="button"
                   onClick={beginCheckout}
-                  disabled={authLoading || submitting || !authenticated || !hasValidAddress || !canCheckout || !checkoutLink}
+                  disabled={authLoading || submitting || !authenticated || !canCheckout || !checkoutLink}
                 >
                   <WhatsAppIcon />
                   <span>
@@ -431,7 +527,7 @@ export default function StoreCart({
                           : !checkoutLink
                             ? "WhatsApp unavailable"
                             : !hasValidAddress
-                              ? "Add address to order"
+                              ? "Complete delivery address"
                               : resolvedAddressMode === "new" && saveAddressForLater
                                 ? "Save address & order"
                                 : "Order via WhatsApp"}

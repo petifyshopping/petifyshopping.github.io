@@ -211,6 +211,53 @@ export async function getInvoices() {
   return data.map(mapInvoice);
 }
 
+export async function getInvoiceDashboardStats() {
+  const client = requireAdminClient();
+  const pageSize = 1000;
+  const stats = {
+    totalInvoices: 0,
+    draftInvoices: 0,
+    sentInvoices: 0,
+    paidInvoices: 0,
+    invoiceTotal: 0,
+    paidTotal: 0,
+  };
+  let from = 0;
+
+  while (true) {
+    const { data, count, error } = await client
+      .from("invoices")
+      .select("total, status", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+
+    stats.totalInvoices = count ?? stats.totalInvoices;
+    for (const invoice of data) {
+      const total = Number(invoice.total);
+      if (!Number.isFinite(total)) {
+        throw new Error("Invoice dashboard returned an invalid invoice total.");
+      }
+      stats.invoiceTotal += total;
+      if (invoice.status === "draft") {
+        stats.draftInvoices += 1;
+      } else if (invoice.status === "sent") {
+        stats.sentInvoices += 1;
+      } else if (invoice.status === "paid") {
+        stats.paidInvoices += 1;
+        stats.paidTotal += total;
+      } else {
+        throw new Error("Invoice dashboard returned an invalid invoice status.");
+      }
+    }
+
+    if (data.length < pageSize || from + data.length >= stats.totalInvoices) break;
+    from += pageSize;
+  }
+
+  return stats;
+}
+
 export async function saveInvoice(invoice) {
   const client = requireAdminClient();
   const values = {

@@ -315,11 +315,19 @@
 }
 
 .admin-shell .admin-profile-card {
+  padding: 0;
+}
+
+.admin-shell .admin-profile-card-content {
   padding: clamp(1rem, 2.2vw, 1.5rem);
 }
 
 .admin-shell .admin-settings-heading {
   margin-bottom: 1.1rem;
+}
+
+.admin-shell .admin-profile-settings-content > .admin-settings-heading {
+  margin-bottom: 0;
 }
 
 .admin-shell .admin-profile-card h2,
@@ -380,7 +388,7 @@
 .admin-shell .customer-management-table th {
   padding-block: 0.9rem;
   border-color: #e9eef6;
-  background: #f7f9fd;
+  background: #fff;
   color: #697991;
   font-size: 0.68rem;
   font-weight: 800;
@@ -439,8 +447,7 @@
 .admin-shell .admin-secondary-button,
 .admin-shell .admin-delete-button,
 .admin-shell .admin-quiet-button,
-.admin-shell .customer-management-load-more,
-.admin-shell .customer-order-admin-save {
+.admin-shell .customer-management-load-more {
   min-height: 42px;
   border-radius: 11px;
   transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
@@ -531,7 +538,7 @@
 .admin-shell .customer-order-admin-card {
   border-color: #e4eaf3;
   border-radius: 14px;
-  background: #fbfcff;
+  background: #fff;
   transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
@@ -670,7 +677,7 @@
     gap: 1rem;
   }
 
-  .admin-shell .admin-profile-card {
+  .admin-shell .admin-profile-card-content {
     padding: 1rem;
   }
 

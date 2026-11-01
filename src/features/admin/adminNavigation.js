@@ -13,10 +13,14 @@ export function isSiteSettingsView(view) {
   return settingsViewIds.has(view) || view === "site-settings";
 }
 
+export function isSettingsTabView(view) {
+  return view === "profile" || view === "team-access" || isSiteSettingsView(view);
+}
+
 export function normalizeAdminView(view) {
-  if (view === "site-team") return "profile";
+  if (view === "site-team") return "team-access";
   if (view === "site-settings") return "site-settings";
-  return view === "products" || view === "customers" || view === "invoices" || view === "profile" || settingsViewIds.has(view) ? view : "products";
+  return view === "products" || view === "customers" || view === "dashboard" || view === "invoices" || view === "team-access" || isSettingsTabView(view) ? view : "products";
 }
 
 export function createAdminNavigationItems(activeView, onSelect) {
@@ -43,17 +47,17 @@ export function createAdminNavigationItems(activeView, onSelect) {
       onClick: () => onSelect("invoices"),
     },
     {
-      id: "settings",
-      label: "Site settings",
-      icon: "settings",
-      active: isSiteSettingsView(activeView),
-      onClick: () => onSelect("site-settings"),
+      id: "dashboard",
+      label: "Dashboard",
+      icon: "overview",
+      active: activeView === "dashboard",
+      onClick: () => onSelect("dashboard"),
     },
     {
-      id: "profile",
-      label: "Profile",
-      icon: "team",
-      active: activeView === "profile",
+      id: "settings",
+      label: "Settings",
+      icon: "settings",
+      active: isSettingsTabView(activeView),
       onClick: () => onSelect("profile"),
     },
   ];

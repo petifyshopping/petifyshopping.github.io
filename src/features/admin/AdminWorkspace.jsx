@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import WorkspaceSidebar from "./WorkspaceSidebar.jsx";
-import { createAdminNavigationItems, isSiteSettingsView, normalizeAdminView, SITE_SETTINGS_VIEWS } from "./adminNavigation.js";
+import { createAdminNavigationItems, isSettingsTabView, isSiteSettingsView, normalizeAdminView, SITE_SETTINGS_VIEWS } from "./adminNavigation.js";
 import AccountMenu from "./AccountMenu.jsx";
 import AdminProfile from "./AdminProfile.jsx";
 import { deleteWorkspaceDraft, getWorkspaceDrafts } from "../../services/workspaceDrafts.js";
@@ -52,7 +52,9 @@ function loadSiteSettingsManager() {
 const SiteSettingsManager = lazy(loadSiteSettingsManager);
 const ProductEditor = lazy(() => import("./products/ProductEditor.jsx"));
 const CustomerManagement = lazy(() => import("./CustomerManagement.jsx"));
+const AdminOverview = lazy(() => import("./AdminOverview.jsx"));
 const InvoiceManager = lazy(() => import("./invoices/InvoiceManager.jsx"));
+const TeamAccessPanel = lazy(() => import("./TeamAccessPanel.jsx"));
 
 export default function ProductManager({
   session,
@@ -79,7 +81,8 @@ export default function ProductManager({
   });
   const [persistenceIssue, setPersistenceIssue] = useState(null);
   const activeView = normalizeAdminView(initialView ?? workspace.activeView);
-  const isSettingsView = isSiteSettingsView(activeView);
+  const isSettingsView = isSettingsTabView(activeView);
+  const isSiteSettingsPanel = isSiteSettingsView(activeView);
   const settingsSection = SITE_SETTINGS_VIEWS.find(({ id }) => id === activeView)?.section ?? "overview";
   const workspaceSnapshot = JSON.stringify({ ...workspace, activeView });
   const persistenceError = persistenceIssue?.snapshot === workspaceSnapshot ? persistenceIssue.message : "";
@@ -526,7 +529,7 @@ export default function ProductManager({
 
   function selectWorkspaceView(view) {
     const nextView = normalizeAdminView(view);
-    if (isSiteSettingsView(nextView)) setSettingsVisited(true);
+    if (isSettingsTabView(nextView)) setSettingsVisited(true);
     setWorkspace((current) => ({ ...current, activeView: nextView }));
     if (nextView === "invoices" && window.location.hash !== "#admin-invoice") {
       window.location.hash = "#admin-invoice";
@@ -541,7 +544,7 @@ export default function ProductManager({
       <AdminTopbar
         brand={adminBrand}
         storefrontBrand={storefrontBrand}
-        pageTitle={editorProduct ? (editorProduct.id ? "Edit product" : "Add product") : SITE_SETTINGS_VIEWS.find(({ id }) => id === activeView)?.label ?? (isSettingsView ? "Site settings" : activeView === "profile" ? "Profile" : activeView === "customers" ? "Customers" : activeView === "invoices" ? "Invoices" : "Products")}
+        pageTitle={editorProduct ? (editorProduct.id ? "Edit product" : "Add product") : isSettingsView ? "Settings" : activeView === "customers" ? "Customers" : activeView === "dashboard" ? "Dashboard" : activeView === "invoices" ? "Invoices" : "Products"}
         searchValue={productSearch}
         onSearchChange={setProductSearch}
         showSearch={activeView === "products" && !editorProduct}
@@ -558,56 +561,96 @@ export default function ProductManager({
               <AdminButton disabled={finalizingDelete} onClick={undoProductDelete}>{finalizingDelete ? "Deleting..." : "Undo"}</AdminButton>
             </AdminNotice>
           )}
-          <div hidden={!isSettingsView}>
+          <div className="admin-settings-workspace" hidden={!isSettingsView}>
             {(settingsVisited || isSettingsView) && (
               <>
-                <section className="admin-settings-section-picker" aria-labelledby="admin-settings-section-picker-title">
-                  <div className="admin-settings-section-picker-heading">
-                    <h2 id="admin-settings-section-picker-title">Choose an area to configure</h2>
-                    <p>Select a section to view and edit its settings.</p>
-                  </div>
-                  <div className="admin-settings-section-grid">
-                    {SITE_SETTINGS_VIEWS.map(({ id, label, description }) => (
+                <div className="admin-settings-inner-nav" role="group" aria-label="Settings sections">
+                  {[
+                    { id: "profile", label: "Profile settings" },
+                    { id: "team-access", label: "Team & Access" },
+                    { id: "site-settings", label: "Site settings" },
+                  ].map((item) => {
+                    const selected = item.id === "profile"
+                      ? activeView === "profile"
+                      : item.id === "team-access"
+                        ? activeView === "team-access"
+                        : isSiteSettingsPanel;
+                    return (
                       <button
-                        key={id}
-                        className={`admin-settings-section-card${activeView === id ? " active" : ""}`}
+                        key={item.id}
+                        className={`admin-settings-inner-tab${selected ? " active" : ""}`}
                         type="button"
-                        aria-current={activeView === id ? "page" : undefined}
-                        onClick={() => selectWorkspaceView(id)}
+                        aria-pressed={selected}
+                        onClick={() => selectWorkspaceView(item.id)}
                       >
-                        <span>{label}</span>
-                        <small>{description}</small>
+                        {item.label}
                       </button>
-                    ))}
-                  </div>
-                </section>
-                <Suspense fallback={<LoadingState message="Loading site settings..." />}>
-                  {settingsSection !== "overview" && (
-                    <SiteSettingsManager
-                      section={settingsSection}
-                      adminBrand={adminBrand}
-                      onAdminBrandChange={onAdminBrandChange}
-                      userId={session.user.id}
-                      mainSections={mainSections}
-                      sections={sections}
-                      products={products}
+                    );
+                  })}
+                </div>
+                <div className="admin-settings-inner-panel">
+                  {activeView === "profile" && (
+                    <AdminProfile
+                      user={session.user}
+                      onUserChange={(user) => onSessionChange({ ...session, user })}
+                      onSignOut={signOut}
+                      onDisplayNameChange={setProfileName}
                     />
                   )}
-                </Suspense>
+                  {activeView === "team-access" && (
+                    <Suspense fallback={<LoadingState message="Loading team access..." />}>
+                      <TeamAccessPanel />
+                    </Suspense>
+                  )}
+                  {isSiteSettingsPanel && (
+                    <>
+                      <section className="admin-settings-section-picker" aria-labelledby="admin-settings-section-picker-title">
+                        <div className="admin-settings-section-picker-heading">
+                          <h2 id="admin-settings-section-picker-title">Choose an area to configure</h2>
+                          <p>Select a section to view and edit its settings.</p>
+                        </div>
+                        <div className="admin-settings-section-grid">
+                          {SITE_SETTINGS_VIEWS.map(({ id, label, description }) => (
+                            <button
+                              key={id}
+                              className={`admin-settings-section-card${activeView === id ? " active" : ""}`}
+                              type="button"
+                              aria-current={activeView === id ? "page" : undefined}
+                              onClick={() => selectWorkspaceView(id)}
+                            >
+                              <span>{label}</span>
+                              <small>{description}</small>
+                            </button>
+                          ))}
+                        </div>
+                      </section>
+                      <Suspense fallback={<LoadingState message="Loading site settings..." />}>
+                        {settingsSection !== "overview" && (
+                          <SiteSettingsManager
+                            section={settingsSection}
+                            adminBrand={adminBrand}
+                            onAdminBrandChange={onAdminBrandChange}
+                            userId={session.user.id}
+                            mainSections={mainSections}
+                            sections={sections}
+                            products={products}
+                          />
+                        )}
+                      </Suspense>
+                    </>
+                  )}
+                </div>
               </>
             )}
           </div>
-          {activeView === "profile" && (
-            <AdminProfile
-              user={session.user}
-              onUserChange={(user) => onSessionChange({ ...session, user })}
-              onSignOut={signOut}
-              onDisplayNameChange={setProfileName}
-            />
-          )}
           {activeView === "customers" && (
             <Suspense fallback={<LoadingState message="Loading customers and orders..." />}>
               <CustomerManagement />
+            </Suspense>
+          )}
+          {activeView === "dashboard" && (
+            <Suspense fallback={<LoadingState message="Loading dashboard..." />}>
+              <AdminOverview />
             </Suspense>
           )}
           {activeView === "invoices" && (

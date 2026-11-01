@@ -138,6 +138,34 @@ export async function getAdminCustomerPage(from, pageSize) {
   return { rows: data, total: count ?? data.length };
 }
 
+export async function getAdminCustomerLatestOrderTimes(userIds) {
+  if (!adminSupabase) throw new Error("Customer order data is unavailable because Supabase is not configured.");
+  const customerIds = [...new Set(userIds.filter(Boolean))];
+  if (!customerIds.length) return {};
+  const latestOrderTimes = {};
+  const pageSize = 1000;
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await adminSupabase
+      .from("customer_orders")
+      .select("user_id, created_at")
+      .in("user_id", customerIds)
+      .order("created_at", { ascending: false })
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    for (const order of data) {
+      if (order.user_id && latestOrderTimes[order.user_id] === undefined) {
+        latestOrderTimes[order.user_id] = order.created_at;
+      }
+    }
+    if (Object.keys(latestOrderTimes).length >= customerIds.length || data.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return latestOrderTimes;
+}
+
 export async function getAdminOrderPage(from, pageSize) {
   if (!adminSupabase) throw new Error("Customer management is unavailable because Supabase is not configured.");
   const { data, count, error } = await adminSupabase

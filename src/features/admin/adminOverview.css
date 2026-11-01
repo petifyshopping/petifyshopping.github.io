@@ -1,0 +1,172 @@
+.admin-overview {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-overview-group {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.admin-overview-collapsible {
+  overflow: hidden;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  background: var(--card-bg);
+}
+
+.admin-overview-collapsible > summary {
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: var(--text-dark);
+  cursor: pointer;
+  list-style: none;
+}
+
+.admin-overview-collapsible > summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-overview-collapsible > summary::after {
+  content: "+";
+  margin-left: 0.5rem;
+  color: var(--text-muted);
+  font-size: 1.15rem;
+}
+
+.admin-overview-collapsible[open] > summary::after {
+  content: "−";
+}
+
+.admin-overview-collapsible > summary strong {
+  min-width: 0;
+  margin-right: auto;
+  font-size: 0.95rem;
+}
+
+.admin-overview-collapsible > summary span {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.admin-overview-collapsible > summary:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: -3px;
+}
+
+.admin-overview-group-content {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0 1rem 1rem;
+}
+
+.admin-overview-collapsible[open] > summary {
+  border-bottom: 1px solid var(--admin-border);
+  margin-bottom: 0.75rem;
+}
+
+.admin-overview-group-content .admin-overview-metrics {
+  padding-top: 0;
+}
+
+.admin-overview-group-content .admin-overview-metric {
+  background: #fff;
+}
+
+.admin-overview-total {
+  padding: 0.2rem 0;
+}
+
+.admin-overview-total > h3 {
+  margin: 0;
+  color: var(--text-dark);
+  font-size: 0.95rem;
+}
+
+.admin-overview-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-overview-heading h2 {
+  margin: 0;
+  color: var(--text-dark);
+  font-size: 1.15rem;
+}
+
+.admin-overview-heading .admin-eyebrow {
+  margin: 0 0 0.25rem;
+}
+
+.admin-overview-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  gap: 0.75rem;
+}
+
+.admin-overview-metric {
+  display: grid;
+  min-width: 0;
+  min-height: 108px;
+  align-content: space-between;
+  gap: 0.8rem;
+  padding: 1rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  background: var(--card-bg);
+}
+
+.admin-overview-metric span {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.admin-overview-metric strong {
+  overflow-wrap: anywhere;
+  color: var(--text-dark);
+  font-size: clamp(1.2rem, 3vw, 1.65rem);
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-overview-error {
+  margin: 0;
+  padding: 0.8rem 1rem;
+  border: 1px solid #efc1c1;
+  border-radius: 10px;
+  background: #fff3f3;
+  color: #8d2929;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 520px) {
+  .admin-overview-heading {
+    align-items: flex-start;
+  }
+
+  .admin-overview-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .admin-overview-metric {
+    min-height: 92px;
+    padding: 0.75rem;
+  }
+
+  .admin-overview-collapsible > summary {
+    gap: 0.5rem;
+    padding-inline: 0.75rem;
+  }
+
+  .admin-overview-group-content {
+    padding-inline: 0.75rem;
+  }
+}

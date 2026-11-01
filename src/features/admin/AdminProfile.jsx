@@ -1,16 +1,13 @@
-import { lazy, Suspense, useState } from "react";
+import { useState } from "react";
 import { adminSupabase } from "../../lib/supabase.js";
 import AdminButton from "./components/AdminButton.jsx";
 import AdminNotice from "./components/AdminNotice.jsx";
-import AdminState from "./components/AdminState.jsx";
 import {
   DEFAULT_SESSION_HOURS,
   MAX_SESSION_HOURS,
   MIN_SESSION_HOURS,
   getSessionLifetimeSettings,
 } from "../../hooks/sessionLifetime.js";
-
-const TeamAccessPanel = lazy(() => import("./TeamAccessPanel.jsx"));
 
 function displayNameFor(user) {
   return user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email?.split("@")[0] ?? "";
@@ -36,7 +33,6 @@ export default function AdminProfile({ user, onSignOut, onDisplayNameChange, onU
   const [savingSessionSettings, setSavingSessionSettings] = useState(false);
   const [sessionSettingsError, setSessionSettingsError] = useState("");
   const [sessionSettingsNotice, setSessionSettingsNotice] = useState("");
-
   async function saveProfile(event) {
     event.preventDefault();
     setError("");
@@ -144,117 +140,106 @@ export default function AdminProfile({ user, onSignOut, onDisplayNameChange, onU
   return (
     <section className="admin-profile" aria-label="Admin profile">
       <div className="admin-profile-card">
-        <div className="admin-settings-heading">
-          <div>
-            <h2>Profile details</h2>
+        <div className="admin-profile-card-content admin-profile-settings-content">
+          <div className="admin-settings-heading">
+            <div>
+              <h2>Profile settings</h2>
+              <p className="admin-muted">Manage your profile, password, and session security.</p>
+            </div>
           </div>
-        </div>
-        <form className="admin-form-grid admin-profile-form" onSubmit={saveProfile}>
-          <label>
-            Display name
-            <input
-              type="text"
-              autoComplete="name"
-              maxLength={80}
-              value={displayName}
-              onChange={(event) => setDisplayName(event.target.value)}
-              required
-            />
-          </label>
-          <label>
-            Email address
-            <input type="email" value={user.email ?? ""} readOnly />
-          </label>
-          {error && <AdminNotice kind="error">{error}</AdminNotice>}
-          {notice && <AdminNotice kind="success">{notice}</AdminNotice>}
-          <div className="admin-profile-actions">
-            <AdminButton variant="primary" type="submit" disabled={savingProfile}>
-              {savingProfile ? "Saving..." : "Save profile"}
-            </AdminButton>
-          </div>
-        </form>
-      </div>
-      <div className="admin-profile-card">
-        <div className="admin-settings-heading">
-          <div>
-            <h2>Automatic logout</h2>
-            {/* <p className="admin-muted">Choose whether this admin account should be signed out automatically after a set period in this browser session.</p> */}
-          </div>
-        </div>
-        <form className="admin-form-grid admin-profile-form" onSubmit={saveSessionSettings}>
-          <label className="admin-checkbox-label">
-            <input
-              type="checkbox"
-              checked={autoLogoutEnabled}
-              onChange={(event) => setAutoLogoutEnabled(event.target.checked)}
-            />
-            Enable automatic logout
-          </label>
-          {autoLogoutEnabled && (
+          <form className="admin-form-grid admin-profile-form" onSubmit={saveProfile}>
             <label>
-              Logout after (hours)
+              Display name
               <input
-                type="number"
-                min={MIN_SESSION_HOURS}
-                max={MAX_SESSION_HOURS}
-                step="0.25"
-                value={autoLogoutHours}
-                onChange={(event) => setAutoLogoutHours(event.target.value)}
+                type="text"
+                autoComplete="name"
+                maxLength={80}
+                value={displayName}
+                onChange={(event) => setDisplayName(event.target.value)}
                 required
               />
             </label>
-          )}
-          {sessionSettingsError && <AdminNotice kind="error">{sessionSettingsError}</AdminNotice>}
-          {sessionSettingsNotice && <AdminNotice kind="success">{sessionSettingsNotice}</AdminNotice>}
-          <div className="admin-profile-actions">
-            <AdminButton variant="primary" type="submit" disabled={savingSessionSettings}>
-              {savingSessionSettings ? "Saving..." : "Save logout settings"}
-            </AdminButton>
-          </div>
-        </form>
-      </div>
-      <div className="admin-profile-card">
-        <div className="admin-settings-heading">
-          <div>
-            <h2>Account security</h2>
-            <p className="admin-muted">Update your password or sign out of this admin account.</p>
-          </div>
-        </div>
-        <div className="admin-profile-security-actions">
-          <AdminButton onClick={() => { setPasswordOpen((open) => !open); setPasswordError(""); setPasswordNotice(""); }}>
-            {passwordOpen ? "Close password change" : "Change password"}
-          </AdminButton>
-          <AdminButton variant="danger" onClick={signOut} disabled={signingOut}>
-            {signingOut ? "Signing out..." : "Sign out"}
-          </AdminButton>
-        </div>
-        {passwordOpen && (
-          <form className="admin-form-grid admin-profile-form admin-password-change" onSubmit={changePassword}>
             <label>
-              Current password
-              <input type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required />
+              Email address
+              <input type="email" value={user.email ?? ""} readOnly />
             </label>
-            <label>
-              New password
-              <input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required />
-            </label>
-            <label>
-              Confirm new password
-              <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required />
-            </label>
-            {passwordError && <AdminNotice kind="error">{passwordError}</AdminNotice>}
-            {passwordNotice && <AdminNotice kind="success">{passwordNotice}</AdminNotice>}
-            <AdminButton variant="primary" type="submit" disabled={savingPassword}>
-              {savingPassword ? "Changing..." : "Save new password"}
-            </AdminButton>
+            {error && <AdminNotice kind="error">{error}</AdminNotice>}
+            {notice && <AdminNotice kind="success">{notice}</AdminNotice>}
+            <div className="admin-profile-actions">
+              <AdminButton variant="primary" type="submit" disabled={savingProfile}>
+                {savingProfile ? "Saving..." : "Save profile"}
+              </AdminButton>
+              <AdminButton variant="danger" onClick={signOut} disabled={signingOut}>
+                {signingOut ? "Signing out..." : "Sign out"}
+              </AdminButton>
+              <AdminButton onClick={() => { setPasswordOpen((open) => !open); setPasswordError(""); setPasswordNotice(""); }}>
+                {passwordOpen ? "Close password change" : "Change password"}
+              </AdminButton>
+            </div>
           </form>
-        )}
-        {signOutError && <AdminNotice kind="error">{signOutError}</AdminNotice>}
-      </div>
-      <div className="admin-profile-card admin-profile-team">
-        <Suspense fallback={<AdminState kind="loading" description="Loading team access..." />}>
-          <TeamAccessPanel />
-        </Suspense>
+          {signOutError && <AdminNotice kind="error">{signOutError}</AdminNotice>}
+          {passwordOpen && (
+            <form className="admin-form-grid admin-profile-form admin-password-change" onSubmit={changePassword}>
+              <label>
+                Current password
+                <input type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required />
+              </label>
+              <label>
+                New password
+                <input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required />
+              </label>
+              <label>
+                Confirm new password
+                <input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required />
+              </label>
+              {passwordError && <AdminNotice kind="error">{passwordError}</AdminNotice>}
+              {passwordNotice && <AdminNotice kind="success">{passwordNotice}</AdminNotice>}
+              <AdminButton variant="primary" type="submit" disabled={savingPassword}>
+                {savingPassword ? "Changing..." : "Save new password"}
+              </AdminButton>
+            </form>
+          )}
+
+          <section className="admin-profile-subsection" aria-labelledby="admin-profile-auto-logout-title">
+            <div className="admin-profile-subsection-heading">
+              <h3 id="admin-profile-auto-logout-title">Automatic logout</h3>
+              <p className="admin-muted">Choose whether this admin account should be signed out automatically.</p>
+            </div>
+            <form className="admin-form-grid admin-profile-form" onSubmit={saveSessionSettings}>
+              <div className="admin-profile-logout-controls">
+                {autoLogoutEnabled ? (
+                  <label>
+                    Logout after (hours)
+                    <input
+                      type="number"
+                      min={MIN_SESSION_HOURS}
+                      max={MAX_SESSION_HOURS}
+                      step="0.25"
+                      value={autoLogoutHours}
+                      onChange={(event) => setAutoLogoutHours(event.target.value)}
+                      required
+                    />
+                  </label>
+                ) : <span aria-hidden="true" />}
+                <label className="admin-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={autoLogoutEnabled}
+                    onChange={(event) => setAutoLogoutEnabled(event.target.checked)}
+                  />
+                  Enable automatic logout
+                </label>
+              </div>
+              {sessionSettingsError && <AdminNotice kind="error">{sessionSettingsError}</AdminNotice>}
+              {sessionSettingsNotice && <AdminNotice kind="success">{sessionSettingsNotice}</AdminNotice>}
+              <div className="admin-profile-actions">
+                <AdminButton variant="primary" type="submit" disabled={savingSessionSettings}>
+                  {savingSessionSettings ? "Saving..." : "Save logout settings"}
+                </AdminButton>
+              </div>
+            </form>
+          </section>
+        </div>
       </div>
     </section>
   );

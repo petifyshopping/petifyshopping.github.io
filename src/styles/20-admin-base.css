@@ -802,10 +802,102 @@ td.admin-state-empty {
 
 .admin-profile-card {
   width: min(100%, 680px);
-  padding: 1.25rem;
+  padding: 0;
   border: 1px solid var(--admin-border);
   border-radius: var(--admin-radius-md);
   background: var(--card-bg);
+}
+
+.admin-profile-card-content {
+  padding: 1.25rem;
+}
+
+.admin-profile-settings-content {
+  display: grid;
+  gap: 1.35rem;
+}
+
+.admin-profile-settings-content > .admin-settings-heading {
+  margin-bottom: 0;
+}
+
+.admin-profile-subsection {
+  display: grid;
+  gap: 0.8rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--admin-border);
+}
+
+.admin-profile-subsection-heading h3 {
+  margin: 0 0 0.25rem;
+  color: var(--text-dark);
+  font-size: 0.95rem;
+}
+
+.admin-profile-subsection-heading p {
+  margin: 0;
+}
+
+.admin-profile-logout-controls {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: 1rem;
+}
+
+.admin-profile-logout-controls > .admin-checkbox-label {
+  min-height: 42px;
+  justify-content: flex-start;
+}
+
+.admin-settings-inner-nav {
+  display: flex;
+  width: 100%;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+  padding: 0.35rem;
+  overflow-x: auto;
+  border: 1px solid #e2e9f3;
+  border-radius: 14px;
+  background: #fff;
+  scrollbar-width: thin;
+}
+
+.admin-settings-inner-tab {
+  min-height: 42px;
+  flex: 1 0 auto;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: #53647d;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.admin-settings-inner-tab:hover {
+  background: #f3f6fb;
+  color: #214aa5;
+}
+
+.admin-settings-inner-tab.active {
+  border-color: #d7e3f7;
+  background: #edf3fd;
+  color: #214aa5;
+  box-shadow: inset 0 -2px 0 #3169d3;
+}
+
+.admin-settings-inner-tab:focus-visible {
+  outline: 3px solid #93b7f5;
+  outline-offset: 2px;
+}
+
+.admin-settings-inner-panel {
+  min-width: 0;
 }
 
 .admin-profile-card h2 {
@@ -838,15 +930,11 @@ td.admin-state-empty {
 }
 
 .admin-profile-actions {
-  display: flex;
-  justify-content: flex-start;
-}
-
-.admin-profile-security-actions {
+  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-start;
   gap: 0.65rem;
-  margin-bottom: 1rem;
 }
 
 .admin-profile-card .admin-password-change {

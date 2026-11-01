@@ -929,6 +929,20 @@
   margin-top: 0.85rem;
 }
 
+.customer-order-history-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: #718097;
+  font-size: 0.74rem;
+}
+
+.customer-order-history-heading strong {
+  color: #1b2942;
+  font-size: 0.8rem;
+}
+
 .customer-order-card {
   padding: 0.9rem;
   border: 1px solid #e1e6ef;
@@ -938,6 +952,17 @@
 
 .customer-order-card-heading {
   align-items: center;
+  list-style: none;
+  cursor: pointer;
+}
+
+.customer-order-card-heading::-webkit-details-marker {
+  display: none;
+}
+
+.customer-order-card-heading:focus-visible {
+  outline: 3px solid #7495ed;
+  outline-offset: 3px;
 }
 
 .customer-order-card-heading strong {

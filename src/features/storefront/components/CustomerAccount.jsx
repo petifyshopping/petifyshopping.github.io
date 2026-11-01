@@ -605,12 +605,17 @@ export default function CustomerAccount({
                   <p className="customer-account-muted">Your WhatsApp order requests will appear here after you continue to WhatsApp.</p>
                 ) : (
                   <div className="customer-order-list">
+                    <div className="customer-order-history-heading">
+                      <strong>{orders.length} {orders.length === 1 ? "order" : "orders"}</strong>
+                      <span>Most recent first</span>
+                    </div>
                     {orders.map((order) => (
-                      <article className="customer-order-card" key={order.id}>
-                        <div className="customer-order-card-heading">
+                      <details className="customer-order-card" key={order.id}>
+                        <summary className="customer-order-card-heading">
                           <strong>{formatProductPrice(order.total)}</strong>
                           <span>{formatDateTime(order.created_at)}</span>
-                        </div>
+                          <span className="customer-order-status">{order.status.replaceAll("_", " ")}</span>
+                        </summary>
                         <ul>
                           {order.items.map((item, index) => (
                             <li key={`${order.id}-${item.product_id}-${item.variant_id}-${index}`}>
@@ -618,8 +623,7 @@ export default function CustomerAccount({
                             </li>
                           ))}
                         </ul>
-                        <span className="customer-order-status">{order.status.replaceAll("_", " ")}</span>
-                      </article>
+                      </details>
                     ))}
                   </div>
                 )}

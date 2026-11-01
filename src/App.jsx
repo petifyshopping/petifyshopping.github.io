@@ -109,12 +109,15 @@ function mergeCartItems(savedItems, guestItems) {
 
 function addCustomerDetailsToOrderLink(link, profile, address, enabledFields) {
   const url = new URL(link);
-  const existingMessage = url.searchParams.get("text") ?? "";
+  const existingMessage = (url.searchParams.get("text") ?? "")
+    .replace(/^\s*(?:Name|Address|Pincode|Place|District|State|Phone|WhatsApp|Email):\s*$/gim, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
   const customerDetails = [
     profile.full_name ? `Name: ${profile.full_name}` : "",
     ...getCustomerOrderContactDetails(profile, address, enabledFields),
   ].filter(Boolean);
-  url.searchParams.set("text", [existingMessage, ...customerDetails].join("\n\n"));
+  url.searchParams.set("text", [existingMessage, ...customerDetails].filter(Boolean).join("\n\n"));
   return url.toString();
 }
 
@@ -673,6 +676,10 @@ export default function App() {
     setDetailVariantId(null);
     setProductFetchError(null);
   }, []);
+  const openCartFromProductDetails = useCallback(() => {
+    closeProductDetails();
+    setIsCartOpen(true);
+  }, [closeProductDetails]);
 
   const cartItemCount = cart.reduce((count, item) => count + item.quantity, 0);
   const currentProductIds = new Set(products.map((product) => String(product.id)));
@@ -850,6 +857,7 @@ export default function App() {
             onAddToCart={addToCart}
             onUpdateQuantity={updateCartQuantity}
             onDirectOrder={handleDirectOrder}
+            onGoToCart={openCartFromProductDetails}
             onClose={closeProductDetails}
             initialVariantId={detailVariantId}
           />

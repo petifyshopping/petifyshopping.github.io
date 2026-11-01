@@ -3,14 +3,16 @@ import WhatsAppIcon from "./WhatsAppIcon.jsx";
 
 export default function ProductOrderLink({ product, whatsappNumber, combo, variant, compact = false, onOrder }) {
   const price = variant?.price ?? parseProductPrice(product.price);
+  const defaultMessage = String(product.defaultWhatsappMsg ?? "")
+    .replace(/^\s*(?:Name|Address|Pincode|Place|District|State|Phone|WhatsApp|Email):\s*$/gim, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
   const productDetails = [
-    `Hello, I'm interested in ${product.title}.`,
+    defaultMessage || `Hello, I'm interested in ${product.title}.`,
     variant?.label ? `Option: ${variant.label}` : "",
     price ? `Price: ${formatProductPrice(price)}` : "",
   ].filter(Boolean).join("\n");
-  const message = [productDetails, product.defaultWhatsappMsg?.trim()]
-    .filter(Boolean)
-    .join("\n\n");
+  const message = productDetails;
   const phone = String(whatsappNumber ?? "").replace(/\D/g, "");
   const link = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}` : "";
 

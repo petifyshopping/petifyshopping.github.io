@@ -4,7 +4,7 @@ import ProductGallery from "./ProductGallery.jsx";
 import ProductOrderLink from "./ProductOrderLink.jsx";
 import QuantityStepper from "./QuantityStepper.jsx";
 
-export default function ProductDetailsDialog({ product, whatsappNumber, cartItems, onAddToCart, onUpdateQuantity, onDirectOrder, onClose, initialVariantId }) {
+export default function ProductDetailsDialog({ product, whatsappNumber, cartItems, onAddToCart, onUpdateQuantity, onDirectOrder, onGoToCart, onClose, initialVariantId }) {
   const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
   const combo = product.type === "combo";
@@ -168,12 +168,22 @@ export default function ProductDetailsDialog({ product, whatsappNumber, cartItem
           )}
           <div className="card-actions">
             {cartItem ? (
-              <QuantityStepper
-                value={cartItem.quantity}
-                label={`${product.title} quantity`}
-                onDecrease={() => onUpdateQuantity(cartKey, -1)}
-                onIncrease={() => onUpdateQuantity(cartKey, 1)}
-              />
+              <div className="product-details-cart-actions">
+                <QuantityStepper
+                  value={cartItem.quantity}
+                  label={`${product.title} quantity`}
+                  onDecrease={() => onUpdateQuantity(cartKey, -1)}
+                  onIncrease={() => onUpdateQuantity(cartKey, 1)}
+                />
+                <button className="product-details-go-to-cart" type="button" onClick={onGoToCart}>
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 4h2l2.2 11.1a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 1.9-1.4L22 9H6" />
+                    <circle cx="10" cy="20" r="1" />
+                    <circle cx="18" cy="20" r="1" />
+                  </svg>
+                  <span>Go to cart</span>
+                </button>
+              </div>
             ) : (
               <button
                 className="btn btn-add-to-cart"

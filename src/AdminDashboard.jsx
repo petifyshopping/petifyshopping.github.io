@@ -4,6 +4,7 @@ import { DEFAULT_ADMIN_BRAND, normalizeAdminBrand } from "./config/siteAppearanc
 import useWorkspaceAccess from "./hooks/useWorkspaceAccess.js";
 import { requestAccess } from "./services/access.js";
 import WorkspaceAccessStatus from "./features/admin/auth/WorkspaceAccessStatus.jsx";
+import LoadingState from "./features/shared/LoadingState.jsx";
 
 const AdminLogin = lazy(() => import("./features/admin/auth/AdminLogin.jsx"));
 const ProductManager = lazy(() => import("./features/admin/AdminWorkspace.jsx"));
@@ -42,12 +43,12 @@ export default function AdminDashboard({
   }
 
   if (checkingSession || (checkingRole && !isAdmin)) {
-    return <div className="admin-gate"><p className="admin-muted">Checking admin access...</p></div>;
+    return <LoadingState message="Checking admin access..." variant="screen" />;
   }
 
   if (!session) {
     return (
-      <Suspense fallback={<div className="admin-gate"><p className="admin-muted">Loading sign in...</p></div>}>
+      <Suspense fallback={<LoadingState message="Loading sign in..." variant="screen" />}>
         <AdminLogin
           key={window.location.hash === "#admin-forgot-password" ? "forgot" : "signin"}
           adminBrand={adminBrand}
@@ -71,7 +72,7 @@ export default function AdminDashboard({
   }
 
   return (
-    <Suspense fallback={<div className="admin-gate"><p className="admin-muted">Loading admin workspace...</p></div>}>
+    <Suspense fallback={<LoadingState message="Loading admin workspace..." variant="screen" />}>
       <ProductManager
         session={session}
         onSessionChange={setSession}

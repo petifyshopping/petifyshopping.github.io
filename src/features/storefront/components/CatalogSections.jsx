@@ -151,7 +151,14 @@ export default function CatalogSections({
             </button>
           )}
           {hasMoreProducts && (
-            <button type="button" className="catalog-reset-button" onClick={onLoadMore} disabled={loadingMore}>
+            <button
+              type="button"
+              className="catalog-reset-button"
+              onClick={onLoadMore}
+              disabled={loadingMore}
+              aria-busy={loadingMore}
+            >
+              {loadingMore && <span className="catalog-button-spinner" aria-hidden="true" />}
               {loadingMore ? "Loading products…" : "Load more products"}
             </button>
           )}
@@ -189,7 +196,9 @@ export default function CatalogSections({
                 else onLoadMore();
               }}
               disabled={loadingMore}
+              aria-busy={loadingMore}
             >
+              {loadingMore && <span className="catalog-button-spinner" aria-hidden="true" />}
               {loadingMore ? "Loading products…" : "Load more products"}
             </button>
           )}

@@ -1257,7 +1257,7 @@
   background: white;
   color: #172b3e;
   box-shadow: 0 3px 18px rgba(15, 23, 42, 0.12);
-  font-family: Arial, sans-serif;
+  font-family: var(--font-body);
   overflow-wrap: anywhere;
 }
 

@@ -1252,6 +1252,14 @@ html {
   justify-content: flex-end;
 }
 
+.store-cart-overlay:has(.app-loading--drawer)::before {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 18, 38, 0.58);
+  backdrop-filter: blur(4px);
+  content: "";
+}
+
 .store-cart-backdrop {
   position: absolute;
   inset: 0;
@@ -1807,7 +1815,7 @@ html {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-display);
   font-size: clamp(1.65rem, 3vw, 2.1rem);
   font-weight: 850;
   letter-spacing: -0.035em;

@@ -787,6 +787,18 @@ body:has(#site-header) {
   color: white;
 }
 
+.catalog-button-spinner {
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-right: 0.45rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: app-loading-spin 0.8s linear infinite;
+  vertical-align: -0.12em;
+}
+
 .catalog-notice {
   display: grid;
   justify-items: center;

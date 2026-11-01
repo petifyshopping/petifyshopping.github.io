@@ -14,6 +14,7 @@ import AdminNotice from "./components/AdminNotice.jsx";
 import AdminButton from "./components/AdminButton.jsx";
 import AdminTopbar from "./components/AdminTopbar.jsx";
 import AdminBottomNav from "./components/AdminBottomNav.jsx";
+import LoadingState from "../shared/LoadingState.jsx";
 import FilterSheet from "./components/FilterSheet.jsx";
 import ProductListItem from "./products/ProductListItem.jsx";
 import { parseVariantPrice } from "./products/productUtils.js";
@@ -580,7 +581,7 @@ export default function ProductManager({
                     ))}
                   </div>
                 </section>
-                <Suspense fallback={<p className="admin-muted">Loading site settings...</p>}>
+                <Suspense fallback={<LoadingState message="Loading site settings..." />}>
                   {settingsSection !== "overview" && (
                     <SiteSettingsManager
                       section={settingsSection}
@@ -605,18 +606,18 @@ export default function ProductManager({
             />
           )}
           {activeView === "customers" && (
-            <Suspense fallback={<p className="admin-muted">Loading customers and orders...</p>}>
+            <Suspense fallback={<LoadingState message="Loading customers and orders..." />}>
               <CustomerManagement />
             </Suspense>
           )}
           {activeView === "invoices" && (
-            <Suspense fallback={<p className="admin-muted">Loading invoices...</p>}>
+            <Suspense fallback={<LoadingState message="Loading invoices..." />}>
               <InvoiceManager products={products} storefrontBrand={storefrontBrand} />
             </Suspense>
           )}
           <div hidden={activeView !== "products"}>
             {editorProduct ? (
-              <Suspense fallback={<p className="admin-muted">Loading product editor...</p>}>
+              <Suspense fallback={<LoadingState message="Loading product editor..." />}>
                 <ProductEditor
                   key={editorDraft.key ?? editorProduct.id ?? "new"}
                   product={editorProduct}

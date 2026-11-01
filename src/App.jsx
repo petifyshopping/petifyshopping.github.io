@@ -11,6 +11,7 @@ import useStorefrontCatalog from "./features/storefront/useStorefrontCatalog.js"
 import { parseProductPrice, productOptions } from "./lib/productPricing.js";
 import { getCustomerOrderContactDetails } from "./lib/customerOrderDetails.js";
 import { WorkspaceAccessProvider } from "./hooks/WorkspaceAccessProvider.jsx";
+import LoadingState from "./features/shared/LoadingState.jsx";
 import { supabase } from "./lib/supabase.js";
 import {
   createCustomerAddress,
@@ -708,7 +709,7 @@ export default function App() {
     : "";
 
   if (isPasswordResetRoute) return (
-    <Suspense fallback={<div className="admin-gate"><p className="admin-muted">Loading password reset...</p></div>}>
+    <Suspense fallback={<LoadingState message="Loading password reset..." variant="screen" />}>
       <PasswordReset
         adminBrand={settings?.adminBrand}
         customerReset={new URLSearchParams(window.location.search).get("view") === "reset-password"}
@@ -718,7 +719,7 @@ export default function App() {
 
   if (isSalesPortalRoute) return (
     <WorkspaceAccessProvider>
-      <Suspense fallback={<div className="admin-gate"><p className="admin-muted">Loading Sales portal...</p></div>}>
+      <Suspense fallback={<LoadingState message="Loading Sales portal..." variant="screen" />}>
       <SalesPortal products={products} adminBrand={settings?.adminBrand} storefrontBrand={{
         brandTitle: settings?.brandTitle,
         tagline: settings?.tagline,
@@ -730,7 +731,7 @@ export default function App() {
 
   if (isAdminRoute) return (
     <WorkspaceAccessProvider>
-      <Suspense fallback={<div className="admin-gate"><p className="admin-muted">Loading admin...</p></div>}>
+      <Suspense fallback={<LoadingState message="Loading admin..." variant="screen" />}>
         <AdminDashboard
           adminBrand={settings?.adminBrand}
           storefrontBrand={{
@@ -836,7 +837,7 @@ export default function App() {
         />
       )}
       {!loading && !error && settings && isCartOpen && (
-        <Suspense fallback={<div className="store-cart-overlay" role="status"><p className="store-cart-drawer">Loading your cart…</p></div>}>
+        <Suspense fallback={<div className="store-cart-overlay"><LoadingState message="Loading your cart..." variant="drawer" /></div>}>
           <StoreCart
             items={cart}
             whatsappNumber={settings.contact.whatsappNumber}
@@ -883,7 +884,7 @@ export default function App() {
         </Suspense>
       )}
       {isAccountOpen && (
-        <Suspense fallback={<div className="admin-gate"><p className="admin-muted">Loading customer account...</p></div>}>
+        <Suspense fallback={<LoadingState message="Loading customer account..." variant="overlay" />}>
           <CustomerAccount
             session={customerSession}
             profile={customerProfile}

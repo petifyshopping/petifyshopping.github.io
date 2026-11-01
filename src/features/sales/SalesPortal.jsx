@@ -13,6 +13,7 @@ import AdminTopbar from "../admin/components/AdminTopbar.jsx";
 import AdminBottomNav from "../admin/components/AdminBottomNav.jsx";
 import WorkspaceAccessStatus from "../admin/auth/WorkspaceAccessStatus.jsx";
 import { requestAccess } from "../../services/access.js";
+import LoadingState from "../shared/LoadingState.jsx";
 
 export default function SalesPortal({
   products,
@@ -72,7 +73,7 @@ export default function SalesPortal({
   }
 
   if (checkingSession || checkingAccess) {
-    return <div className="admin-gate"><p className="admin-muted">Checking Sales portal access...</p></div>;
+    return <LoadingState message="Checking Sales portal access..." variant="screen" />;
   }
 
   if (!session) {

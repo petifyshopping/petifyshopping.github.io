@@ -108,7 +108,8 @@ export default function CatalogSections({
   ));
 
   return (
-    <div className="store-catalog">
+    <div className="store-catalog" id="store-catalog">
+      <h2 className="catalog-browse-title">Shop by category</h2>
       <CategoryNav
         mainSections={mainSections}
         sections={sections}

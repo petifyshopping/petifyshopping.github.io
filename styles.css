@@ -1,3 +1,7 @@
+/* Hallmark · shape: Catalogue/Index · genre: playful · theme: Squeeze (deal 2/3, seed afd4443f) · redesign: full
+ * hero: banner · nav: blue slab with the existing search and actions · footer: brand mast · imagery: live catalog product image · signature: one real product from the catalog in the hero
+ * axes: light/geometric-sans/warm · posture: solid blue hero field with one warm primary · contrast: pass · fold: pass · job: buy · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H5 E4 S4 R5 V4 · weakest: S, the live product image and name anchor the store promise */
 /* Global tokens, resets, and shared layout. */
 @import "./src/styles/00-foundation.css";
 /* Storefront components and primary styles. */
@@ -12,3 +16,5 @@
 @import "./src/styles/50-header-overrides.css";
 /* Modern workspace navigation styling. */
 @import "./src/styles/60-admin-polish.css";
+/* Hallmark storefront, About, and workspace redesign layer. */
+@import "./src/styles/70-hallmark.css";

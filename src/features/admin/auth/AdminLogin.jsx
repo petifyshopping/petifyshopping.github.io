@@ -111,11 +111,9 @@ export default function AdminLogin({
           <span>{adminBrand.name}<small>{adminBrand.label} workspace</small></span>
         </div>
         <div className="admin-login-story-copy">
-          <p className="admin-login-story-kicker">ADMIN WORKSPACE</p>
           <h2>A simpler way to care for your shop.</h2>
           <p>Manage products, update your storefront, and keep your team access organized from one secure place.</p>
         </div>
-        <p className="admin-login-story-note">A secure workspace for your store.</p>
       </section>
       <section className="admin-login-panel">
         <form className="admin-login" aria-label={isForgot ? "Reset password" : "Admin sign in"} onSubmit={submit}>

@@ -92,7 +92,7 @@ export default function ProjectHeader({
       <div className="store-header-inner">
         <div className="store-header-brand">
           {showBrand && (
-            <h1 className="brand-title">
+            <div className="brand-title">
               <a href="#top" className="store-brand-link" onClick={(event) => {
                 event.preventDefault();
                 onLogoClick();
@@ -101,7 +101,7 @@ export default function ProjectHeader({
                   ? <img src={logoUrl} alt={`${brandTitle} logo`} className="brand-logo" width="180" height="64" />
                   : brandTitle}
               </a>
-            </h1>
+            </div>
           )}
           {showTagline && tagline && <p className="brand-tagline">{tagline}</p>}
         </div>

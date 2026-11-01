@@ -6,6 +6,7 @@ import FeatureList from "./features/storefront/components/FeatureList.jsx";
 import ScrollToTop from "./features/storefront/components/ScrollToTop.jsx";
 import StoreFooter from "./features/storefront/components/StoreFooter.jsx";
 import StoreHeader from "./features/storefront/components/StoreHeader.jsx";
+import StorefrontHero from "./features/storefront/components/StorefrontHero.jsx";
 import { getCatalogProductsByIds } from "./services/catalog.js";
 import useStorefrontCatalog from "./features/storefront/useStorefrontCatalog.js";
 import { parseProductPrice, productOptions } from "./lib/productPricing.js";
@@ -702,6 +703,7 @@ export default function App() {
   ));
   const detailProduct = products.find((product) => String(product.id) === detailProductId)
     ?? (String(sharedProduct?.id) === detailProductId ? sharedProduct : null);
+  const featuredProduct = products.find((product) => product.images?.[0]) ?? products[0] ?? null;
   const detailProductError = productFetchError?.id === detailProductId
     && productFetchError?.attempt === productFetchAttempt
     ? productFetchError.message
@@ -784,6 +786,14 @@ export default function App() {
             <AboutPage content={settings.aboutContent} />
           ) : <>
             {cartNotice && <p className="store-cart-notice" role="status">{cartNotice}</p>}
+            {(settings.visibility.catalog ?? true) && !searchQuery.trim() && (
+              <StorefrontHero
+                featuredProduct={featuredProduct}
+                whatsappNumber={settings.contact.whatsappNumber}
+                onOpenDetails={openProductDetails}
+                onDirectOrder={handleDirectOrder}
+              />
+            )}
             {(settings.visibility.catalog ?? true) && (
               <CatalogSections
                 mainSections={mainSections}
@@ -815,11 +825,15 @@ export default function App() {
             )}
             {(settings.visibility.coming_soon ?? true) && (
               <h2 className="section-title glow-text" aria-label={settings.comingSoonTitle}>
-                <span className="status-dot" aria-hidden="true" />
                 <span>{settings.comingSoonTitle}</span>
               </h2>
             )}
             {(settings.visibility.features ?? true) && <FeatureList features={settings.features} />}
+            <section className="store-about-close" aria-labelledby="store-about-close-title">
+              <h2 id="store-about-close-title">{settings.aboutContent.title}</h2>
+              <p>{settings.aboutContent.introduction}</p>
+              <a href="#about">Meet Petify</a>
+            </section>
           </>
         )}
       </main>

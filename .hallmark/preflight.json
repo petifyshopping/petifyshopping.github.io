@@ -1,0 +1,53 @@
+{
+  "date": "2026-11-01",
+  "project": "Petify",
+  "framework": "React 19 and Vite 8",
+  "entry": {
+    "html": "index.html",
+    "mount": "src/main.jsx",
+    "styles": "styles.css"
+  },
+  "brand": {
+    "primary": "#1d4ed8",
+    "primaryDark": "#1e3a8a",
+    "accent": "#f59e0b",
+    "background": "#f8fafc",
+    "font": "System UI for admin, Arial for storefront"
+  },
+  "routes": [
+    { "path": "/", "kind": "storefront catalog" },
+    { "path": "/#about", "kind": "storefront about page" },
+    { "path": "/#admin", "kind": "admin workspace" },
+    { "path": "/#admin-invoice", "kind": "admin invoice screen" },
+    { "path": "/petify-dashboard", "kind": "workspace screen" }
+  ],
+  "preserve": [
+    "Header search, cart, menu, account, About link, configurable navigation, and responsive behavior",
+    "Catalog data, filters, product detail, cart, account, and WhatsApp actions",
+    "Existing route behavior and admin workflows",
+    "Existing brand assets, product images, prices, and provided copy"
+  ],
+  "introduce": [
+    "Playful product-led storefront opening",
+    "Unified Petify blue and white visual system with the existing warm accent",
+    "Rounded, tactile catalog, About, footer, and workspace styling"
+  ],
+  "theme": {
+    "name": "Squeeze",
+    "deal": "2/3",
+    "seed": "afd4443f",
+    "draw": "7d9050",
+    "shape": "Catalogue",
+    "hero": "Index",
+    "reasonForSwap": "The project has no user-supplied site-wide metric; lead with real catalog products."
+  },
+  "material": {
+    "real": ["Petify logo", "catalog products", "product images", "prices", "category names", "About copy"],
+    "absent": ["unprovided testimonials", "unprovided metrics", "unprovided product claims"]
+  },
+  "baseline": {
+    "screenshots": ".hallmark/before",
+    "routes": 5,
+    "sizes": ["1280x800", "1440x900", "1920x1080", "375"]
+  }
+}

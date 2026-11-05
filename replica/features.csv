@@ -1,0 +1,13 @@
+feature,area,priority,original,clone,notes
+Compact navigation across existing work areas,navigation,must,yes,yes,Uses the existing Petify navigation and current sections only.
+Store summary metrics, dashboard,must,yes,yes,Uses existing customer order and invoice aggregates.
+Order status distribution, dashboard,must,yes,yes,Counts remain labeled and accessible; no synthetic history.
+Invoice status distribution, dashboard,must,yes,yes,Counts remain labeled and accessible.
+Brand-aware colors across admin, visual system,must,yes,yes,Uses Petify runtime CSS variables and keeps existing brand colors.
+Responsive admin layouts, visual system,must,yes,yes,Existing desktop rail and mobile navigation remain in use.
+Reduced-motion support, accessibility,should,yes,yes,Dashboard motion is disabled for reduced-motion preferences.
+Historical revenue chart, analytics,skip,yes,skip,Petify does not currently provide time-series revenue data.
+Live visitor analytics, analytics,skip,yes,skip,No live visitor source exists in the current admin.
+Stock/reorder alerts, catalog,skip,yes,skip,No inventory or reorder data is currently available.
+Channel sales breakdown, analytics,skip,yes,skip,No channel sales aggregates are available.
+Separate Cirrel order-management workflow, orders,skip,yes,skip,Keep the existing customer-order workflows rather than adding a second order system.

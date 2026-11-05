@@ -14,6 +14,7 @@ import AdminNotice from "./components/AdminNotice.jsx";
 import AdminButton from "./components/AdminButton.jsx";
 import AdminTopbar from "./components/AdminTopbar.jsx";
 import AdminBottomNav from "./components/AdminBottomNav.jsx";
+import AdminWorkspaceFooter from "./components/AdminWorkspaceFooter.jsx";
 import LoadingState from "../shared/LoadingState.jsx";
 import FilterSheet from "./components/FilterSheet.jsx";
 import ProductListItem from "./products/ProductListItem.jsx";
@@ -947,6 +948,7 @@ export default function ProductManager({
               </>
             )}
           </div>
+          <AdminWorkspaceFooter brandName={adminBrand.name} />
         </div>
       </main>
       <FilterSheet open={filtersOpen && activeView === "products"} title="Filter and sort products" onClose={() => setFiltersOpen(false)}>

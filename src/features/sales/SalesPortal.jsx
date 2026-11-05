@@ -11,6 +11,7 @@ import AdminButton from "../admin/components/AdminButton.jsx";
 import AdminNotice from "../admin/components/AdminNotice.jsx";
 import AdminTopbar from "../admin/components/AdminTopbar.jsx";
 import AdminBottomNav from "../admin/components/AdminBottomNav.jsx";
+import AdminWorkspaceFooter from "../admin/components/AdminWorkspaceFooter.jsx";
 import WorkspaceAccessStatus from "../admin/auth/WorkspaceAccessStatus.jsx";
 import { requestAccess } from "../../services/access.js";
 import LoadingState from "../shared/LoadingState.jsx";
@@ -138,6 +139,7 @@ export default function SalesPortal({
         ]} />
         <div className="admin-page-panel">
           <SalesDashboard products={products} userId={session.user.id} isAdmin={isAdmin} />
+          <AdminWorkspaceFooter brandName={adminBrand.name} />
         </div>
       </main>
       <AdminBottomNav items={[

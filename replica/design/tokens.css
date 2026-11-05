@@ -1,0 +1,10 @@
+:root {
+  --petify-admin-bg: var(--bg-light);
+  --petify-admin-surface: var(--card-bg);
+  --petify-admin-border: var(--admin-border);
+  --petify-admin-text: var(--text-dark);
+  --petify-admin-muted: var(--text-muted);
+  --petify-admin-primary: var(--primary);
+  --petify-admin-primary-strong: var(--primary-dark);
+  --petify-admin-accent: var(--accent);
+}

@@ -170,3 +170,278 @@
     padding-inline: 0.75rem;
   }
 }
+
+.admin-overview {
+  gap: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+.admin-overview-heading {
+  align-items: flex-end;
+}
+
+.admin-overview-heading h2 {
+  font-size: clamp(1.65rem, 3vw, 2.1rem);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+}
+
+.admin-overview-intro,
+.admin-overview-section-heading p,
+.admin-overview-breakdown-heading p {
+  margin: 0.3rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.admin-overview-summary,
+.admin-overview-activity {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.admin-overview-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-overview-section-heading h3,
+.admin-overview-breakdown-heading h3 {
+  margin: 0;
+  color: var(--text-dark);
+  font-size: 1rem;
+  font-weight: 780;
+  letter-spacing: -0.02em;
+}
+
+.admin-overview-metrics {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr));
+  gap: 0.85rem;
+}
+
+.admin-overview-metric {
+  position: relative;
+  min-height: 120px;
+  gap: 1rem;
+  padding: 1.1rem;
+  border-color: var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--primary) 4%, var(--card-bg)), var(--card-bg) 65%);
+  box-shadow: 0 8px 26px -22px color-mix(in srgb, var(--primary-dark) 48%, transparent);
+  animation: admin-overview-rise 420ms ease both;
+}
+
+.admin-overview-metric:nth-child(2) { animation-delay: 35ms; }
+.admin-overview-metric:nth-child(3) { animation-delay: 70ms; }
+.admin-overview-metric:nth-child(4) { animation-delay: 105ms; }
+.admin-overview-metric:nth-child(5) { animation-delay: 140ms; }
+.admin-overview-metric:nth-child(6) { animation-delay: 175ms; }
+
+.admin-overview-metric span {
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.admin-overview-metric strong {
+  font-size: clamp(1.35rem, 2.8vw, 1.8rem);
+  letter-spacing: -0.035em;
+}
+
+.admin-overview-metric-value strong {
+  color: var(--primary-dark);
+}
+
+.admin-overview-breakdowns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.admin-overview-breakdown {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  min-width: 0;
+  padding: clamp(1rem, 2vw, 1.3rem);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  background: var(--card-bg);
+  box-shadow: 0 8px 26px -22px color-mix(in srgb, var(--primary-dark) 48%, transparent);
+  animation: admin-overview-rise 460ms ease both;
+}
+
+.admin-overview-breakdown:nth-child(2) {
+  animation-delay: 80ms;
+}
+
+.admin-overview-breakdown-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-overview-breakdown-total {
+  display: grid;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  place-items: center;
+  padding-inline: 0.45rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--primary) 9%, var(--card-bg));
+  color: var(--primary-dark);
+  font-size: 0.9rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-overview-status-list {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.admin-overview-status-row {
+  display: grid;
+  grid-template-columns: minmax(4.5rem, 0.8fr) minmax(3.5rem, 1.5fr) 2.5ch 3ch;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  color: var(--text-dark);
+  font-size: 0.8rem;
+}
+
+.admin-overview-status-label {
+  overflow: hidden;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-overview-status-track {
+  height: 0.55rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 9%, var(--card-bg));
+}
+
+.admin-overview-status-track > span {
+  display: block;
+  width: var(--status-width);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+  transform-origin: left center;
+  animation: admin-overview-bar 620ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.admin-overview-status-track.is-accent > span {
+  background: var(--accent);
+}
+
+.admin-overview-status-track.is-success > span {
+  background: var(--primary-dark);
+}
+
+.admin-overview-status-track.is-muted > span {
+  background: color-mix(in srgb, var(--text-muted) 50%, var(--card-bg));
+}
+
+.admin-overview-status-row > strong,
+.admin-overview-status-percent {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-overview-status-row > strong {
+  font-weight: 750;
+}
+
+.admin-overview-status-percent {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.admin-overview-breakdown-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.65rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--admin-border);
+  color: var(--text-muted);
+  font-size: 0.77rem;
+}
+
+.admin-overview-breakdown-footer strong {
+  margin-right: auto;
+  color: var(--text-dark);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-overview-error {
+  border-radius: var(--admin-radius-md);
+}
+
+@keyframes admin-overview-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes admin-overview-bar {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@media (max-width: 700px) {
+  .admin-overview-breakdowns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-overview-heading {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 520px) {
+  .admin-overview-heading {
+    flex-direction: column;
+  }
+
+  .admin-overview-heading > button {
+    align-self: flex-start;
+  }
+
+  .admin-overview-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+
+  .admin-overview-metric {
+    min-height: 100px;
+    padding: 0.8rem;
+  }
+
+  .admin-overview-status-row {
+    grid-template-columns: minmax(4.2rem, 0.8fr) minmax(3.5rem, 1.4fr) 2.5ch 3ch;
+    gap: 0.45rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-overview-metric,
+  .admin-overview-breakdown,
+  .admin-overview-status-track > span {
+    animation: none;
+  }
+}

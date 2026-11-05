@@ -147,6 +147,9 @@ export default function ProjectHeader({
                 <a href={isAboutRoute ? "#top" : "#about"} onClick={() => setMenuOpen(false)}>
                   {isAboutRoute ? "Visit store" : "About us"}
                 </a>
+                {!isAboutRoute && (visibility?.footer ?? true) && (
+                  <a href="#site-footer" onClick={() => setMenuOpen(false)}>Discover more</a>
+                )}
               </nav>
             )}
           </div>

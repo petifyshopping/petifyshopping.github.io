@@ -1,8 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ProductCard from "./ProductCard.jsx";
 import CategoryNav from "./CategoryNav.jsx";
-
-const PAGE_SIZE = 12;
 
 function searchText(product, section, mainSection) {
   return [
@@ -33,12 +31,10 @@ export default function CatalogSections({
 }) {
   const [selectedMainId, setSelectedMainId] = useState("");
   const [selectedSectionId, setSelectedSectionId] = useState("");
-  const [pagination, setPagination] = useState({ key: "", count: PAGE_SIZE });
+  const loadMoreSentinel = useRef(null);
   const sectionById = useMemo(() => new Map(sections.map((section) => [section.id, section])), [sections]);
   const mainById = useMemo(() => new Map(mainSections.map((section) => [section.id, section])), [mainSections]);
   const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
-  const paginationKey = `${normalizedQuery}:${selectedMainId}:${selectedSectionId}`;
-  const visibleCount = pagination.key === paginationKey ? pagination.count : PAGE_SIZE;
 
   const matchingProducts = useMemo(() => products.filter((product) => {
     const section = sectionById.get(product.sectionId);
@@ -47,20 +43,40 @@ export default function CatalogSections({
     return !normalizedQuery || searchText(product, section, mainById.get(section?.main_section_id)).includes(normalizedQuery);
   }), [mainById, normalizedQuery, products, sectionById, selectedMainId, selectedSectionId]);
 
-  const visibleProducts = matchingProducts.slice(0, visibleCount);
   const visibleBySection = useMemo(() => {
     const grouped = new Map();
-    for (const product of visibleProducts) {
+    for (const product of matchingProducts) {
       const group = grouped.get(product.sectionId) ?? [];
       group.push(product);
       grouped.set(product.sectionId, group);
     }
     return grouped;
-  }, [visibleProducts]);
+  }, [matchingProducts]);
   const selectedMain = mainById.get(selectedMainId);
   const selectedSection = sectionById.get(selectedSectionId);
   const crumbParts = ["Home", selectedMain?.title, selectedSection?.title].filter(Boolean);
   const standaloneIds = new Set(sections.filter((section) => !section.main_section_id).map((section) => section.id));
+
+  useEffect(() => {
+    const sentinel = loadMoreSentinel.current;
+    if (!sentinel || !hasMoreProducts || loadingMore || loadMoreError) return undefined;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) onLoadMore();
+    }, { rootMargin: "300px" });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMoreProducts, loadMoreError, loadingMore, onLoadMore]);
+
+  const loadMoreStatus = hasMoreProducts && (
+    <div className="catalog-scroll-status" ref={loadMoreSentinel} aria-live="polite">
+      {loadingMore && <><span className="catalog-button-spinner" aria-hidden="true" />Loading more products…</>}
+      {loadMoreError && (
+        <p className="catalog-load-error" role="alert">
+          More products could not be loaded. <button type="button" onClick={onLoadMore} disabled={loadingMore}>Retry</button>
+        </p>
+      )}
+    </div>
+  );
 
   const renderSection = (section, nested = false) => {
     const sectionProducts = visibleBySection.get(section.id) ?? [];
@@ -150,23 +166,7 @@ export default function CatalogSections({
               Browse all products
             </button>
           )}
-          {hasMoreProducts && (
-            <button
-              type="button"
-              className="catalog-reset-button"
-              onClick={onLoadMore}
-              disabled={loadingMore}
-              aria-busy={loadingMore}
-            >
-              {loadingMore && <span className="catalog-button-spinner" aria-hidden="true" />}
-              {loadingMore ? "Loading products…" : "Load more products"}
-            </button>
-          )}
-          {loadMoreError && (
-            <p className="catalog-load-error" role="alert">
-              More products could not be loaded. <button type="button" onClick={onLoadMore} disabled={loadingMore}>Retry</button>
-            </p>
-          )}
+          {loadMoreStatus}
         </div>
       ) : (
         <>
@@ -185,23 +185,7 @@ export default function CatalogSections({
             );
           })}
           {visibleStandaloneSections.map((section) => renderSection(section))}
-          {(visibleCount < matchingProducts.length || hasMoreProducts) && (
-            <button
-              className="catalog-load-more"
-              type="button"
-              onClick={() => {
-                if (visibleCount < matchingProducts.length) {
-                  setPagination({ key: paginationKey, count: visibleCount + PAGE_SIZE });
-                }
-                else onLoadMore();
-              }}
-              disabled={loadingMore}
-              aria-busy={loadingMore}
-            >
-              {loadingMore && <span className="catalog-button-spinner" aria-hidden="true" />}
-              {loadingMore ? "Loading products…" : "Load more products"}
-            </button>
-          )}
+          {loadMoreStatus}
         </>
       )}
     </div>

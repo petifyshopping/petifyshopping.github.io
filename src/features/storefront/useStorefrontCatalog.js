@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getCatalog, getMoreCatalogProducts } from "../../services/catalog.js";
 
 export default function useStorefrontCatalog() {
   const [requestId, setRequestId] = useState(0);
+  const loadingMoreRef = useRef(false);
   const [catalog, setCatalog] = useState({
     products: [],
     totalProducts: 0,
@@ -44,7 +45,8 @@ export default function useStorefrontCatalog() {
     setRequestId((current) => current + 1);
   }, []);
   const loadMore = useCallback(async () => {
-    if (catalog.loadingMore || catalog.products.length >= catalog.totalProducts) return;
+    if (loadingMoreRef.current || catalog.loadingMore || catalog.products.length >= catalog.totalProducts) return;
+    loadingMoreRef.current = true;
     setCatalog((current) => ({ ...current, loadingMore: true, loadMoreError: null }));
     try {
       const result = await getMoreCatalogProducts(catalog.products.length);
@@ -56,6 +58,8 @@ export default function useStorefrontCatalog() {
       }));
     } catch (loadError) {
       setCatalog((current) => ({ ...current, loadingMore: false, loadMoreError: loadError }));
+    } finally {
+      loadingMoreRef.current = false;
     }
   }, [catalog.loadingMore, catalog.products.length, catalog.totalProducts]);
 

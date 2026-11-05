@@ -1,5 +1,6 @@
 import { useState } from "react";
 import AdminButton from "../components/AdminButton.jsx";
+import CurrencyInput from "./CurrencyInput.jsx";
 
 export default function ProductListItem({
   product,
@@ -64,8 +65,8 @@ export default function ProductListItem({
       {editingPrice && (
         <form className="admin-product-quick-price" onSubmit={submitPrice}>
           <label>
-            Price (₹)
-            <input
+            Price
+            <CurrencyInput
               type="text"
               inputMode="decimal"
               value={price}

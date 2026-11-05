@@ -92,6 +92,26 @@ footer a {
   font-weight: 400;
 }
 
+.admin-currency-input {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.admin-currency-input > span {
+  position: absolute;
+  top: 50%;
+  left: 0.75rem;
+  color: var(--text-dark);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.admin-currency-input input {
+  padding-left: 2.4rem !important;
+}
+
 .admin-form-grid textarea {
   resize: vertical;
 }

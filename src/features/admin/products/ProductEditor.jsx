@@ -4,6 +4,7 @@ import { uploadProductImages, saveProduct, setProductStock } from "../../../serv
 import { formatProductPrice } from "../../../lib/productPricing.js";
 import useWorkspaceDraft from "../../../hooks/useWorkspaceDraft.js";
 import { parseVariantPrice, slugify } from "./productUtils.js";
+import CurrencyInput from "./CurrencyInput.jsx";
 import useConfirmDialog from "../../../hooks/useConfirmDialog.js";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import ImageUploadField from "../components/ImageUploadField.jsx";
@@ -494,8 +495,8 @@ export default function ProductEditor({ product, draft, products, mainSections, 
                 {(form.variants ?? []).map((variant, index) => (
                   <div className="product-variant-row" key={variant.id}>
                     <label>Option label<input value={variant.label} onChange={(event) => updateVariant(variant.id, "label", event.target.value)} placeholder="e.g. 250 g, 500 g, Pack of 4" /></label>
-                    <label>Price (₹)<input type="text" inputMode="decimal" value={variant.price} onChange={(event) => updateVariant(variant.id, "price", event.target.value)} placeholder="1,299" /></label>
-                    <label>Previous price (₹)<input type="text" inputMode="decimal" value={variant.oldPrice ?? ""} onChange={(event) => updateVariant(variant.id, "oldPrice", event.target.value)} placeholder="Optional" /></label>
+                    <label>Price<CurrencyInput type="text" inputMode="decimal" value={variant.price} onChange={(event) => updateVariant(variant.id, "price", event.target.value)} placeholder="1,299" /></label>
+                    <label>Previous price<CurrencyInput type="text" inputMode="decimal" value={variant.oldPrice ?? ""} onChange={(event) => updateVariant(variant.id, "oldPrice", event.target.value)} placeholder="Optional" /></label>
                     <button className="admin-delete-button" type="button" aria-label={`Remove variety ${index + 1}`} onClick={() => removeVariant(variant.id)}>Remove</button>
                   </div>
                 ))}
@@ -503,8 +504,8 @@ export default function ProductEditor({ product, draft, products, mainSections, 
               </fieldset>
             ) : (
               <>
-                <label>Price<input type="text" inputMode="decimal" value={form.price} onChange={(event) => update("price", event.target.value)} placeholder="₹1,299" /></label>
-                <label>Previous price<input type="text" inputMode="decimal" value={form.oldPrice} onChange={(event) => update("oldPrice", event.target.value)} placeholder="₹1,499" /></label>
+                <label>Price<CurrencyInput type="text" inputMode="decimal" value={form.price} onChange={(event) => update("price", event.target.value)} placeholder="1,299" /></label>
+                <label>Previous price<CurrencyInput type="text" inputMode="decimal" value={form.oldPrice} onChange={(event) => update("oldPrice", event.target.value)} placeholder="1,499" /></label>
               </>
             )}
             <label className="admin-span-two">WhatsApp order message<input value={form.defaultWhatsappMsg} onChange={(event) => update("defaultWhatsappMsg", event.target.value)} /></label>

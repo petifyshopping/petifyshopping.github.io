@@ -849,7 +849,8 @@ html {
 }
 
 .product-details-cart-actions .store-quantity-stepper {
-  flex: 0 0 auto;
+  width: 9rem;
+  flex: 0 0 9rem;
 }
 
 .product-details-go-to-cart {
@@ -871,6 +872,17 @@ html {
   white-space: nowrap;
   cursor: pointer;
   transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+@media (max-width: 380px) {
+  .product-details-cart-actions {
+    gap: 0.45rem;
+  }
+
+  .product-details-cart-actions .store-quantity-stepper {
+    width: 8.25rem;
+    flex-basis: 8.25rem;
+  }
 }
 
 .product-details-go-to-cart:hover {

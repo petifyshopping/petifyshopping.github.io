@@ -57,6 +57,7 @@ export default function StoreCart({
   selectedAddressId,
   onAddressSelect,
   authenticated,
+  emailVerified,
   authLoading,
   onOpenAccount,
   onCheckout,
@@ -145,6 +146,10 @@ export default function StoreCart({
     setCheckoutError("");
     if (!authenticated) {
       onOpenAccount("Sign in or create an account before placing an order.");
+      return;
+    }
+    if (!emailVerified) {
+      onOpenAccount("Verify your email before placing an order. Check your inbox for the confirmation link.");
       return;
     }
     if (!hasValidAddress) {

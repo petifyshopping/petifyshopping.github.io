@@ -42,6 +42,20 @@ export async function signInCustomer(email, password) {
   return data;
 }
 
+export async function resendCustomerConfirmation(email) {
+  const emailRedirectUrl = new URL(window.location.href);
+  emailRedirectUrl.searchParams.set("email-confirmed", "1");
+  emailRedirectUrl.hash = "";
+  const { error } = await requireSupabase().auth.resend({
+    type: "signup",
+    email: email.trim(),
+    options: {
+      emailRedirectTo: emailRedirectUrl.toString(),
+    },
+  });
+  if (error) throw error;
+}
+
 export async function resetCustomerPassword(email) {
   const { error } = await requireSupabase().auth.resetPasswordForEmail(email, {
     redirectTo: `${window.location.origin}/?view=reset-password`,

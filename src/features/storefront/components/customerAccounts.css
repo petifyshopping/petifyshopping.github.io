@@ -374,6 +374,18 @@
   font-weight: 550;
 }
 
+.customer-account-form label > .customer-account-field-error {
+  color: #a52e2e;
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.customer-account-form input[aria-invalid="true"] {
+  border-color: #d66b6b;
+  background: #fff8f8;
+}
+
 .customer-account-form input,
 .customer-account-form textarea,
 .customer-phone-input select {
@@ -753,6 +765,16 @@
 
 .customer-account-confirmation .customer-account-submit {
   margin-top: 0.5rem;
+}
+
+.customer-account-confirmation-actions {
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.customer-account-confirmation-actions button {
+  margin-top: 0;
 }
 
 .customer-account-content {

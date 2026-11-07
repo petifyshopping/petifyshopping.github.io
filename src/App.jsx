@@ -209,6 +209,7 @@ export default function App() {
   }, []);
 
   const customerUserId = customerSession?.user?.id ?? "";
+  const customerEmailVerified = Boolean(customerSession?.user?.email_confirmed_at);
   const customerProfileLoading = Boolean(
     customerUserId
     && customerCartUserId !== customerUserId
@@ -567,6 +568,10 @@ export default function App() {
       openAccount("Sign in or create an account before placing an order.");
       throw new Error("Sign in to continue to WhatsApp.");
     }
+    if (!customerSession.user.email_confirmed_at) {
+      openAccount("Verify your email before placing an order. Check your inbox for the confirmation link.");
+      throw new Error("Verify your email before placing an order.");
+    }
     if (!customerProfile) throw new Error("Your customer profile is still loading. Please try again.");
     await createCustomerOrder({ items, addressId, temporaryAddress, note });
   }, [customerProfile, customerSession, openAccount]);
@@ -610,6 +615,10 @@ export default function App() {
   const handleDirectOrder = useCallback(async ({ product, variant, link }) => {
     if (!customerSession) {
       openAccount("Sign in or create an account before placing an order.");
+      return;
+    }
+    if (!customerEmailVerified) {
+      openAccount("Verify your email before placing an order. Check your inbox for the confirmation link.");
       return;
     }
     if (!customerProfile) {
@@ -659,6 +668,7 @@ export default function App() {
     customerProfile,
     customerProfileLoading,
     customerSession,
+    customerEmailVerified,
     openAccount,
     selectedCustomerAddressId,
     settings?.customerOrderContactFields,
@@ -853,6 +863,7 @@ export default function App() {
             selectedAddressId={selectedCustomerAddressId}
             onAddressSelect={setSelectedCustomerAddressId}
             authenticated={Boolean(customerSession)}
+            emailVerified={customerEmailVerified}
             authLoading={!customerAuthReady || customerProfileLoading}
             onOpenAccount={openAccount}
             onCheckout={handleCartOrder}

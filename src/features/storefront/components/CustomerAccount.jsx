@@ -9,6 +9,7 @@ import {
 } from "../../../services/customers.js";
 import {
   resetCustomerPassword,
+  resendCustomerConfirmation,
   signInCustomer,
   signUpCustomer,
 } from "../../../services/customerAuth.js";
@@ -89,6 +90,8 @@ export default function CustomerAccount({
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [confirmationEmail, setConfirmationEmail] = useState("");
+  const [confirmationMode, setConfirmationMode] = useState("signup");
+  const [phoneError, setPhoneError] = useState("");
 
   function changeProfileField(field, value) {
     setProfileDraft((current) => ({
@@ -150,13 +153,21 @@ export default function CustomerAccount({
     setError("");
     setNotice("");
     setConfirmationEmail("");
+    setConfirmationMode("signup");
+    setPhoneError("");
     onClearMessage();
     try {
       if (mode === "signup") {
         const parsedPhone = parsePhoneNumberFromString(form.phone, signupCountry);
-        if (!parsedPhone?.isValid()) {
-          throw new Error("Enter a valid phone number for the selected country.");
+        if (!parsedPhone?.isPossible()) {
+          setPhoneError(`Enter a valid ${selectedSignupCountry?.name ?? "country"} phone number.`);
+          return;
         }
+        if (!parsedPhone?.isValid()) {
+          setPhoneError(`Invalid ${selectedSignupCountry?.name ?? "country"} phone number.`);
+          return;
+        }
+        setPhoneError("");
         const result = await signUpCustomer({
           ...form,
           phone: parsedPhone.number,
@@ -177,7 +188,28 @@ export default function CustomerAccount({
       }
     } catch (authError) {
       console.error("Customer authentication failed.", authError);
-      setError(authError.message || "We couldn't complete sign in. Please try again.");
+      if (mode === "signin" && /email not confirmed|confirm your email/i.test(authError.message ?? "")) {
+        setConfirmationEmail(form.email.trim());
+        setConfirmationMode("signin");
+        setError("");
+      } else {
+        setError(authError.message || "We couldn't complete sign in. Please try again.");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resendConfirmation() {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      await resendCustomerConfirmation(confirmationEmail);
+      setNotice("A new confirmation email has been sent. Check your inbox and confirm your email before signing in.");
+    } catch (resendError) {
+      console.error("Could not resend the customer confirmation email.", resendError);
+      setError(resendError.message || "The confirmation email could not be sent.");
     } finally {
       setBusy(false);
     }
@@ -332,24 +364,66 @@ export default function CustomerAccount({
         {confirmationEmail ? (
           <div className="customer-account-confirmation" role="status" aria-live="polite">
             <span className="customer-account-confirmation-icon" aria-hidden="true">✓</span>
-            <p className="customer-account-section-label">ACCOUNT CREATED SUCCESSFULLY</p>
-            <h3>Check your inbox</h3>
-            <p>We sent a confirmation link to:</p>
+            <p className="customer-account-section-label">
+              {confirmationMode === "signin" ? "EMAIL NOT CONFIRMED" : "ACCOUNT CREATED SUCCESSFULLY"}
+            </p>
+            <h3>{confirmationMode === "signin" ? "Confirm your email to sign in" : "Check your inbox"}</h3>
+            <p>{confirmationMode === "signin" ? "Your email is not confirmed yet:" : "We sent a confirmation link to:"}</p>
             <strong className="customer-account-confirmation-email">{confirmationEmail}</strong>
-            <p>Open the link in that email to confirm your address. Once confirmed, come back and sign in to your account.</p>
-            <button
-              className="customer-account-primary customer-account-submit"
-              type="button"
-              onClick={() => {
-                setConfirmationEmail("");
-                setMode("signin");
-                setError("");
-                setNotice("");
-                setForm((current) => ({ ...current, password: "" }));
-              }}
-            >
-              Back to sign in
-            </button>
+            <p>{confirmationMode === "signin"
+              ? "Send the confirmation email again, then open the link before signing in."
+              : "Would you like to verify your email now or do it later? You can keep browsing either way, but your email must be verified before you can place an order."}</p>
+            <div className="customer-account-actions customer-account-confirmation-actions">
+              {confirmationMode === "signin" ? (
+                <>
+                  <button className="customer-account-primary" type="button" onClick={resendConfirmation} disabled={busy}>
+                    {busy ? "Sending…" : "Confirm now"}
+                  </button>
+                  <button
+                    className="customer-account-secondary"
+                    type="button"
+                    onClick={() => {
+                      setConfirmationEmail("");
+                      setMode("signin");
+                      setError("");
+                      setNotice("");
+                    }}
+                    disabled={busy}
+                  >
+                    Back to sign in
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    className="customer-account-primary"
+                    type="button"
+                    onClick={() => {
+                      setConfirmationEmail("");
+                      setMode("signin");
+                      setError("");
+                      setNotice("Check your inbox now and confirm your email before signing in.");
+                      setForm((current) => ({ ...current, password: "" }));
+                    }}
+                  >
+                    I’ll verify it now
+                  </button>
+                  <button
+                    className="customer-account-secondary"
+                    type="button"
+                    onClick={() => {
+                      setConfirmationEmail("");
+                      setMode("signin");
+                      setError("");
+                      setNotice("You can keep browsing, but you must verify your email before placing an order.");
+                      setForm((current) => ({ ...current, password: "" }));
+                    }}
+                  >
+                    I’ll verify it later
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         ) : session ? (
           profileLoading || !profile ? (
@@ -669,7 +743,10 @@ export default function CustomerAccount({
                     </span>
                     <select
                       value={signupCountry}
-                      onChange={(event) => setSignupCountry(event.target.value)}
+                      onChange={(event) => {
+                        setSignupCountry(event.target.value);
+                        setPhoneError("");
+                      }}
                       aria-label="Country and calling code"
                       autoComplete="country"
                     >
@@ -682,15 +759,21 @@ export default function CustomerAccount({
                   </span>
                   <input
                     value={form.phone}
-                    onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+                    onChange={(event) => {
+                      setForm((current) => ({ ...current, phone: event.target.value }));
+                      setPhoneError("");
+                    }}
                     type="tel"
                     autoComplete="tel-national"
                     inputMode="tel"
                     required
                     maxLength={40}
                     placeholder="Phone number"
+                    aria-invalid={Boolean(phoneError)}
+                    aria-describedby={phoneError ? "customer-phone-error" : undefined}
                   />
                 </span>
+                {phoneError && <span className="customer-account-field-error" id="customer-phone-error" role="alert">{phoneError}</span>}
               </label>
             )}
             <label>

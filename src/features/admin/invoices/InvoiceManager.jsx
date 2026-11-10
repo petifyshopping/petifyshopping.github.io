@@ -209,6 +209,7 @@ function lineTotal(item) {
 export default function InvoiceManager({ products, storefrontBrand }) {
   const [invoices, setInvoices] = useState([]);
   const [invoice, setInvoice] = useState(null);
+  const [invoiceTab, setInvoiceTab] = useState("invoices");
   const [invoiceHeaderDefaults, setInvoiceHeaderDefaults] = useState(null);
   const [settingsBusinessDetails, setSettingsBusinessDetails] = useState(null);
   const [invoiceMode, setInvoiceMode] = useState("edit");
@@ -477,6 +478,7 @@ export default function InvoiceManager({ products, storefrontBrand }) {
       if (savedInvoice) {
         setInvoice(null);
         setInvoiceMode("edit");
+        setInvoiceTab(savedInvoice.status === "draft" ? "drafts" : "invoices");
         if (!shareCompleted) setNotice("Invoice saved.");
       }
 
@@ -606,10 +608,11 @@ export default function InvoiceManager({ products, storefrontBrand }) {
 
   async function handleSave(event) {
     event.preventDefault();
-    const savedInvoice = await persistInvoice();
+    const savedInvoice = await persistInvoice({ status: "sent" });
     if (!savedInvoice) return;
     setInvoice(null);
     setInvoiceMode("edit");
+    setInvoiceTab("invoices");
   }
 
   async function saveAsDraft() {
@@ -617,6 +620,7 @@ export default function InvoiceManager({ products, storefrontBrand }) {
     if (!savedInvoice) return;
     setInvoice(null);
     setInvoiceMode("edit");
+    setInvoiceTab("drafts");
   }
 
   async function discardInvoiceChanges() {
@@ -653,6 +657,7 @@ export default function InvoiceManager({ products, storefrontBrand }) {
       if (savedInvoice) {
         setInvoice(null);
         setInvoiceMode("edit");
+        setInvoiceTab(savedInvoice.status === "draft" ? "drafts" : "invoices");
         setNotice("Invoice saved.");
       }
     }
@@ -769,6 +774,7 @@ export default function InvoiceManager({ products, storefrontBrand }) {
       const saved = await updateInvoiceStatus(invoice.id, status);
       setInvoice(editableInvoice(saved, storefrontBrand?.tagline || ""));
       setInvoices((current) => current.map((record) => record.id === saved.id ? saved : record));
+      setInvoiceTab(saved.status === "draft" ? "drafts" : "invoices");
       setNotice("Invoice status updated.");
     } catch (statusError) {
       setError(statusError.message || "Invoice status could not be updated.");
@@ -820,7 +826,15 @@ export default function InvoiceManager({ products, storefrontBrand }) {
           loading={loading}
           loadError={loadError}
           deletingInvoiceId={deletingInvoiceId}
+          activeTab={invoiceTab}
+          onTabChange={setInvoiceTab}
           onCreate={startNewInvoice}
+          onView={(record) => {
+            setInvoice(editableInvoice(record, storefrontBrand?.tagline || ""));
+            setInvoiceMode("view");
+            setError("");
+            setNotice("");
+          }}
           onEdit={(record) => {
             setInvoice(editableInvoice(record, storefrontBrand?.tagline || ""));
             setInvoiceMode("edit");
@@ -1213,10 +1227,20 @@ export default function InvoiceManager({ products, storefrontBrand }) {
                       <option value="paid">Paid</option>
                     </select>
                   </label>
-                  {invoiceMode === "edit" && <button type="button" onClick={() => { moreActionsRef.current.open = false; void saveAsDraft(); }} disabled={saving || sharing || printing || updatingInvoiceStatus}>{saving ? "Saving..." : "Save as draft"}</button>}
+                  {invoiceMode === "edit" && <button className="invoice-menu-save-draft" type="button" onClick={() => { moreActionsRef.current.open = false; void saveAsDraft(); }} disabled={saving || sharing || printing || updatingInvoiceStatus}>{saving ? "Saving..." : "Save as draft"}</button>}
                   <button type="button" className="invoice-discard-action" onClick={() => { moreActionsRef.current.open = false; void discardInvoiceChanges(); }} disabled={saving || sharing || printing || updatingInvoiceStatus}>Discard</button>
                 </div>
               </details>
+              {invoiceMode === "edit" && (
+                <button
+                  type="button"
+                  className="admin-secondary-button invoice-save-draft-button"
+                  onClick={() => void saveAsDraft()}
+                  disabled={saving || sharing || printing || updatingInvoiceStatus}
+                >
+                  {saving ? "Saving..." : "Save as draft"}
+                </button>
+              )}
               {invoiceMode === "edit" && <button className="admin-primary-button invoice-save-button" type="submit" disabled={saving || sharing || printing || updatingInvoiceStatus}>{saving ? "Saving..." : "Save"}</button>}
             </div>
           </div>

@@ -4,7 +4,6 @@ import { invoiceStatus } from "./invoiceStatus.js";
 
 const statusOptions = [
   { value: "all", label: "All statuses" },
-  { value: "draft", label: "Draft" },
   { value: "sent", label: "Sent" },
   { value: "paid", label: "Paid" },
   { value: "overdue", label: "Overdue" },
@@ -51,8 +50,11 @@ export default function InvoiceList({
   loading,
   loadError,
   deletingInvoiceId,
+  activeTab,
+  onTabChange,
   onCreate,
   onEdit,
+  onView,
   onDelete,
   onShare,
   onPrint,
@@ -88,31 +90,75 @@ export default function InvoiceList({
   }
   const filteredInvoices = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
-    return invoices.filter((record) => {
+    const sectionInvoices = invoices.filter((record) => (
+      activeTab === "drafts"
+        ? invoiceStatus(record) === "draft"
+        : invoiceStatus(record) !== "draft"
+    ));
+    return sectionInvoices.filter((record) => {
       const customer = selectedCustomer(record);
       const matchesQuery = !normalizedQuery
         || [record.invoiceNumber, customer.name, customer.phone]
           .some((value) => String(value ?? "").toLocaleLowerCase().includes(normalizedQuery));
-      return matchesQuery && (statusFilter === "all" || invoiceStatus(record) === statusFilter);
+      return matchesQuery && (
+        activeTab === "drafts"
+        || statusFilter === "all"
+        || invoiceStatus(record) === statusFilter
+      );
     });
-  }, [invoices, query, statusFilter]);
+  }, [activeTab, invoices, query, statusFilter]);
 
   if (loading) return <InvoiceSkeletons />;
   if (loadError) return null;
 
-  if (!invoices.length) {
-    return (
-      <div className="invoice-empty-state">
-        <span className="invoice-empty-icon" aria-hidden="true">▤</span>
-        <h2>No invoices yet</h2>
-        <p>Create your first invoice and it will appear here for later viewing, printing, or sharing.</p>
-        <button className="admin-primary-button" type="button" onClick={onCreate}>Create invoice</button>
-      </div>
-    );
-  }
+  const draftCount = invoices.filter((record) => invoiceStatus(record) === "draft").length;
+  const savedInvoices = invoices.length - draftCount;
+  const sectionCount = activeTab === "drafts" ? draftCount : savedInvoices;
 
   return (
-    <section className="invoice-list-section" aria-label="Saved invoices">
+    <section className="invoice-list-section" aria-label="Invoices and drafts">
+      <div
+        className="invoice-section-tabs"
+        role="tablist"
+        aria-label="Invoice sections"
+        onKeyDown={(event) => {
+          if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+          event.preventDefault();
+          const tabs = [...event.currentTarget.querySelectorAll('[role="tab"]')];
+          const currentTab = event.target.closest('[role="tab"]');
+          const currentIndex = tabs.indexOf(currentTab);
+          if (currentIndex < 0) return;
+          const direction = event.key === "ArrowRight" ? 1 : -1;
+          const nextTab = tabs[(currentIndex + direction + tabs.length) % tabs.length];
+          nextTab.focus();
+          onTabChange(nextTab.dataset.tab);
+        }}
+      >
+        <button
+          type="button"
+          role="tab"
+          id="invoice-tab-saved"
+          aria-selected={activeTab === "invoices"}
+          aria-controls="invoice-panel"
+          tabIndex={activeTab === "invoices" ? 0 : -1}
+          data-tab="invoices"
+          onClick={() => onTabChange("invoices")}
+        >
+          Invoices <span>{savedInvoices}</span>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          id="invoice-tab-drafts"
+          aria-selected={activeTab === "drafts"}
+          aria-controls="invoice-panel"
+          tabIndex={activeTab === "drafts" ? 0 : -1}
+          data-tab="drafts"
+          onClick={() => onTabChange("drafts")}
+        >
+          Drafts <span>{draftCount}</span>
+        </button>
+      </div>
       <div className="invoice-list-toolbar">
         <label className="invoice-search">
           <span className="invoice-visually-hidden">Search invoices</span>
@@ -120,35 +166,55 @@ export default function InvoiceList({
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search customer, phone, or invoice number"
+            placeholder="Search customer or invoice number"
           />
         </label>
-        <label className="invoice-status-filter">
-          <span className="invoice-visually-hidden">Filter by invoice status</span>
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-            {statusOptions.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
-          </select>
-        </label>
-        <span className="invoice-list-count">{filteredInvoices.length} of {invoices.length}</span>
+        {activeTab === "invoices" && (
+          <label className="invoice-status-filter">
+            <span className="invoice-visually-hidden">Filter by invoice status</span>
+            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              {statusOptions.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
+            </select>
+          </label>
+        )}
+        <span className="invoice-list-count">{filteredInvoices.length} of {sectionCount}</span>
       </div>
-      {!filteredInvoices.length ? (
-        <div className="invoice-empty-state is-compact">
-          <h2>No matching invoices</h2>
-          <p>Try a different search or status filter.</p>
-          <button
-            className="admin-secondary-button"
-            type="button"
-            onClick={() => { setQuery(""); setStatusFilter("all"); }}
-          >
-            Clear filters
-          </button>
-        </div>
-      ) : (
-        <div className="invoice-list">
-          {filteredInvoices.map((record) => {
-            return (
-              <article className="invoice-list-row" key={record.id}>
-                <div className="invoice-list-open">
+      <div
+        className="invoice-tab-panel"
+        id="invoice-panel"
+        role="tabpanel"
+        aria-labelledby={activeTab === "drafts" ? "invoice-tab-drafts" : "invoice-tab-saved"}
+        tabIndex={0}
+      >
+        {!sectionCount ? (
+          <div className="invoice-empty-state">
+            <span className="invoice-empty-icon" aria-hidden="true">{activeTab === "drafts" ? "✎" : "▤"}</span>
+            <h2>{activeTab === "drafts" ? "No drafts yet" : "No saved invoices yet"}</h2>
+            <p>
+              {activeTab === "drafts"
+                ? "Save an unfinished invoice as a draft and it will be kept here."
+                : "Completed invoices will appear here, separate from your drafts."}
+            </p>
+            <button className="admin-primary-button" type="button" onClick={onCreate}>Create invoice</button>
+          </div>
+        ) : !filteredInvoices.length ? (
+          <div className="invoice-empty-state is-compact">
+            <h2>No matching {activeTab === "drafts" ? "drafts" : "invoices"}</h2>
+            <p>Try a different search{activeTab === "invoices" ? " or status filter" : ""}.</p>
+            <button
+              className="admin-secondary-button"
+              type="button"
+              onClick={() => { setQuery(""); setStatusFilter("all"); }}
+            >
+              Clear filters
+            </button>
+          </div>
+        ) : (
+          <div className="invoice-list">
+            {filteredInvoices.map((record) => {
+              const status = invoiceStatus(record);
+              return (
+                <article className="invoice-list-row" key={record.id}>
                   <span className="invoice-list-customer">
                     <strong>{invoicePrimary(record)}</strong>
                     <small>{invoiceSubtitle(record)}</small>
@@ -156,28 +222,30 @@ export default function InvoiceList({
                   <span className="invoice-list-financial">
                     <strong>{formatProductPrice(record.total)}</strong>
                   </span>
-                </div>
-                <details className="invoice-list-options">
-                  <summary aria-label={`Options for invoice ${record.invoiceNumber}`} onClick={toggleOptions}>Options</summary>
-                  <div>
-                    <button type="button" onClick={(event) => { closeMenu(event); onEdit(record); }}>Edit</button>
-                    <details className="invoice-list-share-options">
-                      <summary onClick={toggleShareOptions}>Share</summary>
-                      <div>
-                        <button type="button" onClick={(event) => { closeMenu(event); onShare(record); }}>Share image</button>
-                        <button type="button" onClick={(event) => { closeMenu(event); onPrint(record); }}>Print / PDF</button>
-                      </div>
-                    </details>
-                    <button type="button" disabled={Boolean(deletingInvoiceId)} onClick={(event) => { closeMenu(event); onDelete(record); }}>
-                      {deletingInvoiceId === record.id ? "Deleting..." : "Delete"}
-                    </button>
-                  </div>
-                </details>
-              </article>
-            );
-          })}
-        </div>
-      )}
+                  <span className={`invoice-status-badge is-${status}`}>{status}</span>
+                  <details className="invoice-list-options">
+                    <summary aria-label={`Options for invoice ${record.invoiceNumber}`} onClick={toggleOptions}>Options</summary>
+                    <div>
+                      <button type="button" onClick={(event) => { closeMenu(event); onView(record); }}>View</button>
+                      <button type="button" onClick={(event) => { closeMenu(event); onEdit(record); }}>Edit</button>
+                      <details className="invoice-list-share-options">
+                        <summary onClick={toggleShareOptions}>Share</summary>
+                        <div>
+                          <button type="button" onClick={(event) => { closeMenu(event); onShare(record); }}>Share image</button>
+                          <button type="button" onClick={(event) => { closeMenu(event); onPrint(record); }}>Print / PDF</button>
+                        </div>
+                      </details>
+                      <button type="button" disabled={Boolean(deletingInvoiceId)} onClick={(event) => { closeMenu(event); onDelete(record); }}>
+                        {deletingInvoiceId === record.id ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
+                  </details>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

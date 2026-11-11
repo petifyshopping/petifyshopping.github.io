@@ -1,5 +1,5 @@
 git add .
-git commit -m "draft section in invoices"
+git commit -m "products in invoice tiles"
 git push origin user-profiles
 
 npm run build

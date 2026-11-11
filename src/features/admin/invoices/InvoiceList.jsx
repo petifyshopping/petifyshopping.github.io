@@ -2,13 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { formatProductPrice } from "../../../lib/productPricing.js";
 import { invoiceStatus } from "./invoiceStatus.js";
 
-const statusOptions = [
-  { value: "all", label: "All statuses" },
-  { value: "sent", label: "Sent" },
-  { value: "paid", label: "Paid" },
-  { value: "overdue", label: "Overdue" },
-];
-
 function selectedCustomer(record) {
   const details = record.customerDetails ?? {};
   if (details.source === "saved") return details.savedCustomer ?? {};
@@ -24,11 +17,16 @@ function invoicePrimary(record) {
   return name || phone || record.invoiceNumber;
 }
 
-function invoiceSubtitle(record) {
-  const customer = selectedCustomer(record);
-  return customer.name?.trim() || customer.phone?.trim()
-    ? `${record.invoiceNumber} · ${record.issueDate}`
-    : record.issueDate;
+function invoiceItemsSummary(record) {
+  const items = (Array.isArray(record.items) ? record.items : [])
+    .map((item) => {
+      const name = String(item.description ?? "").trim();
+      if (!name) return "";
+      const quantity = Number(item.quantity ?? 1);
+      return `${quantity.toLocaleString()} × ${name}`;
+    })
+    .filter(Boolean);
+  return items.length ? items.join(", ") : "No items added";
 }
 
 function InvoiceSkeletons() {
@@ -60,7 +58,8 @@ export default function InvoiceList({
   onPrint,
 }) {
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   useEffect(() => {
     function closeOptions(event) {
       if (event.target.closest(".invoice-list-options")) return;
@@ -97,16 +96,15 @@ export default function InvoiceList({
     ));
     return sectionInvoices.filter((record) => {
       const customer = selectedCustomer(record);
-      const matchesQuery = !normalizedQuery
-        || [record.invoiceNumber, customer.name, customer.phone]
+      const itemNames = (Array.isArray(record.items) ? record.items : []).map((item) => item.description);
+      const matchesSearch = !normalizedQuery
+        || [record.invoiceNumber, customer.name, customer.phone, ...itemNames]
           .some((value) => String(value ?? "").toLocaleLowerCase().includes(normalizedQuery));
-      return matchesQuery && (
-        activeTab === "drafts"
-        || statusFilter === "all"
-        || invoiceStatus(record) === statusFilter
-      );
+      const issueDate = String(record.issueDate ?? "");
+      const matchesDate = (!dateFrom || issueDate >= dateFrom) && (!dateTo || issueDate <= dateTo);
+      return matchesSearch && matchesDate;
     });
-  }, [activeTab, invoices, query, statusFilter]);
+  }, [activeTab, dateFrom, dateTo, invoices, query]);
 
   if (loading) return <InvoiceSkeletons />;
   if (loadError) return null;
@@ -166,18 +164,27 @@ export default function InvoiceList({
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search customer or invoice number"
+            placeholder="Search"
           />
         </label>
-        {activeTab === "invoices" && (
-          <label className="invoice-status-filter">
-            <span className="invoice-visually-hidden">Filter by invoice status</span>
-            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-              {statusOptions.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
-            </select>
+        <div className="invoice-date-filter" role="group" aria-label="Filter by invoice date">
+          <label>
+            <span>From</span>
+            <input type="date" value={dateFrom} max={dateTo || undefined} onChange={(event) => setDateFrom(event.target.value)} />
           </label>
-        )}
-        <span className="invoice-list-count">{filteredInvoices.length} of {sectionCount}</span>
+          <label>
+            <span>To</span>
+            <input type="date" value={dateTo} min={dateFrom || undefined} onChange={(event) => setDateTo(event.target.value)} />
+          </label>
+        </div>
+        <div className="invoice-list-meta">
+          {(query || dateFrom || dateTo) && (
+            <button type="button" className="invoice-clear-filters" onClick={() => { setQuery(""); setDateFrom(""); setDateTo(""); }}>
+              Clear filters
+            </button>
+          )}
+          <span className="invoice-list-count">{filteredInvoices.length} of {sectionCount}</span>
+        </div>
       </div>
       <div
         className="invoice-tab-panel"
@@ -200,11 +207,11 @@ export default function InvoiceList({
         ) : !filteredInvoices.length ? (
           <div className="invoice-empty-state is-compact">
             <h2>No matching {activeTab === "drafts" ? "drafts" : "invoices"}</h2>
-            <p>Try a different search{activeTab === "invoices" ? " or status filter" : ""}.</p>
+            <p>Try a different search.</p>
             <button
               className="admin-secondary-button"
               type="button"
-              onClick={() => { setQuery(""); setStatusFilter("all"); }}
+              onClick={() => { setQuery(""); setDateFrom(""); setDateTo(""); }}
             >
               Clear filters
             </button>
@@ -212,17 +219,22 @@ export default function InvoiceList({
         ) : (
           <div className="invoice-list">
             {filteredInvoices.map((record) => {
-              const status = invoiceStatus(record);
               return (
                 <article className="invoice-list-row" key={record.id}>
-                  <span className="invoice-list-customer">
-                    <strong>{invoicePrimary(record)}</strong>
-                    <small>{invoiceSubtitle(record)}</small>
-                  </span>
-                  <span className="invoice-list-financial">
-                    <strong>{formatProductPrice(record.total)}</strong>
-                  </span>
-                  <span className={`invoice-status-badge is-${status}`}>{status}</span>
+                  <button
+                    className="invoice-list-open-view"
+                    type="button"
+                    aria-label={`View invoice ${record.invoiceNumber} for ${invoicePrimary(record)}`}
+                    onClick={() => onView(record)}
+                  >
+                    <span className="invoice-list-customer">
+                      <strong>{invoicePrimary(record)}</strong>
+                      <small className="invoice-list-items">{invoiceItemsSummary(record)}</small>
+                    </span>
+                    <span className="invoice-list-financial">
+                      <strong>{formatProductPrice(record.total)}</strong>
+                    </span>
+                  </button>
                   <details className="invoice-list-options">
                     <summary aria-label={`Options for invoice ${record.invoiceNumber}`} onClick={toggleOptions}>Options</summary>
                     <div>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { formatProductPrice, parseProductPrice, productOptions } from "../../../lib/productPricing.js";
 import { createInvoiceImage } from "../../../lib/invoiceImage.js";
 import { uploadProductImages } from "../../../services/admin.js";
@@ -19,13 +19,11 @@ import {
   saveInvoiceDeliveryPartner,
   saveInvoice,
   saveInvoiceHeaderSettings,
-  updateInvoiceStatus,
 } from "../../../services/invoices.js";
 import AdminNotice from "../components/AdminNotice.jsx";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import InvoiceList from "./InvoiceList.jsx";
 import InvoicePreview from "./InvoicePreview.jsx";
-import { invoiceStatus } from "./invoiceStatus.js";
 import InvoiceSettingsPanel from "./InvoiceSettingsPanel.jsx";
 import "./invoiceManager.css";
 
@@ -214,6 +212,8 @@ export default function InvoiceManager({ products, storefrontBrand }) {
   const [settingsBusinessDetails, setSettingsBusinessDetails] = useState(null);
   const [invoiceMode, setInvoiceMode] = useState("edit");
   const [livePreviewEnabled, setLivePreviewEnabled] = useState(false);
+  const invoiceToolbarSlotRef = useRef(null);
+  const invoiceToolbarRef = useRef(null);
   const moreActionsRef = useRef(null);
   const shareActionsRef = useRef(null);
   const topShareActionsRef = useRef(null);
@@ -229,7 +229,6 @@ export default function InvoiceManager({ products, storefrontBrand }) {
   const [sharing, setSharing] = useState(false);
   const [printing, setPrinting] = useState(false);
   const [deletingInvoiceId, setDeletingInvoiceId] = useState("");
-  const [updatingInvoiceStatus, setUpdatingInvoiceStatus] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [customers, setCustomers] = useState([]);
   const [customerTotal, setCustomerTotal] = useState(0);
@@ -240,6 +239,52 @@ export default function InvoiceManager({ products, storefrontBrand }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const { confirm, dialogProps } = useConfirmDialog();
+  const hasInvoice = Boolean(invoice);
+
+  useLayoutEffect(() => {
+    if (!hasInvoice) return undefined;
+    const toolbarSlot = invoiceToolbarSlotRef.current;
+    const toolbar = invoiceToolbarRef.current;
+    const appHeader = document.querySelector("#site-header");
+    if (!toolbarSlot || !toolbar) return undefined;
+    const invoiceManager = toolbarSlot.closest(".invoice-manager");
+    const positionTarget = invoiceManager || toolbar;
+
+    function syncToolbarPosition() {
+      const slotRect = toolbarSlot.getBoundingClientRect();
+      const { left, width } = slotRect;
+      const headerBottom = appHeader?.getBoundingClientRect().bottom ?? 0;
+      const toolbarTop = Math.max(0, headerBottom) + 12;
+      positionTarget.style.setProperty("--invoice-toolbar-left", `${left}px`);
+      positionTarget.style.setProperty("--invoice-toolbar-width", `${width}px`);
+      toolbar.style.setProperty("--invoice-toolbar-top", `${toolbarTop}px`);
+      const toolbarHeight = toolbar.getBoundingClientRect().height;
+      const requiredSlotHeight = Math.max(
+        toolbarHeight,
+        toolbarTop + toolbarHeight + 12 - (slotRect.top + window.scrollY)
+      );
+      if (Math.abs(slotRect.height - requiredSlotHeight) > 0.5) {
+        toolbarSlot.style.height = `${requiredSlotHeight}px`;
+      }
+    }
+
+    syncToolbarPosition();
+    const resizeObserver = typeof ResizeObserver === "undefined"
+      ? null
+      : new ResizeObserver(syncToolbarPosition);
+    resizeObserver?.observe(toolbarSlot);
+    resizeObserver?.observe(toolbar);
+    if (appHeader) resizeObserver?.observe(appHeader);
+    window.addEventListener("resize", syncToolbarPosition);
+    window.addEventListener("scroll", syncToolbarPosition, { passive: true });
+    window.visualViewport?.addEventListener("resize", syncToolbarPosition);
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", syncToolbarPosition);
+      window.removeEventListener("scroll", syncToolbarPosition);
+      window.visualViewport?.removeEventListener("resize", syncToolbarPosition);
+    };
+  }, [hasInvoice, invoiceMode, livePreviewEnabled]);
 
   function handleActionMenuToggle(event) {
     const currentMenu = event.currentTarget.parentElement;
@@ -762,27 +807,6 @@ export default function InvoiceManager({ products, storefrontBrand }) {
     }
   }
 
-  async function changeInvoiceStatus(status) {
-    if (!invoice?.id) {
-      updateInvoice("status", status);
-      return;
-    }
-    setUpdatingInvoiceStatus(true);
-    setError("");
-    setNotice("");
-    try {
-      const saved = await updateInvoiceStatus(invoice.id, status);
-      setInvoice(editableInvoice(saved, storefrontBrand?.tagline || ""));
-      setInvoices((current) => current.map((record) => record.id === saved.id ? saved : record));
-      setInvoiceTab(saved.status === "draft" ? "drafts" : "invoices");
-      setNotice("Invoice status updated.");
-    } catch (statusError) {
-      setError(statusError.message || "Invoice status could not be updated.");
-    } finally {
-      setUpdatingInvoiceStatus(false);
-    }
-  }
-
   function startNewInvoice() {
     setInvoice(newInvoice(storefrontBrand, invoiceHeaderDefaults));
     setInvoiceMode("edit");
@@ -847,39 +871,38 @@ export default function InvoiceManager({ products, storefrontBrand }) {
         />
       ) : (
         <form className={`invoice-layout${invoiceMode === "edit" ? " is-editing" : ""}${livePreviewEnabled ? " has-live-preview" : ""}`} onSubmit={handleSave}>
-          <div className="invoice-editor-toolbar">
-            <div className="invoice-toolbar-main">
-              <button type="button" className="invoice-back-button" onClick={() => { setInvoice(null); setError(""); setNotice(""); }} aria-label="Back to all invoices">← Invoices</button>
-              <div className="invoice-toolbar-title">
-                <strong>{invoice.id ? invoice.invoiceNumber : "New invoice"}</strong>
-                <small>{invoice.id ? "Saved" : "Unsaved"}</small>
-              </div>
-              {invoiceStatus(invoice) === "overdue" && (
-                <span className="invoice-status-badge is-overdue">{updatingInvoiceStatus ? "Updating..." : "Overdue"}</span>
-              )}
-              <div className="invoice-mode-switch" role="group" aria-label="Invoice mode">
-                <button type="button" className={`admin-secondary-button${invoiceMode === "edit" ? " active" : ""}`} aria-pressed={invoiceMode === "edit"} onClick={() => setInvoiceMode("edit")}>Edit</button>
-                <button type="button" className={`admin-secondary-button${invoiceMode === "view" ? " active" : ""}`} aria-pressed={invoiceMode === "view"} onClick={() => setInvoiceMode("view")}>View</button>
-              </div>
-              <details className="invoice-share-actions invoice-action-menu" ref={topShareActionsRef}>
-                <summary aria-label="Share or export invoice" onClick={handleActionMenuToggle}>Share</summary>
-                <div>
-                  <button type="button" onClick={() => { topShareActionsRef.current.open = false; void printInvoice(); }} disabled={saving || sharing || printing || updatingInvoiceStatus}>{printing ? "Preparing PDF..." : "Print / PDF"}</button>
-                  <button type="button" onClick={() => { topShareActionsRef.current.open = false; void shareInvoiceAsImage(); }} disabled={saving || sharing || printing || updatingInvoiceStatus}>{sharing ? "Preparing image..." : "Share image"}</button>
-                  {invoiceMode === "edit" && (
-                    <button
-                      type="button"
-                      aria-pressed={livePreviewEnabled}
-                      onClick={() => {
-                        setLivePreviewEnabled((enabled) => !enabled);
-                        topShareActionsRef.current.open = false;
-                      }}
-                    >
-                      {livePreviewEnabled ? "Hide preview" : "Show preview"}
-                    </button>
-                  )}
+          <div className="invoice-editor-toolbar-slot" ref={invoiceToolbarSlotRef}>
+            <div className="invoice-editor-toolbar" ref={invoiceToolbarRef}>
+              <div className="invoice-toolbar-main">
+                <button type="button" className="invoice-back-button" onClick={() => { setInvoice(null); setError(""); setNotice(""); }} aria-label="Back to all invoices">← Invoices</button>
+                <div className="invoice-toolbar-title">
+                  <strong>{invoice.id ? invoice.invoiceNumber : "New invoice"}</strong>
+                  <small>{invoice.id ? "Saved" : "Unsaved"}</small>
                 </div>
-              </details>
+                <div className="invoice-mode-switch" role="group" aria-label="Invoice mode">
+                  <button type="button" className={`admin-secondary-button${invoiceMode === "edit" ? " active" : ""}`} aria-pressed={invoiceMode === "edit"} onClick={() => setInvoiceMode("edit")}>Edit</button>
+                  <button type="button" className={`admin-secondary-button${invoiceMode === "view" ? " active" : ""}`} aria-pressed={invoiceMode === "view"} onClick={() => setInvoiceMode("view")}>View</button>
+                </div>
+                <details className="invoice-share-actions invoice-action-menu" ref={topShareActionsRef}>
+                  <summary aria-label="Share or export invoice" onClick={handleActionMenuToggle}>Share</summary>
+                  <div>
+                    <button type="button" onClick={() => { topShareActionsRef.current.open = false; void printInvoice(); }} disabled={saving || sharing || printing}>{printing ? "Preparing PDF..." : "Print / PDF"}</button>
+                    <button type="button" onClick={() => { topShareActionsRef.current.open = false; void shareInvoiceAsImage(); }} disabled={saving || sharing || printing}>{sharing ? "Preparing image..." : "Share image"}</button>
+                    {invoiceMode === "edit" && (
+                      <button
+                        type="button"
+                        aria-pressed={livePreviewEnabled}
+                        onClick={() => {
+                          setLivePreviewEnabled((enabled) => !enabled);
+                          topShareActionsRef.current.open = false;
+                        }}
+                      >
+                        {livePreviewEnabled ? "Hide preview" : "Show preview"}
+                      </button>
+                    )}
+                  </div>
+                </details>
+              </div>
             </div>
           </div>
           {invoiceMode === "edit" ? (
@@ -889,7 +912,6 @@ export default function InvoiceManager({ products, storefrontBrand }) {
               <div className="invoice-form-grid">
                 <label>Invoice number<input required value={invoice.invoiceNumber} onChange={(event) => updateInvoice("invoiceNumber", event.target.value)} /></label>
                 <label>Invoice date<input type="date" required value={invoice.issueDate} onChange={(event) => updateInvoice("issueDate", event.target.value)} /></label>
-                <label>Due date<input type="date" value={invoice.dueDate} onChange={(event) => updateInvoice("dueDate", event.target.value)} /></label>
               </div>
             </section>
             <section className="invoice-editor-section">
@@ -1192,8 +1214,8 @@ export default function InvoiceManager({ products, storefrontBrand }) {
               <details className="invoice-share-actions invoice-action-menu" ref={shareActionsRef}>
                 <summary aria-label="Share or export invoice" onClick={handleActionMenuToggle}>Share</summary>
                 <div>
-                  <button type="button" onClick={() => { shareActionsRef.current.open = false; void printInvoice(); }} disabled={saving || sharing || printing || updatingInvoiceStatus}>{printing ? "Preparing PDF..." : "Print / PDF"}</button>
-                  <button type="button" onClick={() => { shareActionsRef.current.open = false; void shareInvoiceAsImage(); }} disabled={saving || sharing || printing || updatingInvoiceStatus}>{sharing ? "Preparing image..." : "Share image"}</button>
+                  <button type="button" onClick={() => { shareActionsRef.current.open = false; void printInvoice(); }} disabled={saving || sharing || printing}>{printing ? "Preparing PDF..." : "Print / PDF"}</button>
+                  <button type="button" onClick={() => { shareActionsRef.current.open = false; void shareInvoiceAsImage(); }} disabled={saving || sharing || printing}>{sharing ? "Preparing image..." : "Share image"}</button>
                   {invoiceMode === "edit" && (
                     <button
                       type="button"
@@ -1212,23 +1234,8 @@ export default function InvoiceManager({ products, storefrontBrand }) {
                 <summary aria-label="More invoice actions" onClick={handleActionMenuToggle}>More</summary>
                 <div>
                   <button type="button" onClick={() => { moreActionsRef.current.open = false; openInvoiceSettings(); }}>Settings</button>
-                  <label className="invoice-more-status">
-                    <span>Status</span>
-                    <select
-                      value={invoice.status ?? "draft"}
-                      disabled={updatingInvoiceStatus}
-                      onChange={(event) => {
-                        if (invoiceMode === "view") void changeInvoiceStatus(event.target.value);
-                        else updateInvoice("status", event.target.value);
-                      }}
-                    >
-                      <option value="draft">Draft</option>
-                      <option value="sent">Sent</option>
-                      <option value="paid">Paid</option>
-                    </select>
-                  </label>
-                  {invoiceMode === "edit" && <button className="invoice-menu-save-draft" type="button" onClick={() => { moreActionsRef.current.open = false; void saveAsDraft(); }} disabled={saving || sharing || printing || updatingInvoiceStatus}>{saving ? "Saving..." : "Save as draft"}</button>}
-                  <button type="button" className="invoice-discard-action" onClick={() => { moreActionsRef.current.open = false; void discardInvoiceChanges(); }} disabled={saving || sharing || printing || updatingInvoiceStatus}>Discard</button>
+                  {invoiceMode === "edit" && <button className="invoice-menu-save-draft" type="button" onClick={() => { moreActionsRef.current.open = false; void saveAsDraft(); }} disabled={saving || sharing || printing}>{saving ? "Saving..." : "Save as draft"}</button>}
+                  <button type="button" className="invoice-discard-action" onClick={() => { moreActionsRef.current.open = false; void discardInvoiceChanges(); }} disabled={saving || sharing || printing}>Discard</button>
                 </div>
               </details>
               {invoiceMode === "edit" && (
@@ -1236,12 +1243,12 @@ export default function InvoiceManager({ products, storefrontBrand }) {
                   type="button"
                   className="admin-secondary-button invoice-save-draft-button"
                   onClick={() => void saveAsDraft()}
-                  disabled={saving || sharing || printing || updatingInvoiceStatus}
+                  disabled={saving || sharing || printing}
                 >
                   {saving ? "Saving..." : "Save as draft"}
                 </button>
               )}
-              {invoiceMode === "edit" && <button className="admin-primary-button invoice-save-button" type="submit" disabled={saving || sharing || printing || updatingInvoiceStatus}>{saving ? "Saving..." : "Save"}</button>}
+              {invoiceMode === "edit" && <button className="admin-primary-button invoice-save-button" type="submit" disabled={saving || sharing || printing}>{saving ? "Saving..." : "Save"}</button>}
             </div>
           </div>
         </form>

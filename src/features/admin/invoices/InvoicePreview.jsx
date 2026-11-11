@@ -39,7 +39,7 @@ export default function InvoicePreview({ invoice, totals, storefrontTagline, lin
         </div>
         <div className="invoice-paper-meta">
           <h2>INVOICE</h2>
-          <p><strong>No.</strong> {invoice.invoiceNumber || "—"}</p>
+          <p className="invoice-paper-meta-number"><strong>No.</strong> {invoice.invoiceNumber || "—"}</p>
           <p><strong>Date</strong> {invoice.issueDate || "—"}</p>
           {invoice.dueDate && <p><strong>Due</strong> {invoice.dueDate}</p>}
         </div>
@@ -57,12 +57,12 @@ export default function InvoicePreview({ invoice, totals, storefrontTagline, lin
           <tbody>
             {invoice.items.length ? invoice.items.map((item, index) => (
               <tr key={`${item.productId}-${index}`}>
-                <td>{item.description || "Item"}</td>
-                <td>{item.quantity}</td>
-                <td>{formatProductPrice(item.unitPrice)}</td>
-                <td>{formatProductPrice(lineTotal(item))}</td>
+                <td data-label="Item">{item.description || "Item"}</td>
+                <td data-label="Qty">{item.quantity}</td>
+                <td data-label="Unit price">{formatProductPrice(item.unitPrice)}</td>
+                <td data-label="Amount">{formatProductPrice(lineTotal(item))}</td>
               </tr>
-            )) : <tr><td colSpan="4">No items added</td></tr>}
+            )) : <tr className="invoice-paper-empty-row"><td colSpan="4">No items added</td></tr>}
           </tbody>
         </table>
       </div>

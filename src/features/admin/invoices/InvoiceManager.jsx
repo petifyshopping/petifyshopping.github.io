@@ -131,7 +131,7 @@ function editableInvoice(invoice, storefrontTagline = "") {
   const manualCustomer = customerDetails.manualCustomer ?? legacyCustomer;
   return {
     ...invoice,
-    status: ["draft", "sent", "paid"].includes(invoice.status) ? invoice.status : "draft",
+    status: ["draft", "saved", "sent", "paid"].includes(invoice.status) ? invoice.status : "draft",
     businessDetails: {
       logoBlueBackground: invoice.businessDetails?.logoBlueBackground === true,
       values: {
@@ -147,6 +147,7 @@ function editableInvoice(invoice, storefrontTagline = "") {
       },
     },
     customerDetails: {
+      ...customerDetails,
       enabled: customerDetails.enabled === true
         || Boolean(
           customerDetails.name
@@ -242,7 +243,7 @@ export default function InvoiceManager({ products, storefrontBrand }) {
   const hasInvoice = Boolean(invoice);
 
   useLayoutEffect(() => {
-    if (!hasInvoice) return undefined;
+    if (!hasInvoice || invoiceSettingsOpen) return undefined;
     const toolbarSlot = invoiceToolbarSlotRef.current;
     const toolbar = invoiceToolbarRef.current;
     const appHeader = document.querySelector("#site-header");
@@ -284,7 +285,7 @@ export default function InvoiceManager({ products, storefrontBrand }) {
       window.removeEventListener("scroll", syncToolbarPosition);
       window.visualViewport?.removeEventListener("resize", syncToolbarPosition);
     };
-  }, [hasInvoice, invoiceMode, livePreviewEnabled]);
+  }, [hasInvoice, invoiceMode, invoiceSettingsOpen, livePreviewEnabled]);
 
   function handleActionMenuToggle(event) {
     const currentMenu = event.currentTarget.parentElement;

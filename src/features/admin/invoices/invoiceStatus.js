@@ -5,7 +5,7 @@ function localDate() {
 }
 
 export function invoiceStatus(record) {
-  const status = ["draft", "sent", "paid"].includes(record.status) ? record.status : "draft";
+  const status = ["draft", "saved", "sent", "paid"].includes(record.status) ? record.status : "draft";
   if (status === "sent" && record.dueDate && record.dueDate < localDate()) return "overdue";
   return status;
 }

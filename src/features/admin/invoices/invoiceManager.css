@@ -11,7 +11,7 @@
 .invoice-list-toolbar {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
+  align-items: end;
   gap: 0.65rem;
   padding: 0.8rem;
   border: 1px solid var(--admin-border);
@@ -97,12 +97,17 @@
 
 .invoice-search {
   grid-column: 1 / -1;
+  display: grid;
+  gap: 0.25rem;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 650;
 }
 
 .invoice-date-filter {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.6rem;
 }
 
@@ -117,6 +122,8 @@
 
 .invoice-list-meta {
   grid-column: 1 / -1;
+  min-height: 44px;
+  align-self: end;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -330,6 +337,11 @@
   line-height: 1.35;
   overflow-wrap: anywhere;
   white-space: normal;
+}
+
+.invoice-list-created {
+  color: var(--text-muted);
+  font-size: 0.78rem;
 }
 
 .invoice-list-financial {
@@ -1466,6 +1478,9 @@
 
 .invoice-paper-meta {
   flex: 0 0 auto;
+  display: grid;
+  justify-items: end;
+  gap: 0.3rem;
   text-align: right;
 }
 
@@ -1477,6 +1492,29 @@
 
 .invoice-paper-meta p {
   color: #526579;
+}
+
+.invoice-paper-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.65rem;
+  padding: 0.15rem 0.65rem;
+  border-radius: 999px;
+  background: #edf3fa;
+  color: #173f67;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.invoice-paper-status.is-paid {
+  background: #e8f5ed;
+  color: #17613d;
+}
+
+.invoice-paper-status.is-overdue {
+  background: #fff0ef;
+  color: #a22d27;
 }
 
 .invoice-paper-customer {
@@ -1491,8 +1529,32 @@
   text-transform: uppercase;
 }
 
-.invoice-paper-customer p:first-of-type {
+.invoice-paper-customer-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem 1rem;
+  margin: 0;
+}
+
+.invoice-paper-customer-fields > div {
+  min-width: 0;
+}
+
+.invoice-paper-customer-fields dt {
+  margin-bottom: 0.15rem;
+  color: #526579;
+  font-size: 0.68rem;
+}
+
+.invoice-paper-customer-fields dd {
+  margin: 0;
   color: #172b3e;
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.invoice-paper-customer-fields .is-primary dd {
   font-weight: 700;
 }
 
@@ -2205,6 +2267,7 @@
   .invoice-layout:not(.is-editing) .invoice-paper-meta {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-items: start;
     gap: 0.3rem 0.75rem;
     text-align: left;
   }
@@ -2214,8 +2277,16 @@
     margin-bottom: 0.15rem;
   }
 
+  .invoice-layout:not(.is-editing) .invoice-paper-status {
+    grid-column: 1 / -1;
+  }
+
   .invoice-layout:not(.is-editing) .invoice-paper-meta-number {
     grid-column: 1 / -1;
+  }
+
+  .invoice-layout:not(.is-editing) .invoice-paper-customer-fields {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .invoice-layout:not(.is-editing) .invoice-paper-table-wrap {

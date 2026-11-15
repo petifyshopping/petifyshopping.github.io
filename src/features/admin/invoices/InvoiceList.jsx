@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { formatProductPrice } from "../../../lib/productPricing.js";
+import { formatDate } from "../../../lib/formatters.js";
 import { invoiceStatus } from "./invoiceStatus.js";
 
 function selectedCustomer(record) {
@@ -27,6 +28,14 @@ function invoiceItemsSummary(record) {
     })
     .filter(Boolean);
   return items.length ? items.join(", ") : "No items added";
+}
+
+function localDateKey(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
 }
 
 function InvoiceSkeletons() {
@@ -58,8 +67,7 @@ export default function InvoiceList({
   onPrint,
 }) {
   const [query, setQuery] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
   useEffect(() => {
     function closeOptions(event) {
       if (event.target.closest(".invoice-list-options")) return;
@@ -100,11 +108,10 @@ export default function InvoiceList({
       const matchesSearch = !normalizedQuery
         || [record.invoiceNumber, customer.name, customer.phone, ...itemNames]
           .some((value) => String(value ?? "").toLocaleLowerCase().includes(normalizedQuery));
-      const issueDate = String(record.issueDate ?? "");
-      const matchesDate = (!dateFrom || issueDate >= dateFrom) && (!dateTo || issueDate <= dateTo);
+      const matchesDate = !selectedDate || localDateKey(record.createdAt) === selectedDate;
       return matchesSearch && matchesDate;
     });
-  }, [activeTab, dateFrom, dateTo, invoices, query]);
+  }, [activeTab, invoices, query, selectedDate]);
 
   if (loading) return <InvoiceSkeletons />;
   if (loadError) return null;
@@ -159,27 +166,23 @@ export default function InvoiceList({
       </div>
       <div className="invoice-list-toolbar">
         <label className="invoice-search">
-          <span className="invoice-visually-hidden">Search invoices</span>
+          <span>Search</span>
           <input
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search"
+            placeholder="Search invoices"
           />
         </label>
-        <div className="invoice-date-filter" role="group" aria-label="Filter by invoice date">
+        <div className="invoice-date-filter" role="group" aria-label="Filter by creation date">
           <label>
-            <span>From</span>
-            <input type="date" value={dateFrom} max={dateTo || undefined} onChange={(event) => setDateFrom(event.target.value)} />
-          </label>
-          <label>
-            <span>To</span>
-            <input type="date" value={dateTo} min={dateFrom || undefined} onChange={(event) => setDateTo(event.target.value)} />
+            <span>Date</span>
+            <input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} />
           </label>
         </div>
         <div className="invoice-list-meta">
-          {(query || dateFrom || dateTo) && (
-            <button type="button" className="invoice-clear-filters" onClick={() => { setQuery(""); setDateFrom(""); setDateTo(""); }}>
+          {(query || selectedDate) && (
+            <button type="button" className="invoice-clear-filters" onClick={() => { setQuery(""); setSelectedDate(""); }}>
               Clear filters
             </button>
           )}
@@ -207,11 +210,11 @@ export default function InvoiceList({
         ) : !filteredInvoices.length ? (
           <div className="invoice-empty-state is-compact">
             <h2>No matching {activeTab === "drafts" ? "drafts" : "invoices"}</h2>
-            <p>Try a different search.</p>
+            <p>Try a different search or date.</p>
             <button
               className="admin-secondary-button"
               type="button"
-              onClick={() => { setQuery(""); setDateFrom(""); setDateTo(""); }}
+              onClick={() => { setQuery(""); setSelectedDate(""); }}
             >
               Clear filters
             </button>
@@ -230,6 +233,7 @@ export default function InvoiceList({
                     <span className="invoice-list-customer">
                       <strong>{invoicePrimary(record)}</strong>
                       <small className="invoice-list-items">{invoiceItemsSummary(record)}</small>
+                      <small className="invoice-list-created">{formatDate(record.createdAt)}</small>
                     </span>
                     <span className="invoice-list-financial">
                       <strong>{formatProductPrice(record.total)}</strong>

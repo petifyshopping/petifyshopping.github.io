@@ -28,8 +28,6 @@ async function loadOverview() {
     orderStats: normalizedOrderStats,
     invoiceStats,
     combinedRecordCount: normalizedOrderStats.total_orders + invoiceStats.totalInvoices,
-    combinedCompletedCount: normalizedOrderStats.fulfilled_orders + invoiceStats.paidInvoices,
-    combinedCompletedValue: normalizedOrderStats.fulfilled_total + invoiceStats.paidTotal,
   };
 }
 
@@ -102,16 +100,20 @@ export default function AdminOverview() {
                 <strong>{overview.orderStats.total_orders}</strong>
               </article>
               <article className="admin-overview-metric">
-                <span>Invoice orders</span>
-                <strong>{overview.invoiceStats.totalInvoices}</strong>
+                <span>Saved invoices</span>
+                <strong>{overview.invoiceStats.savedInvoices}</strong>
               </article>
               <article className="admin-overview-metric">
-                <span>Completed + paid</span>
-                <strong>{overview.combinedCompletedCount}</strong>
+                <span>Completed orders</span>
+                <strong>{overview.orderStats.fulfilled_orders}</strong>
               </article>
               <article className="admin-overview-metric admin-overview-metric-value">
-                <span>Completed + paid value</span>
-                <strong>{formatProductPrice(overview.combinedCompletedValue)}</strong>
+                <span>Saved invoice value</span>
+                <strong>{formatProductPrice(overview.invoiceStats.savedTotal)}</strong>
+              </article>
+              <article className="admin-overview-metric admin-overview-metric-value">
+                <span>Completed order value</span>
+                <strong>{formatProductPrice(overview.orderStats.fulfilled_total)}</strong>
               </article>
             </div>
           </section>
@@ -151,7 +153,7 @@ export default function AdminOverview() {
           </details>
           <details className="admin-overview-group admin-overview-collapsible">
             <summary>
-              <strong>Manually entered invoices</strong>
+              <strong>Invoices and drafts</strong>
               <span>{overview.invoiceStats.totalInvoices} invoices</span>
             </summary>
             <div className="admin-overview-group-content">
@@ -161,24 +163,24 @@ export default function AdminOverview() {
                   <strong>{overview.invoiceStats.totalInvoices}</strong>
                 </article>
                 <article className="admin-overview-metric">
+                  <span>Saved invoices</span>
+                  <strong>{overview.invoiceStats.savedInvoices}</strong>
+                </article>
+                <article className="admin-overview-metric">
                   <span>Draft invoices</span>
                   <strong>{overview.invoiceStats.draftInvoices}</strong>
                 </article>
-                <article className="admin-overview-metric">
-                  <span>Sent invoices</span>
-                  <strong>{overview.invoiceStats.sentInvoices}</strong>
-                </article>
-                <article className="admin-overview-metric">
-                  <span>Paid invoices</span>
-                  <strong>{overview.invoiceStats.paidInvoices}</strong>
-                </article>
-                <article className="admin-overview-metric">
+                <article className="admin-overview-metric admin-overview-metric-value">
                   <span>Total invoice value</span>
                   <strong>{formatProductPrice(overview.invoiceStats.invoiceTotal)}</strong>
                 </article>
-                <article className="admin-overview-metric admin-overview-metric-value">
-                  <span>Paid value</span>
-                  <strong>{formatProductPrice(overview.invoiceStats.paidTotal)}</strong>
+                <article className="admin-overview-metric">
+                  <span>Saved invoice value</span>
+                  <strong>{formatProductPrice(overview.invoiceStats.savedTotal)}</strong>
+                </article>
+                <article className="admin-overview-metric">
+                  <span>Draft value</span>
+                  <strong>{formatProductPrice(overview.invoiceStats.draftTotal)}</strong>
                 </article>
               </div>
             </div>

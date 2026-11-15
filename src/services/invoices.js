@@ -217,10 +217,10 @@ export async function getInvoiceDashboardStats() {
   const stats = {
     totalInvoices: 0,
     draftInvoices: 0,
-    sentInvoices: 0,
-    paidInvoices: 0,
+    savedInvoices: 0,
     invoiceTotal: 0,
-    paidTotal: 0,
+    draftTotal: 0,
+    savedTotal: 0,
   };
   let from = 0;
 
@@ -241,11 +241,10 @@ export async function getInvoiceDashboardStats() {
       stats.invoiceTotal += total;
       if (invoice.status === "draft") {
         stats.draftInvoices += 1;
-      } else if (invoice.status === "sent") {
-        stats.sentInvoices += 1;
-      } else if (invoice.status === "paid") {
-        stats.paidInvoices += 1;
-        stats.paidTotal += total;
+        stats.draftTotal += total;
+      } else if (["saved", "sent", "paid"].includes(invoice.status)) {
+        stats.savedInvoices += 1;
+        stats.savedTotal += total;
       } else {
         throw new Error("Invoice dashboard returned an invalid invoice status.");
       }
@@ -304,7 +303,7 @@ export async function deleteInvoice(id) {
 }
 
 export async function updateInvoiceStatus(id, status) {
-  if (!["draft", "sent", "paid"].includes(status)) {
+  if (!["draft", "saved", "sent", "paid"].includes(status)) {
     throw new Error("Choose a valid invoice status.");
   }
   const { data, error } = await requireAdminClient()

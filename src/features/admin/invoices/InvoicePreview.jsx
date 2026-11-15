@@ -1,4 +1,6 @@
 import { formatProductPrice } from "../../../lib/productPricing.js";
+import { formatDate } from "../../../lib/formatters.js";
+import { invoiceStatus } from "./invoiceStatus.js";
 
 const headerFields = [
   ["businessName", "Business name"],
@@ -13,15 +15,32 @@ function selectedCustomerDetails(customerDetails) {
   return customerDetails.manualCustomer ?? customerDetails;
 }
 
+function formatInvoiceDate(value) {
+  if (!value) return "—";
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? value : formatDate(date);
+}
+
 export default function InvoicePreview({ invoice, totals, storefrontTagline, lineTotal }) {
   const { values, visible } = invoice.businessDetails;
-  const customer = selectedCustomerDetails(invoice.customerDetails);
+  const customer = {
+    ...invoice.customerDetails,
+    ...selectedCustomerDetails(invoice.customerDetails),
+  };
   const tagline = values.tagline || storefrontTagline;
-  const customerLines = [...new Set([
-    customer.name,
-    customer.phone,
-    customer.address,
-  ].map((value) => value?.trim()).filter(Boolean))];
+  const status = invoiceStatus(invoice);
+  const customerFields = [
+    ["Name", customer.name],
+    ["Company", customer.companyName],
+    ["Phone", customer.phone],
+    ["Email", customer.email],
+    ["Address", customer.address],
+    ["Place", customer.place],
+    ["GSTIN", customer.gstin],
+    ["Delivery partner", invoice.customerDetails.deliveryPartner],
+  ]
+    .map(([label, value]) => [label, String(value ?? "").trim()])
+    .filter(([, value]) => value);
 
   return (
     <article className="invoice-paper" aria-label="Invoice print preview">
@@ -38,17 +57,27 @@ export default function InvoicePreview({ invoice, totals, storefrontTagline, lin
           ))}
         </div>
         <div className="invoice-paper-meta">
-          <h2>INVOICE</h2>
+          <h2>Invoice</h2>
+          <span className={`invoice-paper-status is-${status}`}>{status}</span>
           <p className="invoice-paper-meta-number"><strong>No.</strong> {invoice.invoiceNumber || "—"}</p>
-          <p><strong>Date</strong> {invoice.issueDate || "—"}</p>
-          {invoice.dueDate && <p><strong>Due</strong> {invoice.dueDate}</p>}
+          <p><strong>Issued</strong> {formatInvoiceDate(invoice.issueDate)}</p>
+          {invoice.dueDate && <p><strong>Due</strong> {formatInvoiceDate(invoice.dueDate)}</p>}
+          {invoice.createdAt && <p><strong>Created</strong> {formatDate(invoice.createdAt)}</p>}
         </div>
       </header>
       {invoice.customerDetails.enabled && (
         <section className="invoice-paper-customer">
           <h3>Customer details</h3>
-          {customerLines.map((value) => <p key={value}>{value}</p>)}
-          {invoice.customerDetails.deliveryPartner && <p>Delivery partner: {invoice.customerDetails.deliveryPartner}</p>}
+          {customerFields.length ? (
+            <dl className="invoice-paper-customer-fields">
+              {customerFields.map(([label, value]) => (
+                <div className={label === "Name" ? "is-primary" : ""} key={label}>
+                  <dt>{label}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : <p>No customer details provided.</p>}
         </section>
       )}
       <div className="invoice-paper-table-wrap">

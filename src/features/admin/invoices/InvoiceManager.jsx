@@ -13,7 +13,6 @@ import {
   getInvoiceCustomProducts,
   getInvoiceDeliveryPartners,
   getInvoiceHeaderSettings,
-  getNextAdminInvoiceNumber,
   getInvoices,
   saveInvoiceCustomCustomer,
   saveInvoiceCustomProduct,
@@ -49,6 +48,24 @@ function localDate() {
   const date = new Date();
   date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
   return date.toISOString().slice(0, 10);
+}
+
+function invoiceNumberForDate(dateValue, sequenceNumber) {
+  const [year, month, day] = dateValue.split("-");
+  if (!year || !month || !day) return "";
+  return `INV-${day}${month}${year}-${String(sequenceNumber).padStart(3, "0")}`;
+}
+
+function createInvoiceNumber(issueDate, existingInvoices) {
+  const [year, month] = issueDate.split("-");
+  const monthKey = `${year}-${month}`;
+  const monthlyInvoices = existingInvoices.filter((record) => record.issueDate?.slice(0, 7) === monthKey);
+  const highestNumber = existingInvoices.reduce((highest, record) => {
+    const match = record.invoiceNumber.match(/^INV-\d{2}(\d{2})(\d{4})-(\d+)$/);
+    if (!match || match[1] !== month || match[2] !== year) return highest;
+    return Math.max(highest, Number(match[3]));
+  }, 0);
+  return invoiceNumberForDate(issueDate, Math.max(monthlyInvoices.length, highestNumber) + 1);
 }
 
 function invoiceBusinessDetails(storefrontBrand, savedSettings) {
@@ -90,6 +107,7 @@ function newInvoice(storefrontBrand, headerDefaults, invoiceNumber, issueDate) {
   return {
     id: null,
     invoiceNumber,
+    autoNumber: true,
     status: "draft",
     businessDetails: invoiceBusinessDetails(storefrontBrand, headerDefaults),
     customerDetails: {
@@ -128,6 +146,7 @@ function editableInvoice(invoice, storefrontTagline = "") {
   const manualCustomer = customerDetails.manualCustomer ?? legacyCustomer;
   return {
     ...invoice,
+    autoNumber: false,
     status: ["draft", "saved", "sent", "paid"].includes(invoice.status) ? invoice.status : "draft",
     businessDetails: {
       logoBlueBackground: invoice.businessDetails?.logoBlueBackground === true,
@@ -218,8 +237,6 @@ export default function InvoiceManager({ products, storefrontBrand }) {
   const moreActionsRef = useRef(null);
   const topShareActionsRef = useRef(null);
   const [invoiceSettingsOpen, setInvoiceSettingsOpen] = useState(false);
-  const [creatingInvoice, setCreatingInvoice] = useState(false);
-  const creatingInvoiceRef = useRef(false);
   const [customProducts, setCustomProducts] = useState([]);
   const [activeProductSearchIndex, setActiveProductSearchIndex] = useState(null);
   const [highlightedProductSuggestionIndex, setHighlightedProductSuggestionIndex] = useState(0);
@@ -896,24 +913,14 @@ export default function InvoiceManager({ products, storefrontBrand }) {
     }
   }
 
-  async function startNewInvoice() {
-    if (creatingInvoiceRef.current) return;
-    creatingInvoiceRef.current = true;
-    setCreatingInvoice(true);
+  function startNewInvoice() {
     setError("");
     setNotice("");
     const issueDate = localDate();
-    try {
-      const invoiceNumber = await getNextAdminInvoiceNumber(issueDate);
-      setInvoice(newInvoice(storefrontBrand, invoiceHeaderDefaults, invoiceNumber, issueDate));
-      setInvoiceMode("edit");
-      setInvoiceSettingsOpen(false);
-    } catch (createError) {
-      setError(createError.message || "An invoice number could not be generated.");
-    } finally {
-      creatingInvoiceRef.current = false;
-      setCreatingInvoice(false);
-    }
+    const invoiceNumber = createInvoiceNumber(issueDate, invoices);
+    setInvoice(newInvoice(storefrontBrand, invoiceHeaderDefaults, invoiceNumber, issueDate));
+    setInvoiceMode("edit");
+    setInvoiceSettingsOpen(false);
   }
 
   return (
@@ -921,9 +928,7 @@ export default function InvoiceManager({ products, storefrontBrand }) {
       {!invoiceSettingsOpen && !invoice && (
         <div className="invoice-page-actions" role="group" aria-label="Invoice actions">
           <button className="admin-secondary-button" type="button" disabled={loading} onClick={openInvoiceSettings}>Settings</button>
-          <button className="admin-primary-button" type="button" disabled={loading || creatingInvoice} onClick={() => void startNewInvoice()}>
-            {creatingInvoice ? "Creating..." : "Create invoice"}
-          </button>
+          <button className="admin-primary-button" type="button" disabled={loading} onClick={startNewInvoice}>Create invoice</button>
         </div>
       )}
       {error && <AdminNotice kind="error">{error}</AdminNotice>}
@@ -954,7 +959,6 @@ export default function InvoiceManager({ products, storefrontBrand }) {
           invoices={invoices}
           loading={loading}
           loadError={loadError}
-          creatingInvoice={creatingInvoice}
           deletingInvoiceId={deletingInvoiceId}
           activeTab={invoiceTab}
           onTabChange={setInvoiceTab}
@@ -1042,8 +1046,15 @@ export default function InvoiceManager({ products, storefrontBrand }) {
                 </svg>
               </summary>
               <div className="invoice-form-grid">
-                <label>Invoice number<input required value={invoice.invoiceNumber} onChange={(event) => updateInvoice("invoiceNumber", event.target.value)} /></label>
-                <label className="invoice-date-field">Invoice date<input type="date" required value={invoice.issueDate} onChange={(event) => updateInvoice("issueDate", event.target.value)} /></label>
+                <label>Invoice number<input required value={invoice.invoiceNumber} onChange={(event) => {
+                  updateInvoice("invoiceNumber", event.target.value);
+                  updateInvoice("autoNumber", false);
+                }} /></label>
+                <label className="invoice-date-field">Invoice date<input type="date" required value={invoice.issueDate} onChange={(event) => {
+                  const issueDate = event.target.value;
+                  updateInvoice("issueDate", issueDate);
+                  if (invoice.autoNumber) updateInvoice("invoiceNumber", createInvoiceNumber(issueDate, invoices));
+                }} /></label>
               </div>
             </details>
             <section className="invoice-editor-section">

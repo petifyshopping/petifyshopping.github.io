@@ -55,7 +55,6 @@ function InvoiceSkeletons() {
 export default function InvoiceList({
   invoices,
   loading,
-  creatingInvoice = false,
   loadError,
   deletingInvoiceId,
   activeTab,
@@ -206,9 +205,7 @@ export default function InvoiceList({
                 ? "Save an unfinished invoice as a draft and it will be kept here."
                 : "Completed invoices will appear here, separate from your drafts."}
             </p>
-            <button className="admin-primary-button" type="button" disabled={creatingInvoice} onClick={onCreate}>
-              {creatingInvoice ? "Creating..." : "Create invoice"}
-            </button>
+            <button className="admin-primary-button" type="button" onClick={onCreate}>Create invoice</button>
           </div>
         ) : !filteredInvoices.length ? (
           <div className="invoice-empty-state is-compact">

@@ -1,5 +1,5 @@
 git add .
-git commit -m "invoices updtaed"
+git commit -m "2.0 little changes"
 git push origin user-profiles
 
 npm run build

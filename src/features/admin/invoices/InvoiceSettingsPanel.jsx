@@ -12,6 +12,7 @@ const headerFields = [
 
 const tabs = [
   { id: "header", label: "Header" },
+  { id: "item-entry", label: "Item entry" },
   { id: "products", label: "Custom products" },
   { id: "customers", label: "Invoice customers" },
   { id: "delivery", label: "Delivery partners" },
@@ -25,6 +26,8 @@ export default function InvoiceSettingsPanel({
   customCustomers,
   deliveryPartners,
   onHeaderChange,
+  productEntryMode,
+  onProductEntryModeChange,
   onLogoSelected,
   onSaveHeader,
   onSaveProduct,
@@ -176,6 +179,52 @@ export default function InvoiceSettingsPanel({
         ))}
       </div>
       {error && <AdminNotice kind="error">{error}</AdminNotice>}
+      {activeTab === "item-entry" && (
+        <section
+          className="invoice-settings-content"
+          id="invoice-settings-panel-item-entry"
+          role="tabpanel"
+          aria-labelledby="invoice-settings-tab-item-entry"
+        >
+          <h3>Choose how you add invoice items</h3>
+          <p className="invoice-customer-hint">
+            This setting applies whenever you create or edit an invoice.
+          </p>
+          <div className="invoice-product-entry-options" role="radiogroup" aria-label="Invoice item entry">
+            <label className={`invoice-product-entry-option${productEntryMode === "separate" ? " is-selected" : ""}`}>
+              <input
+                type="radio"
+                name="invoice-product-entry-mode"
+                value="separate"
+                checked={productEntryMode === "separate"}
+                onChange={() => onProductEntryModeChange("separate")}
+              />
+              <span>
+                <strong>Separate fields</strong>
+                <small>Choose a catalog or saved product, then edit the item name.</small>
+              </span>
+            </label>
+            <label className={`invoice-product-entry-option${productEntryMode === "single" ? " is-selected" : ""}`}>
+              <input
+                type="radio"
+                name="invoice-product-entry-mode"
+                value="single"
+                checked={productEntryMode === "single"}
+                onChange={() => onProductEntryModeChange("single")}
+              />
+              <span>
+                <strong>One searchable field</strong>
+                <small>Type to find catalog and saved products, or use a new custom item.</small>
+              </span>
+            </label>
+          </div>
+          <div className="invoice-settings-done-row">
+            <button className="admin-primary-button" type="button" disabled={savingHeader || uploadingLogo} onClick={() => void saveHeader()}>
+              {savingHeader ? "Saving..." : "Save item entry"}
+            </button>
+          </div>
+        </section>
+      )}
       {activeTab === "header" && (
         <section
           className="invoice-settings-content"

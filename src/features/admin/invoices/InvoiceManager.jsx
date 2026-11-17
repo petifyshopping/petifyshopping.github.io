@@ -76,6 +76,7 @@ function invoiceBusinessDetails(storefrontBrand, savedSettings) {
   };
   return {
     logoBlueBackground: savedSettings?.logoBlueBackground === true,
+    productEntryMode: savedSettings?.productEntryMode === "single" ? "single" : "separate",
     values: {
       ...defaults.values,
       ...savedSettings?.values,
@@ -187,6 +188,7 @@ function editableInvoice(invoice, storefrontTagline = "") {
     },
     items: (invoice.items ?? []).map((item) => ({
       ...item,
+      lineId: item.lineId ?? crypto.randomUUID(),
       productId: item.productId ?? "",
       invoiceCustomProductId: item.invoiceCustomProductId ?? "",
       variantIndex: Number(item.variantIndex ?? 0),
@@ -211,15 +213,18 @@ export default function InvoiceManager({ products, storefrontBrand }) {
   const [invoiceTab, setInvoiceTab] = useState("invoices");
   const [invoiceHeaderDefaults, setInvoiceHeaderDefaults] = useState(null);
   const [settingsBusinessDetails, setSettingsBusinessDetails] = useState(null);
+  const [productEntryMode, setProductEntryMode] = useState("separate");
+  const [settingsProductEntryMode, setSettingsProductEntryMode] = useState("separate");
   const [invoiceMode, setInvoiceMode] = useState("edit");
   const [livePreviewEnabled, setLivePreviewEnabled] = useState(false);
   const invoiceToolbarSlotRef = useRef(null);
   const invoiceToolbarRef = useRef(null);
   const moreActionsRef = useRef(null);
-  const shareActionsRef = useRef(null);
   const topShareActionsRef = useRef(null);
   const [invoiceSettingsOpen, setInvoiceSettingsOpen] = useState(false);
   const [customProducts, setCustomProducts] = useState([]);
+  const [activeProductSearchIndex, setActiveProductSearchIndex] = useState(null);
+  const [highlightedProductSuggestionIndex, setHighlightedProductSuggestionIndex] = useState(0);
   const [customCustomers, setCustomCustomers] = useState([]);
   const [deliveryPartners, setDeliveryPartners] = useState([]);
   const [addingDeliveryPartner, setAddingDeliveryPartner] = useState(false);
@@ -320,6 +325,7 @@ export default function InvoiceManager({ products, storefrontBrand }) {
         if (!active) return;
         setInvoices(records);
         setInvoiceHeaderDefaults(headerDefaults);
+        setProductEntryMode(headerDefaults?.productEntryMode === "single" ? "single" : "separate");
         setCustomProducts(savedCustomProducts);
         setCustomCustomers(savedCustomCustomers);
         setDeliveryPartners(savedDeliveryPartners);
@@ -387,7 +393,16 @@ export default function InvoiceManager({ products, storefrontBrand }) {
   ));
 
   function addItem() {
-    updateInvoice("items", [...invoice.items, { productId: "", invoiceCustomProductId: "", variantIndex: 0, description: "", quantity: 1, unitPrice: 0 }]);
+    setActiveProductSearchIndex(null);
+    updateInvoice("items", [...invoice.items, {
+      lineId: crypto.randomUUID(),
+      productId: "",
+      invoiceCustomProductId: "",
+      variantIndex: 0,
+      description: "",
+      quantity: 1,
+      unitPrice: 0,
+    }]);
   }
 
   function updateItem(index, updates) {
@@ -431,6 +446,71 @@ export default function InvoiceManager({ products, storefrontBrand }) {
       description: [product.title, option.label].filter(Boolean).join(" — "),
       unitPrice: option.price,
     });
+  }
+
+  function matchingProductValue(value) {
+    const normalizedName = value.trim().toLocaleLowerCase();
+    if (!normalizedName) return "";
+    const catalogProduct = products.find((product) => product.title.trim().toLocaleLowerCase() === normalizedName);
+    if (catalogProduct) return `catalog:${catalogProduct.id}`;
+    const savedProduct = customProducts.find((product) => product.name.trim().toLocaleLowerCase() === normalizedName);
+    return savedProduct ? `custom:${savedProduct.id}` : "";
+  }
+
+  function productSuggestions(value) {
+    const query = value.trim().toLocaleLowerCase();
+    if (!query) return [];
+    const catalogMatches = products
+      .filter((product) => product.title.toLocaleLowerCase().includes(query))
+      .map((product) => ({
+        value: `catalog:${product.id}`,
+        name: product.title,
+        source: "Store catalog",
+        price: productOptions(product)[0]?.price ?? parseProductPrice(product.price),
+      }));
+    const savedMatches = customProducts
+      .filter((product) => product.name.toLocaleLowerCase().includes(query))
+      .map((product) => ({
+        value: `custom:${product.id}`,
+        name: product.name,
+        source: "Saved invoice product",
+        price: product.unitPrice,
+      }));
+    return [...catalogMatches, ...savedMatches].slice(0, 8);
+  }
+
+  function updateSingleFieldItem(index, description) {
+    updateItem(index, {
+      description,
+      productId: "",
+      invoiceCustomProductId: "",
+      variantIndex: 0,
+    });
+    setActiveProductSearchIndex(productSuggestions(description).length ? index : null);
+    setHighlightedProductSuggestionIndex(0);
+  }
+
+  function selectProductSuggestion(index, productValue) {
+    setActiveProductSearchIndex(null);
+    setHighlightedProductSuggestionIndex(0);
+    chooseProduct(index, productValue);
+  }
+
+  async function saveItemAsProduct(index, item) {
+    setSaving(true);
+    setError("");
+    try {
+      const savedProduct = await saveCustomProduct({ name: item.description, unitPrice: item.unitPrice });
+      updateItem(index, {
+        description: savedProduct.name,
+        productId: "",
+        invoiceCustomProductId: savedProduct.id,
+      });
+    } catch (saveError) {
+      setError(saveError.message || "The custom product could not be saved.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleInvoiceLogoSelected(files) {
@@ -593,7 +673,11 @@ export default function InvoiceManager({ products, storefrontBrand }) {
     setNotice("");
     try {
       const savedProducts = [];
-      for (const item of invoice.items.filter((lineItem) => !lineItem.productId)) {
+      for (const item of invoice.items.filter((lineItem) => (
+        !lineItem.productId
+        && !lineItem.invoiceCustomProductId
+        && (productEntryMode !== "single" || lineItem.saveAsInvoiceProduct === true)
+      ))) {
         savedProducts.push(await saveInvoiceCustomProduct({ name: item.description, unitPrice: item.unitPrice }));
       }
       const customProductsByName = new Map(savedProducts.map((product) => [product.name.toLocaleLowerCase(), product]));
@@ -710,15 +794,20 @@ export default function InvoiceManager({ products, storefrontBrand }) {
   }
 
   async function saveHeaderDefaults(businessDetails) {
-    const savedDefaults = await saveInvoiceHeaderSettings(businessDetails);
+    const savedDefaults = await saveInvoiceHeaderSettings({
+      ...businessDetails,
+      productEntryMode: settingsProductEntryMode,
+    });
     setInvoiceHeaderDefaults(savedDefaults);
+    setProductEntryMode(savedDefaults.productEntryMode);
     setSettingsBusinessDetails(savedDefaults);
     setInvoice((current) => current ? { ...current, businessDetails: savedDefaults } : current);
-    setNotice("Invoice header defaults saved for future invoices.");
+    setNotice("Invoice settings saved.");
   }
 
   function openInvoiceSettings() {
     setSettingsBusinessDetails(invoice?.businessDetails ?? invoiceBusinessDetails(storefrontBrand, invoiceHeaderDefaults));
+    setSettingsProductEntryMode(productEntryMode);
     if (invoice) setInvoiceMode("edit");
     setInvoiceSettingsOpen(true);
     setError("");
@@ -731,6 +820,7 @@ export default function InvoiceManager({ products, storefrontBrand }) {
       ...current.filter((record) => record.id !== savedProduct.id),
       savedProduct,
     ].sort((first, second) => first.name.localeCompare(second.name)));
+    return savedProduct;
   }
 
   async function removeCustomProduct(id) {
@@ -835,6 +925,8 @@ export default function InvoiceManager({ products, storefrontBrand }) {
           customCustomers={customCustomers}
           deliveryPartners={deliveryPartners}
           onHeaderChange={setSettingsBusinessDetails}
+          productEntryMode={settingsProductEntryMode}
+          onProductEntryModeChange={setSettingsProductEntryMode}
           onLogoSelected={(files) => void handleInvoiceLogoSelected(files)}
           onSaveHeader={saveHeaderDefaults}
           onSaveProduct={saveCustomProduct}
@@ -884,6 +976,22 @@ export default function InvoiceManager({ products, storefrontBrand }) {
                   <button type="button" className={`admin-secondary-button${invoiceMode === "edit" ? " active" : ""}`} aria-pressed={invoiceMode === "edit"} onClick={() => setInvoiceMode("edit")}>Edit</button>
                   <button type="button" className={`admin-secondary-button${invoiceMode === "view" ? " active" : ""}`} aria-pressed={invoiceMode === "view"} onClick={() => setInvoiceMode("view")}>View</button>
                 </div>
+                <details className="invoice-more-actions invoice-action-menu" ref={moreActionsRef}>
+                  <summary aria-label="More invoice actions" onClick={handleActionMenuToggle}>More</summary>
+                  <div>
+                    <button type="button" onClick={() => { moreActionsRef.current.open = false; openInvoiceSettings(); }}>Settings</button>
+                    {invoiceMode === "edit" && (
+                      <button type="button" onClick={() => { moreActionsRef.current.open = false; void saveAsDraft(); }} disabled={saving || sharing || printing}>
+                        {saving ? "Saving..." : "Save as draft"}
+                      </button>
+                    )}
+                    {invoiceMode === "edit" && (
+                      <button type="submit" onClick={() => { moreActionsRef.current.open = false; }} disabled={saving || sharing || printing}>
+                        {saving ? "Saving..." : "Save"}
+                      </button>
+                    )}
+                  </div>
+                </details>
                 <details className="invoice-share-actions invoice-action-menu" ref={topShareActionsRef}>
                   <summary aria-label="Share or export invoice" onClick={handleActionMenuToggle}>Share</summary>
                   <div>
@@ -908,13 +1016,23 @@ export default function InvoiceManager({ products, storefrontBrand }) {
           </div>
           {invoiceMode === "edit" ? (
             <div className="invoice-editor">
-            <section className="invoice-editor-section">
-              <h2>Invoice details</h2>
+            <details className="invoice-editor-section invoice-collapsible-section">
+              <summary>
+                <span>
+                  <strong>{invoice.invoiceNumber}</strong>
+                  <small>
+                    {invoice.issueDate ? new Date(`${invoice.issueDate}T00:00:00`).toLocaleDateString() : "No date"}
+                  </small>
+                </span>
+                <svg className="invoice-edit-indicator" aria-hidden="true" viewBox="0 0 20 20" fill="none">
+                  <path d="m12.2 4.1 3.7 3.7M4.2 15.8l3.1-.7 8.6-8.6a1.8 1.8 0 0 0-2.5-2.5l-8.6 8.6-.6 3.2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </summary>
               <div className="invoice-form-grid">
                 <label>Invoice number<input required value={invoice.invoiceNumber} onChange={(event) => updateInvoice("invoiceNumber", event.target.value)} /></label>
-                <label>Invoice date<input type="date" required value={invoice.issueDate} onChange={(event) => updateInvoice("issueDate", event.target.value)} /></label>
+                <label className="invoice-date-field">Invoice date<input type="date" required value={invoice.issueDate} onChange={(event) => updateInvoice("issueDate", event.target.value)} /></label>
               </div>
-            </section>
+            </details>
             <section className="invoice-editor-section">
               <label className="invoice-customer-toggle">
                 <input
@@ -1111,29 +1229,110 @@ export default function InvoiceManager({ products, storefrontBrand }) {
               {invoice.items.map((item, index) => {
                 const selectedProduct = products.find((product) => product.id === item.productId);
                 const options = selectedProduct ? productOptions(selectedProduct) : [];
+                const suggestions = productSuggestions(item.description);
+                const showSuggestions = activeProductSearchIndex === index && suggestions.length > 0;
                 return (
-                <div className="invoice-item-row" key={`${item.productId || "custom"}-${index}`}>
+                <div className={`invoice-item-row${productEntryMode === "single" ? " uses-single-product-entry" : ""}`} key={item.lineId}>
                   <div className="invoice-item-product-fields">
-                    <label>Product<select value={item.productId ? `catalog:${item.productId}` : item.invoiceCustomProductId ? `custom:${item.invoiceCustomProductId}` : ""} onChange={(event) => chooseProduct(index, event.target.value)}>
-                    <option value="">Custom item / choose product</option>
-                    {products.length > 0 && (
-                      <optgroup label="Store catalog">
-                        {products.map((product) => <option value={`catalog:${product.id}`} key={product.id}>{product.title}{product.isActive ? "" : " (inactive)"}</option>)}
-                      </optgroup>
+                    {productEntryMode === "single" ? (
+                      <>
+                        <div
+                          className="invoice-product-search"
+                          onBlur={(event) => {
+                            if (!event.currentTarget.contains(event.relatedTarget)) {
+                              setActiveProductSearchIndex(null);
+                            }
+                          }}
+                        >
+                          <label>Product<input
+                            required
+                            role="combobox"
+                            aria-autocomplete="list"
+                            aria-expanded={showSuggestions}
+                            aria-controls={showSuggestions ? `invoice-product-suggestions-${index}` : undefined}
+                            aria-activedescendant={showSuggestions ? `invoice-product-suggestion-${index}-${highlightedProductSuggestionIndex}` : undefined}
+                            value={item.description}
+                            onChange={(event) => updateSingleFieldItem(index, event.target.value)}
+                            onKeyDown={(event) => {
+                              if (!showSuggestions) return;
+                              if (event.key === "ArrowDown") {
+                                event.preventDefault();
+                                setHighlightedProductSuggestionIndex((current) => (current + 1) % suggestions.length);
+                              } else if (event.key === "ArrowUp") {
+                                event.preventDefault();
+                                setHighlightedProductSuggestionIndex((current) => (current - 1 + suggestions.length) % suggestions.length);
+                              } else if (event.key === "Enter") {
+                                event.preventDefault();
+                                selectProductSuggestion(index, suggestions[highlightedProductSuggestionIndex].value);
+                              } else if (event.key === "Escape") {
+                                setActiveProductSearchIndex(null);
+                              }
+                            }}
+                            placeholder="Search products or enter a new item"
+                          /></label>
+                          {showSuggestions && (
+                            <div
+                              className="invoice-product-suggestions"
+                              id={`invoice-product-suggestions-${index}`}
+                              role="listbox"
+                              aria-label="Matching products"
+                            >
+                              {suggestions.map((suggestion, suggestionIndex) => (
+                                <button
+                                  className="invoice-product-suggestion"
+                                  id={`invoice-product-suggestion-${index}-${suggestionIndex}`}
+                                  type="button"
+                                  role="option"
+                                  aria-selected={highlightedProductSuggestionIndex === suggestionIndex}
+                                  key={suggestion.value}
+                                  onMouseDown={(event) => event.preventDefault()}
+                                  onClick={() => selectProductSuggestion(index, suggestion.value)}
+                                >
+                                  <span>{suggestion.name}<small>{suggestion.source}</small></span>
+                                  <strong>{formatProductPrice(suggestion.price)}</strong>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {!item.productId && !item.invoiceCustomProductId && item.description.trim() && !matchingProductValue(item.description) && (
+                          <>
+                            <p className="invoice-product-entry-hint">This will stay on this invoice unless you save it as a product.</p>
+                            <button
+                              className="invoice-save-custom-product"
+                              type="button"
+                              disabled={saving}
+                              onClick={() => void saveItemAsProduct(index, item)}
+                            >
+                              {saving ? "Saving product..." : "Add to saved invoice products"}
+                            </button>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <label>Product<select value={item.productId ? `catalog:${item.productId}` : item.invoiceCustomProductId ? `custom:${item.invoiceCustomProductId}` : ""} onChange={(event) => chooseProduct(index, event.target.value)}>
+                        <option value="">Custom item / choose product</option>
+                        {products.length > 0 && (
+                          <optgroup label="Store catalog">
+                            {products.map((product) => <option value={`catalog:${product.id}`} key={product.id}>{product.title}{product.isActive ? "" : " (inactive)"}</option>)}
+                          </optgroup>
+                        )}
+                        {customProducts.length > 0 && (
+                          <optgroup label="Saved invoice products">
+                            {customProducts.map((product) => <option value={`custom:${product.id}`} key={product.id}>{product.name}</option>)}
+                          </optgroup>
+                        )}
+                      </select></label>
                     )}
-                    {customProducts.length > 0 && (
-                      <optgroup label="Saved invoice products">
-                        {customProducts.map((product) => <option value={`custom:${product.id}`} key={product.id}>{product.name}</option>)}
-                      </optgroup>
-                    )}
-                    </select></label>
                     {options.length > 1 && (
                       <label>Product option<select value={item.variantIndex ?? 0} onChange={(event) => chooseVariant(index, selectedProduct, event.target.value)}>
                         {options.map((option, optionIndex) => <option value={optionIndex} key={option.id || optionIndex}>{option.label || `Option ${optionIndex + 1}`} · {formatProductPrice(option.price)}</option>)}
                       </select></label>
                     )}
                   </div>
-                  <label>Item name<input required value={item.description} onChange={(event) => updateItem(index, { description: event.target.value, productId: "", invoiceCustomProductId: "" })} /></label>
+                  {productEntryMode !== "single" && (
+                    <label>Item name<input required value={item.description} onChange={(event) => updateItem(index, { description: event.target.value, productId: "", invoiceCustomProductId: "" })} /></label>
+                  )}
                   <div className="invoice-item-numbers">
                     <label>Qty<input type="number" min="0.01" step="any" required value={item.quantity} onChange={(event) => updateItem(index, { quantity: event.target.value })} /></label>
                     <label>Unit price<input type="number" min="0" step="0.01" required value={item.unitPrice} onChange={(event) => updateItem(index, { unitPrice: event.target.value })} /></label>
@@ -1142,7 +1341,10 @@ export default function InvoiceManager({ products, storefrontBrand }) {
                       <strong>{formatProductPrice(lineTotal(item))}</strong>
                     </div>
                   </div>
-                  <button className="invoice-remove-item" type="button" aria-label={`Remove ${item.description || "item"}`} onClick={() => updateInvoice("items", invoice.items.filter((_, itemIndex) => itemIndex !== index))}>
+                  <button className="invoice-remove-item" type="button" aria-label={`Remove ${item.description || "item"}`} onClick={() => {
+                    setActiveProductSearchIndex(null);
+                    updateInvoice("items", invoice.items.filter((_, itemIndex) => itemIndex !== index));
+                  }}>
                     <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
                       <path d="M3.5 5.5h13m-11.5 0 .7 11h9.6l.7-11M8 5.5V3.8h4v1.7m-3 3v5m3-5v5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -1184,9 +1386,15 @@ export default function InvoiceManager({ products, storefrontBrand }) {
                 </div>
               )}
             </section>
-            <section className="invoice-editor-section">
-              <label className="invoice-notes-field">Notes<textarea rows="3" placeholder="Payment terms or a note for the customer" value={invoice.notes} onChange={(event) => updateInvoice("notes", event.target.value)} /></label>
-            </section>
+            <details className="invoice-editor-section invoice-collapsible-section">
+              <summary>
+                <span><strong>Notes</strong><small>Optional payment terms or a note for the customer</small></span>
+                <svg className="invoice-edit-indicator" aria-hidden="true" viewBox="0 0 20 20" fill="none">
+                  <path d="m12.2 4.1 3.7 3.7M4.2 15.8l3.1-.7 8.6-8.6a1.8 1.8 0 0 0-2.5-2.5l-8.6 8.6-.6 3.2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </summary>
+              <label className="invoice-notes-field"><span className="invoice-visually-hidden">Notes</span><textarea rows="3" placeholder="Payment terms or a note for the customer" value={invoice.notes} onChange={(event) => updateInvoice("notes", event.target.value)} /></label>
+            </details>
             </div>
           ) : null}
           <div className={`invoice-preview-wrap${invoiceMode === "edit" && !livePreviewEnabled ? " is-preview-disabled" : ""}`}>
@@ -1197,49 +1405,18 @@ export default function InvoiceManager({ products, storefrontBrand }) {
               lineTotal={lineTotal}
             />
           </div>
-          <div className="invoice-bottom-actions">
-            <span className="invoice-bottom-actions-label">Invoice actions</span>
-            <div className="invoice-editor-actions">
-              <button
-                type="button"
-                className="invoice-back-button invoice-go-to-list-button"
-                onClick={() => {
-                  setInvoice(null);
-                  setInvoiceMode("edit");
-                  setError("");
-                  setNotice("");
-                }}
-              >
-                ← Invoices
-              </button>
-              <details className="invoice-share-actions invoice-action-menu" ref={shareActionsRef}>
-                <summary aria-label="Share or export invoice" onClick={handleActionMenuToggle}>Share</summary>
-                <div>
-                  <button type="button" onClick={() => { shareActionsRef.current.open = false; void printInvoice(); }} disabled={saving || sharing || printing}>{printing ? "Preparing PDF..." : "Print / PDF"}</button>
-                  <button type="button" onClick={() => { shareActionsRef.current.open = false; void shareInvoiceAsImage(); }} disabled={saving || sharing || printing}>{sharing ? "Preparing image..." : "Share image"}</button>
-                  {invoiceMode === "edit" && (
-                    <button
-                      type="button"
-                      aria-pressed={livePreviewEnabled}
-                      onClick={() => {
-                        setLivePreviewEnabled((enabled) => !enabled);
-                        shareActionsRef.current.open = false;
-                      }}
-                    >
-                      {livePreviewEnabled ? "Hide preview" : "Show preview"}
-                    </button>
-                  )}
-                </div>
-              </details>
-              <details className="invoice-more-actions invoice-action-menu" ref={moreActionsRef}>
-                <summary aria-label="More invoice actions" onClick={handleActionMenuToggle}>More</summary>
-                <div>
-                  <button type="button" onClick={() => { moreActionsRef.current.open = false; openInvoiceSettings(); }}>Settings</button>
-                  {invoiceMode === "edit" && <button className="invoice-menu-save-draft" type="button" onClick={() => { moreActionsRef.current.open = false; void saveAsDraft(); }} disabled={saving || sharing || printing}>{saving ? "Saving..." : "Save as draft"}</button>}
-                  <button type="button" className="invoice-discard-action" onClick={() => { moreActionsRef.current.open = false; void discardInvoiceChanges(); }} disabled={saving || sharing || printing}>Discard</button>
-                </div>
-              </details>
-              {invoiceMode === "edit" && (
+          {invoiceMode === "edit" && (
+            <div className="invoice-bottom-actions">
+              <span className="invoice-bottom-actions-label">Invoice actions</span>
+              <div className="invoice-editor-actions">
+                <button
+                  type="button"
+                  className="invoice-discard-button"
+                  onClick={() => void discardInvoiceChanges()}
+                  disabled={saving || sharing || printing}
+                >
+                  Discard
+                </button>
                 <button
                   type="button"
                   className="admin-secondary-button invoice-save-draft-button"
@@ -1248,10 +1425,12 @@ export default function InvoiceManager({ products, storefrontBrand }) {
                 >
                   {saving ? "Saving..." : "Save as draft"}
                 </button>
-              )}
-              {invoiceMode === "edit" && <button className="admin-primary-button invoice-save-button" type="submit" disabled={saving || sharing || printing}>{saving ? "Saving..." : "Save"}</button>}
+                <button className="admin-primary-button invoice-save-button" type="submit" disabled={saving || sharing || printing}>
+                  {saving ? "Saving..." : "Save"}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </form>
       )}
       <ConfirmDialog {...dialogProps} />

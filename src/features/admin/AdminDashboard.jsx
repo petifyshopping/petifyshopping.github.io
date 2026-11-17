@@ -1,13 +1,13 @@
 import { lazy, Suspense, useCallback, useState } from "react";
-import { adminSupabase } from "./lib/supabase.js";
-import { DEFAULT_ADMIN_BRAND, normalizeAdminBrand } from "./config/siteAppearance.js";
-import useWorkspaceAccess from "./hooks/useWorkspaceAccess.js";
-import { requestAccess } from "./services/access.js";
-import WorkspaceAccessStatus from "./features/admin/auth/WorkspaceAccessStatus.jsx";
-import LoadingState from "./features/shared/LoadingState.jsx";
+import { adminSupabase } from "../../lib/supabase.js";
+import { DEFAULT_ADMIN_BRAND, normalizeAdminBrand } from "../../config/siteAppearance.js";
+import useWorkspaceAccess from "../../hooks/useWorkspaceAccess.js";
+import { requestAccess } from "../../services/access.js";
+import WorkspaceAccessStatus from "./auth/WorkspaceAccessStatus.jsx";
+import LoadingState from "../../components/ui/LoadingState.jsx";
 
-const AdminLogin = lazy(() => import("./features/admin/auth/AdminLogin.jsx"));
-const ProductManager = lazy(() => import("./features/admin/AdminWorkspace.jsx"));
+const AdminLogin = lazy(() => import("./auth/AdminLogin.jsx"));
+const ProductManager = lazy(() => import("./AdminWorkspace.jsx"));
 
 export default function AdminDashboard({
   adminBrand: initialAdminBrand,

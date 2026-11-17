@@ -14,7 +14,7 @@ import AdminNotice from "./components/AdminNotice.jsx";
 import AdminButton from "./components/AdminButton.jsx";
 import AdminTopbar from "./components/AdminTopbar.jsx";
 import AdminBottomNav from "./components/AdminBottomNav.jsx";
-import LoadingState from "../shared/LoadingState.jsx";
+import LoadingState from "../../components/ui/LoadingState.jsx";
 import FilterSheet from "./components/FilterSheet.jsx";
 import ProductListItem from "./products/ProductListItem.jsx";
 import { parseVariantPrice } from "./products/productUtils.js";

@@ -13,7 +13,7 @@ import AdminTopbar from "../admin/components/AdminTopbar.jsx";
 import AdminBottomNav from "../admin/components/AdminBottomNav.jsx";
 import WorkspaceAccessStatus from "../admin/auth/WorkspaceAccessStatus.jsx";
 import { requestAccess } from "../../services/access.js";
-import LoadingState from "../shared/LoadingState.jsx";
+import LoadingState from "../../components/ui/LoadingState.jsx";
 
 export default function SalesPortal({
   products,

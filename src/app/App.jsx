@@ -1,63 +1,46 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import AboutPage from "./features/storefront/components/AboutPage.jsx";
-import CatalogLoading from "./features/storefront/components/CatalogLoading.jsx";
-import CatalogSections from "./features/storefront/components/CatalogSections.jsx";
-import FeatureList from "./features/storefront/components/FeatureList.jsx";
-import ScrollToTop from "./features/storefront/components/ScrollToTop.jsx";
-import StoreFooter from "./features/storefront/components/StoreFooter.jsx";
-import StoreHeader from "./features/storefront/components/StoreHeader.jsx";
-import { getCatalogProductsByIds } from "./services/catalog.js";
-import useStorefrontCatalog from "./features/storefront/useStorefrontCatalog.js";
-import { parseProductPrice, productOptions } from "./lib/productPricing.js";
-import { getCustomerOrderContactDetails } from "./lib/customerOrderDetails.js";
-import { WorkspaceAccessProvider } from "./hooks/WorkspaceAccessProvider.jsx";
-import LoadingState from "./features/shared/LoadingState.jsx";
-import { supabase } from "./lib/supabase.js";
+import AboutPage from "../features/storefront/components/AboutPage.jsx";
+import CatalogLoading from "../features/storefront/components/CatalogLoading.jsx";
+import CatalogSections from "../features/storefront/components/CatalogSections.jsx";
+import FeatureList from "../features/storefront/components/FeatureList.jsx";
+import ScrollToTop from "../features/storefront/components/ScrollToTop.jsx";
+import StoreFooter from "../features/storefront/components/StoreFooter.jsx";
+import StoreHeader from "../features/storefront/components/StoreHeader.jsx";
+import { getCatalogProductsByIds } from "../services/catalog.js";
+import useStorefrontCatalog from "../features/storefront/useStorefrontCatalog.js";
+import { parseProductPrice, productOptions } from "../lib/productPricing.js";
+import { getCustomerOrderContactDetails } from "../lib/customerOrderDetails.js";
+import { WorkspaceAccessProvider } from "../hooks/WorkspaceAccessProvider.jsx";
+import LoadingState from "../components/ui/LoadingState.jsx";
+import { supabase } from "../lib/supabase.js";
 import {
   createCustomerAddress,
   createCustomerOrder,
   getCustomerAccount,
   saveCustomerCart,
-} from "./services/customers.js";
-import { signOutCustomer } from "./services/customerAuth.js";
+} from "../services/customers.js";
+import { signOutCustomer } from "../services/customerAuth.js";
 import {
   DEFAULT_LOADING_SCREEN,
   applyColorPalette,
   normalizeColorPalette,
   normalizeLoadingScreen,
-} from "./config/siteAppearance.js";
+} from "../config/siteAppearance.js";
+import {
+  hasSuccessfulEmailConfirmationRedirect,
+  isPasswordResetLocation,
+  normalizeRoutePath,
+} from "./routeState.js";
 
-const AdminDashboard = lazy(() => import("./AdminDashboard.jsx"));
-const SalesPortal = lazy(() => import("./features/sales/SalesPortal.jsx"));
-const PasswordReset = lazy(() => import("./features/admin/auth/PasswordReset.jsx"));
-const CustomerAccount = lazy(() => import("./features/storefront/components/CustomerAccount.jsx"));
-const StoreCart = lazy(() => import("./features/storefront/components/StoreCart.jsx"));
-const ProductDetailsDialog = lazy(() => import("./features/storefront/components/ProductDetailsDialog.jsx"));
-const EmailVerifiedNotice = lazy(() => import("./features/storefront/components/EmailVerifiedNotice.jsx"));
+const AdminDashboard = lazy(() => import("../features/admin/AdminDashboard.jsx"));
+const SalesPortal = lazy(() => import("../features/sales/SalesPortal.jsx"));
+const PasswordReset = lazy(() => import("../features/admin/auth/PasswordReset.jsx"));
+const CustomerAccount = lazy(() => import("../features/storefront/components/CustomerAccount.jsx"));
+const StoreCart = lazy(() => import("../features/storefront/components/StoreCart.jsx"));
+const ProductDetailsDialog = lazy(() => import("../features/storefront/components/ProductDetailsDialog.jsx"));
+const EmailVerifiedNotice = lazy(() => import("../features/storefront/components/EmailVerifiedNotice.jsx"));
 const CART_STORAGE_KEY = "petify-store-cart";
 const DEFAULT_DOCUMENT_TITLE = "Petify | Pure love, premium care";
-
-function isPasswordResetLocation(search, hash) {
-  const queryParams = new URLSearchParams(search);
-  const hashParams = new URLSearchParams(hash.replace(/^#/, ""));
-  return queryParams.get("password-reset") === "1"
-    || queryParams.get("view") === "reset-password"
-    || queryParams.get("type") === "recovery"
-    || queryParams.get("error_code") === "otp_expired"
-    || hash === "#reset-password"
-    || hashParams.get("type") === "recovery"
-    || hashParams.get("error_code") === "otp_expired";
-}
-
-function hasSuccessfulEmailConfirmationRedirect() {
-  const url = new URL(window.location.href);
-  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
-  return url.searchParams.get("email-confirmed") === "1"
-    && !url.searchParams.has("error")
-    && !url.searchParams.has("error_code")
-    && !hashParams.has("error")
-    && !hashParams.has("error_code");
-}
 
 function readStoredCart() {
   try {
@@ -137,7 +120,7 @@ export default function App() {
     loadMore,
   } = useStorefrontCatalog();
   const [routeHash, setRouteHash] = useState(window.location.hash);
-  const [routePath, setRoutePath] = useState(window.location.pathname.replace(/\/+$/, "") || "/");
+  const [routePath, setRoutePath] = useState(() => normalizeRoutePath(window.location.pathname));
   const [customerSession, setCustomerSession] = useState(null);
   const [customerAuthReady, setCustomerAuthReady] = useState(!supabase);
   const [customerProfile, setCustomerProfile] = useState(null);
@@ -147,7 +130,9 @@ export default function App() {
   const [customerAccountErrorUserId, setCustomerAccountErrorUserId] = useState("");
   const [customerAccountMessage, setCustomerAccountMessage] = useState("");
   const [isAccountOpen, setIsAccountOpen] = useState(false);
-  const [showEmailVerifiedNotice, setShowEmailVerifiedNotice] = useState(hasSuccessfulEmailConfirmationRedirect);
+  const [showEmailVerifiedNotice, setShowEmailVerifiedNotice] = useState(
+    () => hasSuccessfulEmailConfirmationRedirect(window.location),
+  );
   const isAdminRoute = routeHash === "#admin"
     || routeHash === "#admin-settings"
     || routeHash === "#admin-products"
@@ -258,7 +243,7 @@ export default function App() {
   useEffect(() => {
     const updateRoute = () => {
       setRouteHash(window.location.hash);
-      setRoutePath(window.location.pathname.replace(/\/+$/, "") || "/");
+      setRoutePath(normalizeRoutePath(window.location.pathname));
       const url = new URLSearchParams(window.location.search);
       setDetailProductId(url.get("product"));
       setDetailVariantId(url.get("variant"));

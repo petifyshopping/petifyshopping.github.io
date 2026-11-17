@@ -202,13 +202,50 @@ function mapInvoice(row) {
   };
 }
 
+const INVOICE_FIELDS = [
+  "id",
+  "invoice_number",
+  "business_details",
+  "customer_details",
+  "items",
+  "issue_date",
+  "due_date",
+  "status",
+  "notes",
+  "subtotal",
+  "discount_rate",
+  "discount_amount",
+  "delivery_charge_enabled",
+  "delivery_charge",
+  "free_delivery",
+  "tax_rate",
+  "tax_amount",
+  "total",
+  "created_at",
+  "updated_at",
+].join(", ");
+
 export async function getInvoices() {
-  const { data, error } = await requireAdminClient()
-    .from("invoices")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data.map(mapInvoice);
+  const client = requireAdminClient();
+  const pageSize = 500;
+  const rows = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, count, error } = await client
+      .from("invoices")
+      .select(INVOICE_FIELDS, { count: "exact" })
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw error;
+
+    rows.push(...data);
+    offset += data.length;
+    if (data.length < pageSize || (count !== null && offset >= count)) break;
+  }
+
+  return rows.map(mapInvoice);
 }
 
 export async function getInvoiceDashboardStats() {

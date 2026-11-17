@@ -6,7 +6,27 @@ Petify's product catalog is a React + Vite web app. Products, sections, and all 
 
 1. Install Node.js 20.19+ or 22.12+.
 2. Run `npm install`.
-3. Run `npm run dev` and open the URL Vite prints.
+3. Copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from your Supabase project's API settings. The anon key is public; never put a service-role key in a `VITE_` variable.
+4. Run `npm run dev` and open the URL Vite prints.
+
+## Project structure
+
+- `src/app/` contains the application entry point and top-level route selection.
+- `src/features/admin/`, `src/features/sales/`, and `src/features/storefront/` contain feature UI and feature-specific components.
+- `src/components/ui/` contains reusable UI shared across features.
+- `src/hooks/`, `src/lib/`, `src/services/`, and `src/config/` contain shared hooks, helpers, Supabase access, and application configuration.
+- `src/styles/` contains global and responsive styles; feature-specific styles stay beside their feature.
+- `supabase/` contains ordered database migrations and optional migration paths described below.
+- `public/` contains static files copied to the production build.
+
+## Scripts
+
+- `npm run dev` starts the Vite development server.
+- `npm run lint` runs ESLint.
+- `npm run format` formats supported project files with Prettier.
+- `npm run build` creates the production build in `dist/`.
+- `npm run preview` serves the production build locally.
+- `npm run deploy` publishes `dist/` to GitHub Pages; it runs the build first.
 
 ## Connect Supabase and enable workspace access
 
@@ -34,8 +54,12 @@ Petify's product catalog is a React + Vite web app. Products, sections, and all 
    Apply `18-invoice-custom-records.sql` after `17-invoice-header-settings.sql` to add separate admin-only custom invoice products and customers.
    Apply `19-admin-invoice-status.sql` after `18-invoice-custom-records.sql` to store Draft, Sent, and Paid invoice statuses. Sent invoices past their due date display as Overdue.
    Apply `20-admin-invoice-discounts.sql` after `19-admin-invoice-status.sql` to persist invoice-level percentage discounts.
+   Apply `21-admin-invoice-delivery.sql` after `20-admin-invoice-discounts.sql` to add invoice delivery-charge fields.
+   Apply `22-admin-invoice-delivery-partners.sql` after `21-admin-invoice-delivery.sql` to add the admin-only saved delivery-partner list.
+   `23-restore-workspace-draft-policies.sql` is only for projects that applied both `10-remove-sales-backend.sql` and `15-admin-access-after-sales-removal.sql`; it restores admin-owned workspace-draft storage after that cleanup.
    Apply `25-admin-invoice-monthly-numbering.sql` after `20-admin-invoice-discounts.sql` to create the monthly invoice counter.
    Then apply `26-admin-invoice-number-on-save.sql` before deploying the client to assign a unique `INV-DDMMYYYY-001` number only when an invoice is inserted. It also resets any numbers previously reserved by canceled invoice attempts. Creating and discarding an invoice will not consume a number.
+
 3. In Supabase Authentication, enable email/password sign-in and email confirmation. Enable sign-ups for customer accounts and any staff access-request workflow you use. Customer profiles do not grant admin or workspace access; admin authorization remains based on the protected `admin_users` table and RLS. The app keeps customer and admin auth sessions in separate browser storage keys, so signing out of one role does not sign out the other. Existing users may need to sign in again once after this app update. No extra SQL migration is required for this client-side session separation; database policies continue to evaluate each request's own authenticated user.
 4. Create the first admin once, using the account's email, in the Supabase SQL Editor. This is a privileged bootstrap operation and must not be exposed as a client RPC:
 
@@ -48,6 +72,7 @@ Petify's product catalog is a React + Vite web app. Products, sections, and all 
    ```
 
    Run this once for the initial owner only. There is no public/admin-client bootstrap RPC. Add later admins through **Site settings → Team & Access**.
+
 5. Configure Supabase Auth settings before launch:
    - Require email confirmation and choose the password minimum in Supabase Auth to match your preference. The app does not impose an additional password length rule.
    - Keep **Confirm email** enabled. Add the production site URL and `http://localhost:5173` to **Authentication → URL Configuration → Redirect URLs**, including the reset destination `https://your-production-host/?view=reset-password` and `http://localhost:5173/?view=reset-password`. Keep the site URL set to the canonical production origin. In the **Reset Password** email template, use Supabase's `{{ .ConfirmationURL }}` link so verification follows the requested redirect; do not link directly to `{{ .SiteURL }}`, which opens the storefront instead of the password form.
@@ -87,11 +112,17 @@ import AdminButton from "./components/AdminButton.jsx";
 import AdminNotice from "./components/AdminNotice.jsx";
 import AdminState from "./components/AdminState.jsx";
 
-<AdminButton variant="primary" type="submit" disabled={saving}>
-  {saving ? "Saving..." : "Save"}
-</AdminButton>
-{error && <AdminNotice kind="error">{error}</AdminNotice>}
-{loading && <AdminState kind="loading" description="Loading products..." />}
+function ProductForm({ saving, error, loading }) {
+  return (
+    <>
+      <AdminButton variant="primary" type="submit" disabled={saving}>
+        {saving ? "Saving..." : "Save"}
+      </AdminButton>
+      {error && <AdminNotice kind="error">{error}</AdminNotice>}
+      {loading && <AdminState kind="loading" description="Loading products..." />}
+    </>
+  );
+}
 ```
 
 For a destructive action, call `useConfirmDialog()` and render its dialog once in the component:
@@ -100,14 +131,16 @@ For a destructive action, call `useConfirmDialog()` and render its dialog once i
 import useConfirmDialog from "../../hooks/useConfirmDialog.js";
 import ConfirmDialog from "./components/ConfirmDialog.jsx";
 
-const { confirm, dialogProps } = useConfirmDialog();
+function DestructiveAction({ deleteItem }) {
+  const { confirm, dialogProps } = useConfirmDialog();
 
-async function removeItem() {
-  if (!await confirm({ title: "Delete this item?", confirmLabel: "Delete" })) return;
-  await deleteItem();
+  async function removeItem() {
+    if (!(await confirm({ title: "Delete this item?", confirmLabel: "Delete" }))) return;
+    await deleteItem();
+  }
+
+  return <ConfirmDialog {...dialogProps} />;
 }
-
-<ConfirmDialog {...dialogProps} />
 ```
 
 `ImageUploadField` forwards selected files to `onChange(files)` and can optionally limit file size:
@@ -126,3 +159,5 @@ async function removeItem() {
 ## Build
 
 Run `npm run build` for the production bundle and `npm run preview` to inspect it locally.
+
+See [SECURITY.md](./SECURITY.md) for the pre-launch security checklist and provider-side checks that cannot be verified from this repository.

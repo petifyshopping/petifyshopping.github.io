@@ -15,6 +15,16 @@ export async function getInvoiceHeaderSettings() {
   return data?.business_details ?? null;
 }
 
+export async function getNextAdminInvoiceNumber(invoiceDate) {
+  const { data, error } = await requireAdminClient()
+    .rpc("get_next_admin_invoice_number", { p_invoice_date: invoiceDate });
+  if (error) throw error;
+  if (typeof data !== "string" || !data.trim()) {
+    throw new Error("The invoice number service returned an invalid number.");
+  }
+  return data;
+}
+
 export async function saveInvoiceHeaderSettings(businessDetails) {
   const { data, error } = await requireAdminClient()
     .from("invoice_settings")

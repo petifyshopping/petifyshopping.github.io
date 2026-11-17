@@ -34,6 +34,7 @@ Petify's product catalog is a React + Vite web app. Products, sections, and all 
    Apply `18-invoice-custom-records.sql` after `17-invoice-header-settings.sql` to add separate admin-only custom invoice products and customers.
    Apply `19-admin-invoice-status.sql` after `18-invoice-custom-records.sql` to store Draft, Sent, and Paid invoice statuses. Sent invoices past their due date display as Overdue.
    Apply `20-admin-invoice-discounts.sql` after `19-admin-invoice-status.sql` to persist invoice-level percentage discounts.
+   Apply `25-admin-invoice-monthly-numbering.sql` after `20-admin-invoice-discounts.sql` to generate unique invoice numbers in `INV-DDMMYYYY-001` format with an atomic monthly counter.
 3. In Supabase Authentication, enable email/password sign-in and email confirmation. Enable sign-ups for customer accounts and any staff access-request workflow you use. Customer profiles do not grant admin or workspace access; admin authorization remains based on the protected `admin_users` table and RLS. The app keeps customer and admin auth sessions in separate browser storage keys, so signing out of one role does not sign out the other. Existing users may need to sign in again once after this app update. No extra SQL migration is required for this client-side session separation; database policies continue to evaluate each request's own authenticated user.
 4. Create the first admin once, using the account's email, in the Supabase SQL Editor. This is a privileged bootstrap operation and must not be exposed as a client RPC:
 

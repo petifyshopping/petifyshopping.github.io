@@ -13,6 +13,7 @@ import {
   getInvoiceCustomProducts,
   getInvoiceDeliveryPartners,
   getInvoiceHeaderSettings,
+  getNextAdminInvoiceNumber,
   getInvoices,
   saveInvoiceCustomCustomer,
   saveInvoiceCustomProduct,
@@ -50,11 +51,6 @@ function localDate() {
   return date.toISOString().slice(0, 10);
 }
 
-function createInvoiceNumber() {
-  const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
-  return `INV-${localDate().replace(/-/g, "")}-${suffix}`;
-}
-
 function invoiceBusinessDetails(storefrontBrand, savedSettings) {
   const defaults = {
     values: {
@@ -90,10 +86,10 @@ function invoiceBusinessDetails(storefrontBrand, savedSettings) {
   };
 }
 
-function newInvoice(storefrontBrand, headerDefaults) {
+function newInvoice(storefrontBrand, headerDefaults, invoiceNumber, issueDate) {
   return {
     id: null,
-    invoiceNumber: createInvoiceNumber(),
+    invoiceNumber,
     status: "draft",
     businessDetails: invoiceBusinessDetails(storefrontBrand, headerDefaults),
     customerDetails: {
@@ -106,7 +102,7 @@ function newInvoice(storefrontBrand, headerDefaults) {
       deliveryPartnerId: "",
     },
     items: [],
-    issueDate: localDate(),
+    issueDate,
     dueDate: "",
     notes: "",
     discountRate: 0,
@@ -222,6 +218,8 @@ export default function InvoiceManager({ products, storefrontBrand }) {
   const moreActionsRef = useRef(null);
   const topShareActionsRef = useRef(null);
   const [invoiceSettingsOpen, setInvoiceSettingsOpen] = useState(false);
+  const [creatingInvoice, setCreatingInvoice] = useState(false);
+  const creatingInvoiceRef = useRef(false);
   const [customProducts, setCustomProducts] = useState([]);
   const [activeProductSearchIndex, setActiveProductSearchIndex] = useState(null);
   const [highlightedProductSuggestionIndex, setHighlightedProductSuggestionIndex] = useState(0);
@@ -898,12 +896,24 @@ export default function InvoiceManager({ products, storefrontBrand }) {
     }
   }
 
-  function startNewInvoice() {
-    setInvoice(newInvoice(storefrontBrand, invoiceHeaderDefaults));
-    setInvoiceMode("edit");
-    setInvoiceSettingsOpen(false);
+  async function startNewInvoice() {
+    if (creatingInvoiceRef.current) return;
+    creatingInvoiceRef.current = true;
+    setCreatingInvoice(true);
     setError("");
     setNotice("");
+    const issueDate = localDate();
+    try {
+      const invoiceNumber = await getNextAdminInvoiceNumber(issueDate);
+      setInvoice(newInvoice(storefrontBrand, invoiceHeaderDefaults, invoiceNumber, issueDate));
+      setInvoiceMode("edit");
+      setInvoiceSettingsOpen(false);
+    } catch (createError) {
+      setError(createError.message || "An invoice number could not be generated.");
+    } finally {
+      creatingInvoiceRef.current = false;
+      setCreatingInvoice(false);
+    }
   }
 
   return (
@@ -911,7 +921,9 @@ export default function InvoiceManager({ products, storefrontBrand }) {
       {!invoiceSettingsOpen && !invoice && (
         <div className="invoice-page-actions" role="group" aria-label="Invoice actions">
           <button className="admin-secondary-button" type="button" disabled={loading} onClick={openInvoiceSettings}>Settings</button>
-          <button className="admin-primary-button" type="button" disabled={loading} onClick={startNewInvoice}>Create invoice</button>
+          <button className="admin-primary-button" type="button" disabled={loading || creatingInvoice} onClick={() => void startNewInvoice()}>
+            {creatingInvoice ? "Creating..." : "Create invoice"}
+          </button>
         </div>
       )}
       {error && <AdminNotice kind="error">{error}</AdminNotice>}
@@ -942,6 +954,7 @@ export default function InvoiceManager({ products, storefrontBrand }) {
           invoices={invoices}
           loading={loading}
           loadError={loadError}
+          creatingInvoice={creatingInvoice}
           deletingInvoiceId={deletingInvoiceId}
           activeTab={invoiceTab}
           onTabChange={setInvoiceTab}

@@ -1,0 +1,118 @@
+.customer-review-queue-notice {
+  margin: 0.75rem 0;
+  color: #17643b;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.customer-review-queue-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.customer-review-queue-item {
+  padding: 1rem;
+  border: 1px solid var(--admin-border, #e5e9f0);
+  border-radius: 12px;
+  background: var(--admin-surface, #fff);
+}
+
+.customer-review-queue-item-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.customer-review-queue-item-heading > div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.customer-review-queue-item-heading strong {
+  color: var(--admin-text, #29364d);
+  font-size: 0.9rem;
+}
+
+.customer-review-queue-item-heading > div:first-child > span,
+.customer-review-queue-item-heading time {
+  color: var(--admin-muted, #748198);
+  font-size: 0.74rem;
+}
+
+.customer-review-queue-item-heading > div:last-child {
+  justify-items: end;
+}
+
+.customer-review-queue-rating {
+  color: #9a5700;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.customer-review-queue-email {
+  display: inline-block;
+  max-width: 100%;
+  margin-top: 0.45rem;
+  color: var(--admin-muted, #64728a);
+  font-size: 0.76rem;
+  overflow-wrap: anywhere;
+}
+
+.customer-review-queue-item > p {
+  margin: 0.75rem 0;
+  color: var(--admin-text, #39465d);
+  font-size: 0.84rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.customer-review-queue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.customer-review-queue-actions button {
+  min-height: 38px;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.customer-review-queue-approve {
+  background: #e8f7ef;
+  color: #17643b;
+}
+
+.customer-review-queue-reject {
+  border-color: #e7c2c2;
+  background: #fff;
+  color: #a33131;
+}
+
+.customer-review-queue-actions button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.customer-review-queue-actions button:focus-visible {
+  outline: 3px solid var(--primary, #315ec4);
+  outline-offset: 3px;
+}
+
+@media (max-width: 520px) {
+  .customer-review-queue-item-heading {
+    flex-direction: column;
+  }
+
+  .customer-review-queue-item-heading > div:last-child {
+    justify-items: start;
+  }
+}

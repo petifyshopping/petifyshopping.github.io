@@ -8,6 +8,18 @@ function requireSupabase() {
   return supabase;
 }
 
+function mapCustomerOrderItems(items) {
+  return items.map((item) => ({
+    product_id: String(item.productId),
+    variant_id: String(item.variantId ?? ""),
+    quantity: item.quantity,
+    allow_unpriced: item.allowUnpriced === true,
+    expected_unit_price: Number.isFinite(item.expectedPrice ?? item.price) ? (item.expectedPrice ?? item.price) : null,
+    expected_title: item.title ?? "",
+    expected_variant_label: item.variantLabel ?? "",
+  }));
+}
+
 export async function getCustomerAccount(userId) {
   const client = requireSupabase();
   const [profileResult, cartResult, addressResult] = await Promise.all([
@@ -97,20 +109,24 @@ export async function deleteCustomerAddress(userId, addressId) {
 
 export async function createCustomerOrder({ items, addressId, temporaryAddress, note }) {
   const client = requireSupabase();
-  const orderItems = items.map((item) => ({
-    product_id: String(item.productId),
-    variant_id: String(item.variantId ?? ""),
-    quantity: item.quantity,
-    allow_unpriced: item.allowUnpriced === true,
-    expected_unit_price: Number.isFinite(item.expectedPrice ?? item.price) ? (item.expectedPrice ?? item.price) : null,
-    expected_title: item.title ?? "",
-    expected_variant_label: item.variantLabel ?? "",
-  }));
   const { data, error } = await client.rpc("create_customer_order_for_delivery", {
-    p_items: orderItems,
+    p_items: mapCustomerOrderItems(items),
     p_address_id: addressId,
     p_order_note: note,
     p_temporary_address: temporaryAddress ?? null,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function createGuestCustomerOrder({ items, name, phone, address, note }) {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("create_guest_customer_order", {
+    p_items: mapCustomerOrderItems(items),
+    p_customer_name: name.trim(),
+    p_customer_phone: phone.trim(),
+    p_delivery_address: address.trim(),
+    p_order_note: note,
   });
   if (error) throw error;
   return data;
@@ -127,6 +143,18 @@ export async function getCustomerOrders(userId) {
   return data;
 }
 
+export async function deleteCustomerOrder(userId, orderId) {
+  const { data, error } = await requireSupabase()
+    .from("customer_orders")
+    .delete()
+    .eq("user_id", userId)
+    .eq("id", orderId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("The order could not be found or deleted.");
+}
+
 export async function getAdminCustomerPage(from, pageSize) {
   if (!adminSupabase) throw new Error("Customer management is unavailable because Supabase is not configured.");
   const { data, count, error } = await adminSupabase
@@ -135,7 +163,31 @@ export async function getAdminCustomerPage(from, pageSize) {
     .order("created_at", { ascending: false })
     .range(from, from + pageSize - 1);
   if (error) throw error;
-  return { rows: data, total: count ?? data.length };
+  const { data: verificationRows, error: verificationError } = await adminSupabase.rpc(
+    "get_admin_customer_email_verification",
+    { p_user_ids: data.map((customer) => customer.user_id) },
+  );
+  if (verificationError) throw verificationError;
+  if (!Array.isArray(verificationRows) || verificationRows.length !== data.length) {
+    throw new Error("Customer email verification returned an invalid response.");
+  }
+  const verificationByUserId = new Map(
+    verificationRows.map((row) => [row.user_id, row.email_verified]),
+  );
+  if (
+    verificationByUserId.size !== data.length
+    || data.some((customer) => !verificationByUserId.has(customer.user_id))
+    || verificationRows.some((row) => typeof row.email_verified !== "boolean")
+  ) {
+    throw new Error("Customer email verification returned an invalid response.");
+  }
+  return {
+    rows: data.map((customer) => ({
+      ...customer,
+      email_verified: verificationByUserId.get(customer.user_id),
+    })),
+    total: count ?? data.length,
+  };
 }
 
 export async function getAdminCustomerLatestOrderTimes(userIds) {
@@ -194,6 +246,18 @@ export async function updateAdminCustomerOrderStatus(orderId, status) {
     p_status: status,
   });
   if (error) throw error;
+}
+
+export async function deleteAdminCustomerOrder(orderId) {
+  if (!adminSupabase) throw new Error("Customer order management is unavailable because Supabase is not configured.");
+  const { data, error } = await adminSupabase
+    .from("customer_orders")
+    .delete()
+    .eq("id", orderId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("The order could not be found or deleted.");
 }
 
 const DEFAULT_ORDER_CONTACT_FIELDS = { email: false, phone: true, whatsapp: false };

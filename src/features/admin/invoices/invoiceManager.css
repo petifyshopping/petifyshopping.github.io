@@ -998,6 +998,68 @@
   row-gap: 0.85rem;
 }
 
+.invoice-review-invitation-settings {
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+.invoice-review-invitation-settings .invoice-customer-toggle {
+  align-items: flex-start;
+}
+
+.invoice-review-invitation-settings .invoice-customer-toggle > span {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.invoice-review-invitation-settings .invoice-customer-toggle strong {
+  font-size: 0.85rem;
+}
+
+.invoice-review-invitation-settings .invoice-customer-toggle small {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+
+.invoice-review-invitation-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.invoice-review-invitation-fields label {
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.83rem;
+  font-weight: 650;
+}
+
+.invoice-review-invitation-fields input,
+.invoice-review-invitation-fields textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  background: var(--card-bg);
+  color: var(--text-dark);
+  font: inherit;
+  font-weight: 400;
+}
+
+.invoice-review-invitation-fields textarea {
+  resize: vertical;
+}
+
+.invoice-review-invitation-url {
+  grid-column: 1 / -1;
+}
+
 .invoice-settings-content .invoice-settings-done-row {
   display: flex;
   justify-content: flex-end;
@@ -1820,6 +1882,42 @@
   overflow-wrap: anywhere;
 }
 
+.invoice-paper-review-invitation {
+  margin-top: 1.25rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #d5e0ec;
+  background: #f3f7fc;
+  color: #172b3e;
+  overflow-wrap: anywhere;
+}
+
+.invoice-paper-review-invitation h3 {
+  margin: 0 0 0.35rem;
+  color: #163b5c;
+  font-size: 0.92rem;
+}
+
+.invoice-paper-review-invitation p {
+  margin: 0.2rem 0;
+  font-size: 0.76rem;
+}
+
+.invoice-paper-review-invitation a {
+  display: inline-block;
+  margin-top: 0.25rem;
+  color: #174f84;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+.invoice-paper-review-invitation .invoice-paper-review-url {
+  color: #526579;
+  font-size: 0.68rem;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 980px) {
   .invoice-layout.has-live-preview {
     grid-template-columns: minmax(0, 1fr);
@@ -2177,7 +2275,8 @@
   }
 
   .invoice-form-grid,
-  .invoice-header-fields {
+  .invoice-header-fields,
+  .invoice-review-invitation-fields {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -2445,7 +2544,8 @@
 
   .invoice-paper-table tr,
   .invoice-paper-totals,
-  .invoice-paper-notes {
+  .invoice-paper-notes,
+  .invoice-paper-review-invitation {
     break-inside: avoid;
     page-break-inside: avoid;
   }

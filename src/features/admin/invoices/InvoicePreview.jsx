@@ -21,8 +21,19 @@ function formatInvoiceDate(value) {
   return Number.isNaN(date.getTime()) ? value : formatDate(date);
 }
 
+function safeHttpUrl(value) {
+  try {
+    const url = new URL(value);
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+
 export default function InvoicePreview({ invoice, totals, storefrontTagline, lineTotal }) {
   const { values, visible } = invoice.businessDetails;
+  const reviewInvitation = invoice.businessDetails.reviewInvitation;
+  const reviewInvitationUrl = safeHttpUrl(reviewInvitation?.url ?? "");
   const customer = {
     ...invoice.customerDetails,
     ...selectedCustomerDetails(invoice.customerDetails),
@@ -108,6 +119,14 @@ export default function InvoicePreview({ invoice, totals, storefrontTagline, lin
         <p className="invoice-paper-grand-total"><span>Total</span><strong>{formatProductPrice(totals.total)}</strong></p>
       </div>
       {invoice.notes && <section className="invoice-paper-notes"><h3>Notes</h3><p>{invoice.notes}</p></section>}
+      {reviewInvitation?.enabled && reviewInvitationUrl && (
+        <section className="invoice-paper-review-invitation" aria-label="Review invitation">
+          <h3>{reviewInvitation.heading}</h3>
+          <p>{reviewInvitation.message}</p>
+          <a href={reviewInvitationUrl}>{reviewInvitation.linkText}</a>
+          <p className="invoice-paper-review-url">{reviewInvitationUrl}</p>
+        </section>
+      )}
     </article>
   );
 }

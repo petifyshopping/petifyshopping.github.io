@@ -34,6 +34,24 @@ const headerFields = [
   ["address", "Address"],
 ];
 
+const defaultReviewInvitation = {
+  enabled: false,
+  heading: "Enjoying your Petify experience?",
+  message: "We'd love to hear what you think.",
+  linkText: "Leave a review",
+  url: "https://petifyshopping.vercel.app/#review-here",
+};
+
+function invoiceReviewInvitation(value) {
+  return {
+    enabled: value?.enabled === true,
+    heading: typeof value?.heading === "string" ? value.heading : defaultReviewInvitation.heading,
+    message: typeof value?.message === "string" ? value.message : defaultReviewInvitation.message,
+    linkText: typeof value?.linkText === "string" ? value.linkText : defaultReviewInvitation.linkText,
+    url: typeof value?.url === "string" ? value.url : defaultReviewInvitation.url,
+  };
+}
+
 function invoiceCustomerName(customerDetails) {
   if (!customerDetails?.enabled) return "";
   const customer = customerDetails.source === "saved"
@@ -90,6 +108,7 @@ function invoiceBusinessDetails(storefrontBrand, savedSettings) {
   return {
     logoBlueBackground: savedSettings?.logoBlueBackground === true,
     productEntryMode: savedSettings?.productEntryMode === "single" ? "single" : "separate",
+    reviewInvitation: invoiceReviewInvitation(savedSettings?.reviewInvitation),
     values: {
       ...defaults.values,
       ...savedSettings?.values,
@@ -150,6 +169,7 @@ function editableInvoice(invoice, storefrontTagline = "") {
     status: ["draft", "saved", "sent", "paid"].includes(invoice.status) ? invoice.status : "draft",
     businessDetails: {
       logoBlueBackground: invoice.businessDetails?.logoBlueBackground === true,
+      reviewInvitation: invoiceReviewInvitation(invoice.businessDetails?.reviewInvitation),
       values: {
         ...Object.fromEntries(headerFields.map(([key]) => [key, invoice.businessDetails?.values?.[key] ?? ""])),
         logoUrl: invoice.businessDetails?.values?.logoUrl ?? "",

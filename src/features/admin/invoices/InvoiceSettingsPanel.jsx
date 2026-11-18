@@ -18,6 +18,14 @@ const tabs = [
   { id: "delivery", label: "Delivery partners" },
 ];
 
+function isHttpUrl(value) {
+  try {
+    return ["http:", "https:"].includes(new URL(value).protocol);
+  } catch {
+    return false;
+  }
+}
+
 export default function InvoiceSettingsPanel({
   businessDetails,
   storefrontBrand,
@@ -52,7 +60,37 @@ export default function InvoiceSettingsPanel({
   const [error, setError] = useState("");
   const motto = businessDetails.values.tagline || storefrontBrand?.tagline || "";
 
+  function updateReviewInvitation(field, value) {
+    onHeaderChange({
+      ...businessDetails,
+      reviewInvitation: {
+        ...businessDetails.reviewInvitation,
+        [field]: value,
+      },
+    });
+  }
+
   async function saveHeader() {
+    const reviewInvitation = businessDetails.reviewInvitation;
+    if (reviewInvitation.enabled) {
+      if (!reviewInvitation.heading.trim() || reviewInvitation.heading.length > 80) {
+        setError("Enter a review heading of 1 to 80 characters.");
+        return;
+      }
+      if (!reviewInvitation.message.trim() || reviewInvitation.message.length > 240) {
+        setError("Enter a review message of 1 to 240 characters.");
+        return;
+      }
+      if (!reviewInvitation.linkText.trim() || reviewInvitation.linkText.length > 40) {
+        setError("Enter a review link label of 1 to 40 characters.");
+        return;
+      }
+      if (!isHttpUrl(reviewInvitation.url)) {
+        setError("Enter a valid HTTP or HTTPS review link.");
+        return;
+      }
+    }
+
     setSavingHeader(true);
     setError("");
     try {
@@ -343,6 +381,59 @@ export default function InvoiceSettingsPanel({
                 />
               </div>
             ))}
+          </div>
+          <div className="invoice-review-invitation-settings">
+            <label className="invoice-customer-toggle">
+              <input
+                type="checkbox"
+                checked={businessDetails.reviewInvitation.enabled}
+                onChange={(event) => updateReviewInvitation("enabled", event.target.checked)}
+              />
+              <span>
+                <strong>Add a review invitation to invoices</strong>
+                <small>Show an editable review message at the bottom of printed and shared invoices.</small>
+              </span>
+            </label>
+            {businessDetails.reviewInvitation.enabled && (
+              <div className="invoice-review-invitation-fields">
+                <label>
+                  Heading
+                  <input
+                    type="text"
+                    maxLength={80}
+                    value={businessDetails.reviewInvitation.heading}
+                    onChange={(event) => updateReviewInvitation("heading", event.target.value)}
+                  />
+                </label>
+                <label>
+                  Message
+                  <textarea
+                    rows="2"
+                    maxLength={240}
+                    value={businessDetails.reviewInvitation.message}
+                    onChange={(event) => updateReviewInvitation("message", event.target.value)}
+                  />
+                </label>
+                <label>
+                  Link label
+                  <input
+                    type="text"
+                    maxLength={40}
+                    value={businessDetails.reviewInvitation.linkText}
+                    onChange={(event) => updateReviewInvitation("linkText", event.target.value)}
+                  />
+                </label>
+                <label className="invoice-review-invitation-url">
+                  Review link
+                  <input
+                    type="url"
+                    maxLength={500}
+                    value={businessDetails.reviewInvitation.url}
+                    onChange={(event) => updateReviewInvitation("url", event.target.value)}
+                  />
+                </label>
+              </div>
+            )}
           </div>
           <div className="invoice-settings-done-row">
             <button className="admin-primary-button" type="button" disabled={savingHeader || uploadingLogo} onClick={() => void saveHeader()}>

@@ -503,6 +503,26 @@
   font-size: 0.74rem;
 }
 
+.customer-management-table td:first-child > .customer-directory-email {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.customer-directory-verified-icon {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  padding: 2px;
+  border-radius: 50%;
+  background: #e2f5eb;
+  fill: none;
+  stroke: #16834b;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
 .customer-management-muted,
 .customer-management-empty {
   color: var(--admin-muted, #748198);
@@ -849,6 +869,24 @@
 .customer-order-admin-saving {
   color: var(--admin-muted, #748198);
   font-size: 0.74rem;
+}
+
+.customer-order-admin-delete {
+  min-height: 36px;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid #e3b8b8;
+  border-radius: 9px;
+  background: #fff;
+  color: #a33131;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.customer-order-admin-delete:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 .customer-order-admin-card > .customer-management-error {

@@ -23,7 +23,7 @@ set last_number = greatest(
     select max((regexp_match(
       invoice.invoice_number,
       '^INV-([0-9]{2})([0-9]{2})([0-9]{4})-([0-9]+)$'
-    ))[4]::bigint
+    ))[4]::bigint)
     from public.invoices as invoice
     where invoice.invoice_number ~ '^INV-[0-9]{8}-[0-9]+$'
       and substring(invoice.invoice_number from 7 for 2) = to_char(sequences.month_start, 'MM')
@@ -62,6 +62,7 @@ begin
       and invoice.issue_date < (v_month_start + interval '1 month')::date
     on conflict (month_start)
     do update set last_number = sequences.last_number + 1;
+
     return new;
   end if;
 
@@ -98,6 +99,7 @@ $$;
 revoke all on function public.assign_admin_invoice_number_on_insert() from public, anon, authenticated;
 
 drop trigger if exists set_admin_invoice_number_before_insert on public.invoices;
+
 create trigger set_admin_invoice_number_before_insert
 before insert on public.invoices
 for each row

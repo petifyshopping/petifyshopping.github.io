@@ -1,6 +1,9 @@
+import { lazy, Suspense } from "react";
 import { INSTAGRAM_PROFILE_URL } from "../../../config/siteContent.js";
 
-export default function AboutPage({ content }) {
+const AboutReviews = lazy(() => import("./AboutReviews.jsx"));
+
+export default function AboutPage({ content, session, profile, authLoading }) {
   return (
     <article className="about-page">
       <div className="about-page-heading">
@@ -51,6 +54,11 @@ export default function AboutPage({ content }) {
         </a>
       </section>
       <a className="about-back-link" href="#top">Explore the store</a>
+      <div id="review-here" className="about-review-route-target">
+        <Suspense fallback={<p className="about-review-empty">Loading customer reviews…</p>}>
+          <AboutReviews session={session} profile={profile} authLoading={authLoading} />
+        </Suspense>
+      </div>
     </article>
   );
 }

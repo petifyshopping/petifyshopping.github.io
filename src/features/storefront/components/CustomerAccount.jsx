@@ -3,6 +3,7 @@ import { getCountries, getCountryCallingCode, parsePhoneNumberFromString } from 
 import {
   createCustomerAddress,
   deleteCustomerAddress,
+  deleteCustomerOrder,
   getCustomerOrders,
   updateCustomerAddress,
   updateCustomerProfile,
@@ -39,12 +40,24 @@ function getProfileDraft(profile) {
   };
 }
 
+function getCustomerInitials(name) {
+  return String(name ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toLocaleUpperCase() || "P";
+}
+
 export default function CustomerAccount({
   session,
   profile,
   profileLoading,
   customerOrderContactFields = { email: false, phone: true, whatsapp: false },
   message,
+  initialMode = "signin",
   authError,
   onClearMessage,
   onClose,
@@ -54,7 +67,7 @@ export default function CustomerAccount({
 }) {
   const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
-  const [mode, setMode] = useState("signin");
+  const [mode, setMode] = useState(initialMode);
   const [showPassword, setShowPassword] = useState(false);
   const [signupCountry, setSignupCountry] = useState("IN");
   const selectedSignupCountry = signupCountries.find((country) => country.code === signupCountry);
@@ -84,6 +97,7 @@ export default function CustomerAccount({
   });
   const [addressEditorOpen, setAddressEditorOpen] = useState(false);
   const [orderState, setOrderState] = useState({ userId: "", rows: [] });
+  const [deletingOrderIds, setDeletingOrderIds] = useState([]);
   const orders = session && orderState.userId === session.user.id ? orderState.rows : [];
   const loadingOrders = Boolean(session && orderState.userId !== session.user.id);
   const [busy, setBusy] = useState(false);
@@ -94,6 +108,8 @@ export default function CustomerAccount({
   const [phoneError, setPhoneError] = useState("");
 
   function changeProfileField(field, value) {
+    setError("");
+    setNotice("");
     setProfileDraft((current) => ({
       ...(current ?? getProfileDraft(profile)),
       [field]: value,
@@ -318,6 +334,25 @@ export default function CustomerAccount({
     }
   }
 
+  async function removeOrder(orderId) {
+    if (!window.confirm("Delete this order from your order history? This cannot be undone.")) return;
+    setDeletingOrderIds((current) => [...current, orderId]);
+    setError("");
+    setNotice("");
+    try {
+      await deleteCustomerOrder(session.user.id, orderId);
+      setOrderState((current) => current.userId === session.user.id
+        ? { ...current, rows: current.rows.filter((order) => order.id !== orderId) }
+        : current);
+      setNotice("Order deleted.");
+    } catch (deleteError) {
+      console.error("Could not delete the customer order.", deleteError);
+      setError(deleteError.message || "The order could not be deleted.");
+    } finally {
+      setDeletingOrderIds((current) => current.filter((id) => id !== orderId));
+    }
+  }
+
   async function signOut() {
     setBusy(true);
     setError("");
@@ -333,6 +368,11 @@ export default function CustomerAccount({
   }
 
   const feedback = error || authError || message || notice;
+  const profileHasChanges = Boolean(
+    profile
+    && profileDraft
+    && JSON.stringify(profileDraft) !== JSON.stringify(getProfileDraft(profile)),
+  );
 
   return (
     <div className="customer-account-overlay">
@@ -347,8 +387,7 @@ export default function CustomerAccount({
       >
         <header className="customer-account-header">
           <div className="customer-account-header-copy">
-            {/* <p className="customer-account-eyebrow">Petify</p> */}
-            <h2 id="customer-account-title" className={session ? "visually-hidden" : undefined}>{session ? "Profile" : confirmationEmail ? "Confirm your email" : mode === "signup" ? "Create your account" : "Welcome back"}</h2>
+            <h2 id="customer-account-title">{session ? "Your account" : confirmationEmail ? "Confirm your email" : mode === "signup" ? "Create your account" : "Welcome back"}</h2>
             {!session && !confirmationEmail && (
               <p className="customer-account-header-description">
                 {mode === "signup"
@@ -372,7 +411,7 @@ export default function CustomerAccount({
             <strong className="customer-account-confirmation-email">{confirmationEmail}</strong>
             <p>{confirmationMode === "signin"
               ? "Send the confirmation email again, then open the link before signing in."
-              : "Would you like to verify your email now or do it later? You can keep browsing either way, but your email must be verified before you can place an order."}</p>
+              : "Would you like to verify your email now or do it later? You can place an order as a guest without verifying; verification is only needed to use your account."}</p>
             <div className="customer-account-actions customer-account-confirmation-actions">
               {confirmationMode === "signin" ? (
                 <>
@@ -415,7 +454,7 @@ export default function CustomerAccount({
                       setConfirmationEmail("");
                       setMode("signin");
                       setError("");
-                      setNotice("You can keep browsing, but you must verify your email before placing an order.");
+                      setNotice("You can place an order as a guest now. Verify your email whenever you want to use your account.");
                       setForm((current) => ({ ...current, password: "" }));
                     }}
                   >
@@ -433,18 +472,35 @@ export default function CustomerAccount({
             </div>
           ) : (
             <div className="customer-account-content">
+              <section className="customer-account-profile-hero" aria-label="Account overview">
+                <span className="customer-account-profile-avatar" aria-hidden="true">
+                  {getCustomerInitials(profile.full_name)}
+                </span>
+                <div className="customer-account-profile-identity">
+                  <h3>{profile.full_name}</h3>
+                  <p>{profile.email}</p>
+                </div>
+                {session.user.email_confirmed_at && (
+                  <span className="customer-account-verified">
+                    <svg viewBox="0 0 20 20" aria-hidden="true">
+                      <path d="m5 10 3.2 3.2L15.5 6" />
+                    </svg>
+                    Email verified
+                  </span>
+                )}
+              </section>
+
               <form className="customer-account-form customer-account-profile-form" onSubmit={saveProfile}>
-                <p className="customer-account-section-label">ACCOUNT DETAILS</p>
-                <label>
-                  Name
+                <div className="customer-account-section-intro">
+                  <h3>Personal details</h3>
+                  <p>Keep your contact information up to date for your orders.</p>
+                </div>
+                <label className="customer-account-name-field">
+                  Full name
                   <input value={profileDraft?.full_name ?? profile.full_name} onChange={(event) => changeProfileField("full_name", event.target.value)} autoComplete="name" required maxLength={120} />
                 </label>
-                <label>
-                  Email
-                  <input value={profile.email} type="email" autoComplete="email" readOnly />
-                </label>
-                <label>
-                  Phone
+                <label className="customer-account-phone-field">
+                  Phone number
                   <input value={profileDraft?.phone ?? profile.phone} onChange={(event) => changeProfileField("phone", event.target.value)} type="tel" autoComplete="tel" required maxLength={40} />
                 </label>
                 <label className="customer-account-checkbox">
@@ -472,43 +528,68 @@ export default function CustomerAccount({
                   </label>
                 )}
                 {(customerOrderContactFields.email || customerOrderContactFields.phone || customerOrderContactFields.whatsapp) && (
-                  <fieldset className="customer-account-sharing">
-                    <legend>Contact details in order messages</legend>
-                    <p>Choose which enabled details you are comfortable sharing with the store on WhatsApp.</p>
-                    {customerOrderContactFields.email && (
-                      <label className="customer-account-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={profileDraft?.share_email_in_orders ?? profile.share_email_in_orders}
-                          onChange={(event) => changeProfileField("share_email_in_orders", event.target.checked)}
-                        />
-                        <span>Include my email address</span>
-                      </label>
-                    )}
-                    {customerOrderContactFields.phone && (
-                      <label className="customer-account-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={profileDraft?.share_phone_in_orders ?? profile.share_phone_in_orders}
-                          onChange={(event) => changeProfileField("share_phone_in_orders", event.target.checked)}
-                        />
-                        <span>Include my phone number</span>
-                      </label>
-                    )}
-                    {customerOrderContactFields.whatsapp && (
-                      <label className="customer-account-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={profileDraft?.share_whatsapp_in_orders ?? profile.share_whatsapp_in_orders}
-                          onChange={(event) => changeProfileField("share_whatsapp_in_orders", event.target.checked)}
-                        />
-                        <span>Include my WhatsApp number</span>
-                      </label>
-                    )}
-                  </fieldset>
+                  <details className="customer-account-message-preferences">
+                    <summary>
+                      <span>
+                        <strong>Order message preferences</strong>
+                        <small>Choose which details you share on WhatsApp.</small>
+                      </span>
+                      <svg className="customer-disclosure-chevron" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </summary>
+                    <fieldset className="customer-account-sharing">
+                      <legend>Contact details in order messages</legend>
+                      <p>Only details enabled by the store can be included.</p>
+                      {customerOrderContactFields.email && (
+                        <label className="customer-account-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={profileDraft?.share_email_in_orders ?? profile.share_email_in_orders}
+                            onChange={(event) => changeProfileField("share_email_in_orders", event.target.checked)}
+                          />
+                          <span>Include my email address</span>
+                        </label>
+                      )}
+                      {customerOrderContactFields.phone && (
+                        <label className="customer-account-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={profileDraft?.share_phone_in_orders ?? profile.share_phone_in_orders}
+                            onChange={(event) => changeProfileField("share_phone_in_orders", event.target.checked)}
+                          />
+                          <span>Include my phone number</span>
+                        </label>
+                      )}
+                      {customerOrderContactFields.whatsapp && (
+                        <label className="customer-account-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={profileDraft?.share_whatsapp_in_orders ?? profile.share_whatsapp_in_orders}
+                            onChange={(event) => changeProfileField("share_whatsapp_in_orders", event.target.checked)}
+                          />
+                          <span>Include my WhatsApp number</span>
+                        </label>
+                      )}
+                    </fieldset>
+                  </details>
                 )}
                 <div className="customer-account-actions">
-                  <button className="customer-account-primary" type="submit" disabled={busy || profileLoading}>{busy ? "Saving…" : "Save details"}</button>
+                  {profileHasChanges && (
+                    <button
+                      className="customer-account-secondary"
+                      type="button"
+                      onClick={() => {
+                        setProfileDraft(null);
+                        setError("");
+                        setNotice("");
+                      }}
+                      disabled={busy}
+                    >
+                      Discard changes
+                    </button>
+                  )}
+                  <button className="customer-account-primary" type="submit" disabled={busy || profileLoading || !profileHasChanges}>{busy ? "Saving…" : "Save changes"}</button>
                   <button className="customer-account-secondary" type="button" onClick={signOut} disabled={busy}>{busy ? "Please wait…" : "Sign out"}</button>
                 </div>
               </form>
@@ -516,10 +597,10 @@ export default function CustomerAccount({
               <section className="customer-addresses" aria-labelledby="customer-addresses-title">
                 <div className="customer-account-orders-heading">
                   <div>
-                    <p className="customer-account-section-label">DELIVERY</p>
-                    <h3 id="customer-addresses-title">Saved addresses</h3>
+                    <h3 id="customer-addresses-title">Delivery addresses</h3>
+                    <p className="customer-account-section-description">Saved places for a faster checkout.</p>
                   </div>
-                  <span>{profile.addresses?.length ?? 0}/3</span>
+                  <span className="customer-account-address-count">{profile.addresses?.length ?? 0} of 3</span>
                 </div>
                 {profile.addresses?.length ? (
                   <div className="customer-address-list">
@@ -669,7 +750,10 @@ export default function CustomerAccount({
 
               <details className="customer-account-orders">
                 <summary className="customer-account-orders-heading">
-                  <div><p className="customer-account-section-label">PURCHASES</p><h3 id="customer-orders-title">Orders</h3></div>
+                  <div>
+                    <h3 id="customer-orders-title">Your orders</h3>
+                    <p className="customer-account-section-description">Review items, totals and order status.</p>
+                  </div>
                   <span className="customer-account-orders-count">{orders.length}</span>
                   <svg className="customer-disclosure-chevron" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="m6 9 6 6 6-6" />
@@ -697,6 +781,16 @@ export default function CustomerAccount({
                             </li>
                           ))}
                         </ul>
+                        <div className="customer-order-card-actions">
+                          <button
+                            className="customer-account-text-button is-danger"
+                            type="button"
+                            disabled={deletingOrderIds.includes(order.id)}
+                            onClick={() => removeOrder(order.id)}
+                          >
+                            {deletingOrderIds.includes(order.id) ? "Deleting…" : "Delete order"}
+                          </button>
+                        </div>
                       </details>
                     ))}
                   </div>

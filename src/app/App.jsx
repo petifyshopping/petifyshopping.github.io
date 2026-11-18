@@ -16,6 +16,7 @@ import { supabase } from "../lib/supabase.js";
 import {
   createCustomerAddress,
   createCustomerOrder,
+  createGuestCustomerOrder,
   getCustomerAccount,
   saveCustomerCart,
 } from "../services/customers.js";
@@ -129,6 +130,7 @@ export default function App() {
   const [customerAccountError, setCustomerAccountError] = useState("");
   const [customerAccountErrorUserId, setCustomerAccountErrorUserId] = useState("");
   const [customerAccountMessage, setCustomerAccountMessage] = useState("");
+  const [customerAccountInitialMode, setCustomerAccountInitialMode] = useState("signin");
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [showEmailVerifiedNotice, setShowEmailVerifiedNotice] = useState(
     () => hasSuccessfulEmailConfirmationRedirect(window.location),
@@ -138,7 +140,8 @@ export default function App() {
     || routeHash === "#admin-products"
     || routeHash === "#admin-invoice"
     || routeHash === "#admin-forgot-password";
-  const isAboutRoute = routeHash === "#about";
+  const isReviewRoute = routeHash === "#review-here";
+  const isAboutRoute = routeHash === "#about" || isReviewRoute;
   const isSalesPortalRoute = routePath === "/petify-dashboard"
     || (routePath === "/" && (routeHash === "#sales-dashb" || routeHash.startsWith("#petify-dashboard")));
   const isPasswordResetRoute = isPasswordResetLocation(window.location.search, routeHash);
@@ -419,8 +422,19 @@ export default function App() {
 
   useEffect(() => {
     const storeTitle = settings?.brandTitle?.trim() || DEFAULT_DOCUMENT_TITLE;
-    document.title = isAboutRoute ? `About us | ${storeTitle}` : storeTitle;
-  }, [isAboutRoute, settings?.brandTitle]);
+    document.title = isReviewRoute
+      ? `Customer reviews | ${storeTitle}`
+      : isAboutRoute ? `About us | ${storeTitle}` : storeTitle;
+  }, [isAboutRoute, isReviewRoute, settings?.brandTitle]);
+
+  useEffect(() => {
+    if (!isReviewRoute || loading || error) return undefined;
+    const frameId = window.requestAnimationFrame(() => {
+      const target = document.getElementById("review-here");
+      target?.scrollIntoView({ block: "start", behavior: "instant" });
+    });
+    return () => window.cancelAnimationFrame(frameId);
+  }, [error, isReviewRoute, loading]);
 
   useEffect(() => {
     if (!settings?.colorPalette) return;
@@ -510,7 +524,7 @@ export default function App() {
 
   const closeCart = useCallback(() => setIsCartOpen(false), []);
   const openCart = useCallback(() => setIsCartOpen(true), []);
-  const openAccount = useCallback((message = "") => {
+  const openAccount = useCallback((message = "", initialMode = "signin") => {
     setIsCartOpen(false);
     if (new URL(window.location.href).searchParams.has("product")) {
       const url = new URL(window.location.href);
@@ -522,6 +536,7 @@ export default function App() {
       setProductFetchError(null);
     }
     setCustomerAccountMessage(message);
+    setCustomerAccountInitialMode(initialMode);
     setIsAccountOpen(true);
   }, []);
   const closeAccount = useCallback(() => {
@@ -548,7 +563,25 @@ export default function App() {
     }
     await signOutCustomer();
   }, [customerCartUserId, customerProfile, customerSession]);
-  const handleCartOrder = useCallback(async ({ items, addressId, temporaryAddress, note }) => {
+  const handleCartOrder = useCallback(async ({
+    items,
+    addressId,
+    temporaryAddress,
+    note,
+    guestCheckout,
+    guestName,
+    guestPhone,
+  }) => {
+    if (guestCheckout) {
+      await createGuestCustomerOrder({
+        items,
+        name: guestName,
+        phone: guestPhone,
+        address: temporaryAddress,
+        note,
+      });
+      return;
+    }
     if (!customerSession) {
       openAccount("Sign in or create an account before placing an order.");
       throw new Error("Sign in to continue to WhatsApp.");
@@ -598,12 +631,13 @@ export default function App() {
     }
   }, [customerCartUserId, customerSession]);
   const handleDirectOrder = useCallback(async ({ product, variant, link }) => {
-    if (!customerSession) {
-      openAccount("Sign in or create an account before placing an order.");
-      return;
-    }
-    if (!customerEmailVerified) {
-      openAccount("Verify your email before placing an order. Check your inbox for the confirmation link.");
+    if (!customerSession || !customerEmailVerified) {
+      const whatsappWindow = window.open(link, "_blank");
+      if (!whatsappWindow) {
+        setCartNotice("Allow pop-ups to continue to WhatsApp.");
+        return;
+      }
+      whatsappWindow.opener = null;
       return;
     }
     if (!customerProfile) {
@@ -777,7 +811,12 @@ export default function App() {
           </div>
         ) : (
           isAboutRoute ? (
-            <AboutPage content={settings.aboutContent} />
+            <AboutPage
+              content={settings.aboutContent}
+              session={customerSession}
+              profile={customerProfile}
+              authLoading={!customerAuthReady}
+            />
           ) : <>
             {cartNotice && <p className="store-cart-notice" role="status">{cartNotice}</p>}
             {(settings.visibility.catalog ?? true) && (
@@ -887,6 +926,7 @@ export default function App() {
             profileLoading={customerProfileLoading}
             customerOrderContactFields={settings?.customerOrderContactFields}
             message={customerAccountMessage}
+            initialMode={customerAccountInitialMode}
             authError={customerAccountError}
             onClearMessage={() => setCustomerAccountMessage("")}
             onClose={closeAccount}

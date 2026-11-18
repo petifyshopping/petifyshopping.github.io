@@ -67,18 +67,26 @@ export default function StoreCart({
 }) {
   const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
-  const [customer, setCustomer] = useState({ note: "" });
+  const [customer, setCustomer] = useState({ name: "", phone: "", note: "" });
   const [checkoutError, setCheckoutError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [useGuestCheckout, setUseGuestCheckout] = useState(false);
+  const [checkoutChoice, setCheckoutChoice] = useState("");
   const [addressMode, setAddressMode] = useState("auto");
   const [addressEditorOpen, setAddressEditorOpen] = useState(() => !selectedAddressId);
   const [showAddressRequirements, setShowAddressRequirements] = useState(false);
   const [showAddressChooser, setShowAddressChooser] = useState(false);
   const [addressDraft, setAddressDraft] = useState(emptyAddressDraft);
   const [saveAddressForLater, setSaveAddressForLater] = useState(true);
+  const isGuestCheckout = authenticated
+    ? useGuestCheckout
+    : checkoutChoice === "guest";
+  const canContinueCheckout = authenticated || isGuestCheckout;
   const totalQuantity = items.reduce((total, item) => total + item.quantity, 0);
   const totalPrice = items.reduce((total, item) => total + item.price * item.quantity, 0);
-  const deliveryAddress = profile?.addresses?.find((address) => address.id === selectedAddressId);
+  const deliveryAddress = isGuestCheckout
+    ? null
+    : profile?.addresses?.find((address) => address.id === selectedAddressId);
   const resolvedAddressMode = addressMode === "auto"
     ? deliveryAddress ? "saved" : "new"
     : addressMode;
@@ -98,10 +106,21 @@ export default function StoreCart({
   const hasValidAddress = resolvedAddressMode === "saved"
     ? Boolean(deliveryAddress && addressText.trim().length >= 5)
     : resolvedAddressMode === "new" && isNewAddressComplete && addressText.trim().length >= 5;
-  const canSaveAddress = (profile?.addresses?.length ?? 0) < 3;
+  const canSaveAddress = !isGuestCheckout && (profile?.addresses?.length ?? 0) < 3;
   const newAddressLabel = addressDraft.label.trim() || `Address ${(profile?.addresses?.length ?? 0) + 1}`;
   const customerDetails = { ...customer, address: addressText };
-  const checkoutLink = cartOrderLink(items, whatsappNumber, totalPrice, customerDetails, profile, customerOrderContactFields);
+  const orderProfile = isGuestCheckout
+    ? {
+      full_name: customer.name.trim(),
+      phone: customer.phone.trim(),
+      share_phone_in_orders: true,
+      whatsapp_same_as_phone: true,
+    }
+    : profile;
+  const orderContactFields = isGuestCheckout
+    ? { ...customerOrderContactFields, phone: true }
+    : customerOrderContactFields;
+  const checkoutLink = cartOrderLink(items, whatsappNumber, totalPrice, customerDetails, orderProfile, orderContactFields);
 
   useEffect(() => {
     const previouslyFocused = document.activeElement;
@@ -144,13 +163,24 @@ export default function StoreCart({
 
   async function beginCheckout() {
     setCheckoutError("");
-    if (!authenticated) {
+    if (!isGuestCheckout && !authenticated) {
       onOpenAccount("Sign in or create an account before placing an order.");
       return;
     }
-    if (!emailVerified) {
+    if (!isGuestCheckout && !emailVerified) {
       onOpenAccount("Verify your email before placing an order. Check your inbox for the confirmation link.");
       return;
+    }
+    if (isGuestCheckout) {
+      if (!customer.name.trim() || customer.name.trim().length > 100) {
+        setCheckoutError("Enter your name to continue.");
+        return;
+      }
+      const phoneDigits = customer.phone.replace(/\D/g, "");
+      if (phoneDigits.length < 7 || phoneDigits.length > 15) {
+        setCheckoutError("Enter a valid phone or WhatsApp number to continue.");
+        return;
+      }
     }
     if (!hasValidAddress) {
       setCheckoutError(resolvedAddressMode === "new"
@@ -166,9 +196,11 @@ export default function StoreCart({
     whatsappWindow.opener = null;
     setSubmitting(true);
     try {
-      let addressId = resolvedAddressMode === "saved" ? deliveryAddress?.id ?? null : null;
-      const temporaryAddress = resolvedAddressMode === "new" && !saveAddressForLater ? addressText : null;
-      if (resolvedAddressMode === "new" && saveAddressForLater) {
+      let addressId = !isGuestCheckout && resolvedAddressMode === "saved" ? deliveryAddress?.id ?? null : null;
+      const temporaryAddress = isGuestCheckout
+        ? addressText
+        : resolvedAddressMode === "new" && !saveAddressForLater ? addressText : null;
+      if (!isGuestCheckout && resolvedAddressMode === "new" && saveAddressForLater) {
         if (!canSaveAddress) throw new Error("You can save up to three delivery addresses. Choose a one-time address or manage saved addresses in your account.");
         const savedAddress = await onSaveAddress({
           label: newAddressLabel,
@@ -183,14 +215,17 @@ export default function StoreCart({
         addressId,
         temporaryAddress,
         note: customer.note.trim(),
+        guestCheckout: isGuestCheckout,
+        guestName: customer.name.trim(),
+        guestPhone: customer.phone.trim(),
       });
       whatsappWindow.location.href = cartOrderLink(
         items,
         whatsappNumber,
         totalPrice,
         customerDetails,
-        profile,
-        customerOrderContactFields,
+        orderProfile,
+        orderContactFields,
       );
       await onOrderHandoff();
     } catch (orderError) {
@@ -314,20 +349,174 @@ export default function StoreCart({
             <div className="store-cart-footer">
               <div className="store-cart-footer-details">
                 <p className="store-cart-note">Delivery and availability are confirmed on WhatsApp.</p>
-                <div className="store-cart-customer-fields">
+                {!authenticated && (
+                  <div className="store-cart-checkout-options">
+                    <section className="store-cart-checkout-option">
+                      <button
+                        type="button"
+                        aria-expanded={checkoutChoice === "create-account"}
+                        onClick={() => setCheckoutChoice((current) => current === "create-account" ? "" : "create-account")}
+                      >
+                        Create an account
+                      </button>
+                      {checkoutChoice === "create-account" && (
+                        <div>
+                          <p>Save your details for faster future orders. Signup takes about 2 minutes, plus email verification.</p>
+                          <button
+                            className="store-cart-address-action"
+                            type="button"
+                            onClick={() => onOpenAccount("Create an account to save your details for faster future orders.", "signup")}
+                          >
+                            Continue to account creation
+                          </button>
+                        </div>
+                      )}
+                    </section>
+                    <section className="store-cart-checkout-option">
+                      <button
+                        type="button"
+                        aria-expanded={checkoutChoice === "sign-in"}
+                        onClick={() => setCheckoutChoice((current) => current === "sign-in" ? "" : "sign-in")}
+                      >
+                        I’m a returning customer
+                      </button>
+                      {checkoutChoice === "sign-in" && (
+                        <div>
+                          <p>Sign in to load your saved contact and delivery details.</p>
+                          <button
+                            className="store-cart-address-action"
+                            type="button"
+                            onClick={() => onOpenAccount("Sign in to load your saved customer details.")}
+                          >
+                            Sign in to my account
+                          </button>
+                        </div>
+                      )}
+                    </section>
+                    <section className="store-cart-checkout-option">
+                      <button
+                        type="button"
+                        aria-expanded={checkoutChoice === "guest"}
+                        onClick={() => {
+                          setCheckoutChoice((current) => current === "guest" ? "" : "guest");
+                          setCheckoutError("");
+                        }}
+                      >
+                        Order as a guest
+                      </button>
+                      {checkoutChoice === "guest" && (
+                        <p>No account or email confirmation needed. Enter your details for this order only.</p>
+                      )}
+                    </section>
+                  </div>
+                )}
+                {canContinueCheckout && (
+                  <div className="store-cart-customer-fields">
+                  {isGuestCheckout && (
+                    <>
+                      <label>
+                        <span>Name</span>
+                        <input
+                          value={customer.name}
+                          onChange={(event) => setCustomer((current) => ({ ...current, name: event.target.value }))}
+                          autoComplete="name"
+                          maxLength={100}
+                          required
+                        />
+                      </label>
+                      <label>
+                        <span>Phone or WhatsApp</span>
+                        <input
+                          value={customer.phone}
+                          onChange={(event) => setCustomer((current) => ({ ...current, phone: event.target.value }))}
+                          type="tel"
+                          autoComplete="tel"
+                          maxLength={30}
+                          required
+                        />
+                      </label>
+                    </>
+                  )}
                   <label>
-                    {/* <span>Order note (optional)</span> */}
+                    <span>Order note (optional)</span>
                     <input
                       value={customer.note}
                       onChange={(event) => setCustomer((current) => ({ ...current, note: event.target.value }))}
-                      placeholder="Note (Optional)"
+                      placeholder="Add a note"
                       maxLength={500}
                     />
                   </label>
-                </div>
+                  </div>
+                )}
                 <section className="store-cart-delivery-card" aria-label="Delivery address">
-                  {!authenticated ? (
-                    <p className="store-cart-address-hint">Sign in to add a delivery address.</p>
+                  {!canContinueCheckout ? (
+                    <p className="store-cart-address-hint">Choose an option above to continue.</p>
+                  ) : isGuestCheckout ? (
+                    <>
+                      <div className="store-cart-address-editor">
+                        <label>
+                          Address
+                          <textarea
+                            value={addressDraft.address}
+                            onChange={(event) => setAddressDraft((current) => ({ ...current, address: event.target.value }))}
+                            autoComplete="address-line1"
+                            rows="2"
+                            minLength={5}
+                            maxLength={250}
+                            required
+                          />
+                        </label>
+                        <div className="store-cart-address-fields">
+                          <label>
+                            Pincode
+                            <input
+                              value={addressDraft.pincode}
+                              onChange={(event) => setAddressDraft((current) => ({ ...current, pincode: event.target.value }))}
+                              autoComplete="postal-code"
+                              inputMode="numeric"
+                              maxLength={20}
+                              required
+                            />
+                          </label>
+                          <label>
+                            Place
+                            <input
+                              value={addressDraft.place}
+                              onChange={(event) => setAddressDraft((current) => ({ ...current, place: event.target.value }))}
+                              autoComplete="address-level3"
+                              maxLength={60}
+                              required
+                            />
+                          </label>
+                          <label>
+                            District
+                            <input
+                              value={addressDraft.district}
+                              onChange={(event) => setAddressDraft((current) => ({ ...current, district: event.target.value }))}
+                              autoComplete="address-level2"
+                              maxLength={60}
+                              required
+                            />
+                          </label>
+                          <label>
+                            State
+                            <input
+                              value={addressDraft.state}
+                              onChange={(event) => setAddressDraft((current) => ({ ...current, state: event.target.value }))}
+                              autoComplete="address-level1"
+                              maxLength={60}
+                              required
+                            />
+                          </label>
+                        </div>
+                        {showAddressRequirements && !isNewAddressComplete && (
+                          <p className="store-cart-address-hint" role="status">
+                            Still needed: {missingAddressFields.join(", ")}.
+                          </p>
+                        )}
+                      </div>
+                      <p className="store-cart-address-hint">No account or email confirmation needed. Just enter your details for this order.</p>
+                    </>
                   ) : resolvedAddressMode === "saved" && deliveryAddress ? (
                     <>
                       <button
@@ -498,6 +687,46 @@ export default function StoreCart({
                       Add delivery address
                     </button>
                   ) : null}
+                  {authenticated && !useGuestCheckout && (
+                    <>
+                      {!emailVerified && (
+                        <p className="store-cart-address-hint">Email confirmation is needed for account orders, but you can continue as a guest.</p>
+                      )}
+                      <button
+                        className="store-cart-address-action"
+                        type="button"
+                        onClick={() => {
+                          setUseGuestCheckout(true);
+                          setAddressMode("new");
+                          setAddressEditorOpen(true);
+                          setSaveAddressForLater(false);
+                          setCustomer((current) => ({
+                            ...current,
+                            name: profile?.full_name ?? current.name,
+                            phone: profile?.phone ?? current.phone,
+                          }));
+                          setCheckoutError("");
+                        }}
+                        disabled={authLoading || submitting}
+                      >
+                        Continue as guest instead
+                      </button>
+                    </>
+                  )}
+                  {authenticated && useGuestCheckout && emailVerified && (
+                    <button
+                      className="store-cart-address-action"
+                      type="button"
+                      onClick={() => {
+                        setUseGuestCheckout(false);
+                        setAddressMode("auto");
+                        setCheckoutError("");
+                      }}
+                      disabled={authLoading || submitting}
+                    >
+                      Use my saved account details
+                    </button>
+                  )}
                 </section>
               {checkoutError && <p className="store-cart-phone-error" role="alert">{checkoutError}</p>}
               {!canCheckout ? (
@@ -519,14 +748,18 @@ export default function StoreCart({
                   className="store-cart-checkout"
                   type="button"
                   onClick={beginCheckout}
-                  disabled={authLoading || submitting || (authenticated && (!canCheckout || !checkoutLink))}
+                  disabled={authLoading || submitting || !canCheckout || !checkoutLink || !canContinueCheckout}
                 >
                   <WhatsAppIcon />
                   <span>
                     {submitting
                       ? "Saving order…"
-                      : !authenticated
-                        ? "Sign in to order"
+                      : !canContinueCheckout
+                        ? "Choose an option above"
+                      : isGuestCheckout
+                        ? !customer.name.trim() || !customer.phone.trim()
+                          ? "Enter your name & phone"
+                          : "Order as guest via WhatsApp"
                         : !canCheckout
                           ? "Checkout unavailable"
                           : !checkoutLink

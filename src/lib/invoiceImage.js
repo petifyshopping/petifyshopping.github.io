@@ -91,6 +91,22 @@ export async function createInvoiceImage(invoice, totals) {
     return { item, descriptionLines, height: Math.max(58, descriptionLines.length * 30 + 24) };
   });
   const notesLines = invoice.notes ? wrapText(measureContext, invoice.notes, contentWidth) : [];
+  const reviewInvitation = invoice.businessDetails.reviewInvitation;
+  const reviewInvitationLines = reviewInvitation?.enabled
+    ? {
+      heading: wrapText(measureContext, reviewInvitation.heading, contentWidth - 48),
+      message: wrapText(measureContext, reviewInvitation.message, contentWidth - 48),
+      linkText: wrapText(measureContext, reviewInvitation.linkText, contentWidth - 48),
+      url: wrapText(measureContext, reviewInvitation.url, contentWidth - 48),
+    }
+    : null;
+  const reviewBlockHeight = reviewInvitationLines
+    ? 44
+      + reviewInvitationLines.heading.length * 30
+      + reviewInvitationLines.message.length * 28
+      + reviewInvitationLines.linkText.length * 27
+      + reviewInvitationLines.url.length * 24
+    : 0;
   const headerHeight = Math.max(
     175,
     70 + businessLines.length * 32,
@@ -98,7 +114,8 @@ export async function createInvoiceImage(invoice, totals) {
   );
   const plannedHeight = pageMargin * 2 + headerHeight + customerBlockHeight + 68
     + itemRows.reduce((height, row) => height + row.height, 0)
-    + 230 + (notesLines.length ? 110 + notesLines.length * 32 : 0);
+    + 230 + (notesLines.length ? 110 + notesLines.length * 32 : 0)
+    + (reviewInvitationLines ? 50 + reviewBlockHeight : 0);
   const canvas = document.createElement("canvas");
   canvas.width = pageWidth * imageScale;
   canvas.height = Math.max(1754, plannedHeight) * imageScale;
@@ -240,6 +257,33 @@ export async function createInvoiceImage(invoice, totals) {
     context.font = "bold 18px Arial, sans-serif";
     context.fillText("NOTES", pageMargin, y);
     y = drawWrappedText(context, notesLines, pageMargin, y + 36);
+  }
+  if (reviewInvitationLines) {
+    y += 50;
+    context.fillStyle = "#f3f7fc";
+    context.fillRect(pageMargin, y, contentWidth, reviewBlockHeight);
+    y += 24;
+    y = drawWrappedText(context, reviewInvitationLines.heading, pageMargin + 24, y, {
+      color: "#163b5c",
+      font: "bold 24px Arial, sans-serif",
+      line: 30,
+    });
+    y = drawWrappedText(context, reviewInvitationLines.message, pageMargin + 24, y, {
+      color: "#526579",
+      font: "20px Arial, sans-serif",
+      line: 28,
+    });
+    y = drawWrappedText(context, reviewInvitationLines.linkText, pageMargin + 24, y, {
+      color: "#174f84",
+      font: "bold 19px Arial, sans-serif",
+      line: 27,
+    });
+    y = drawWrappedText(context, reviewInvitationLines.url, pageMargin + 24, y, {
+      color: "#526579",
+      font: "17px Arial, sans-serif",
+      line: 24,
+    });
+    y += 20;
   }
 
   const outputCanvas = document.createElement("canvas");

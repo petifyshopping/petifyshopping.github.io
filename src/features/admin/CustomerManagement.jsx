@@ -6,9 +6,13 @@ import {
   getAdminCustomerLatestOrderTimes,
   getAdminCustomerPage,
   getAdminOrderPage,
+  deleteAdminCustomerOrder,
   updateAdminCustomerOrderStatus,
   updateAdminCustomerOrderContactFields,
 } from "../../services/customers.js";
+import useConfirmDialog from "../../hooks/useConfirmDialog.js";
+import ConfirmDialog from "./components/ConfirmDialog.jsx";
+import CustomerReviewsQueue from "./CustomerReviewsQueue.jsx";
 import "./customerManagement.css";
 
 const PAGE_SIZE = 30;
@@ -51,7 +55,9 @@ export default function CustomerManagement() {
   const [contactFieldsNotice, setContactFieldsNotice] = useState("");
   const [statusDrafts, setStatusDrafts] = useState({});
   const [updatingOrderIds, setUpdatingOrderIds] = useState([]);
+  const [deletingOrderIds, setDeletingOrderIds] = useState([]);
   const [statusErrors, setStatusErrors] = useState({});
+  const [deleteErrors, setDeleteErrors] = useState({});
   const [customerSearch, setCustomerSearch] = useState("");
   const [customerSortBy, setCustomerSortBy] = useState("name");
   const [customerSortDirection, setCustomerSortDirection] = useState("asc");
@@ -66,6 +72,7 @@ export default function CustomerManagement() {
   const [showPrivacySettings, setShowPrivacySettings] = useState(false);
   const privacySettingsCloseRef = useRef(null);
   const knownOrderIdsRef = useRef(new Set());
+  const { confirm, dialogProps } = useConfirmDialog();
 
   useEffect(() => {
     let active = true;
@@ -343,6 +350,48 @@ export default function CustomerManagement() {
     }
   }
 
+  async function deleteOrder(order) {
+    if (updatingOrderIds.includes(order.id) || deletingOrderIds.includes(order.id)) return;
+    if (!await confirm({
+      title: `Delete ${order.customer_name || "this customer's"} order?`,
+      description: "This permanently removes the order from the customer's account and cannot be undone.",
+      confirmLabel: "Delete order",
+    })) return;
+
+    setDeletingOrderIds((current) => [...current, order.id]);
+    setDeleteErrors((current) => ({ ...current, [order.id]: "" }));
+    try {
+      await deleteAdminCustomerOrder(order.id);
+      setOrders((current) => current.filter((item) => item.id !== order.id));
+      setOrderTotal((current) => Math.max(0, current - 1));
+      knownOrderIdsRef.current.delete(order.id);
+      setUnnoticedOrderIds((current) => {
+        const next = new Set(current);
+        next.delete(order.id);
+        persistUnnoticedOrderIds(next);
+        return next;
+      });
+      setStatusDrafts((current) => {
+        const next = { ...current };
+        delete next[order.id];
+        return next;
+      });
+      setStatusErrors((current) => {
+        const next = { ...current };
+        delete next[order.id];
+        return next;
+      });
+    } catch (deleteError) {
+      console.error("Could not delete customer order.", deleteError);
+      setDeleteErrors((current) => ({
+        ...current,
+        [order.id]: deleteError.message || "The order could not be deleted.",
+      }));
+    } finally {
+      setDeletingOrderIds((current) => current.filter((id) => id !== order.id));
+    }
+  }
+
   async function saveContactFields(event) {
     event.preventDefault();
     if (!contactFields) return;
@@ -491,7 +540,20 @@ export default function CustomerManagement() {
                 <tbody>
                   {filteredCustomers.map((customer) => (
                     <tr key={customer.user_id}>
-                      <td><strong>{customer.full_name}</strong><span>{customer.email}</span></td>
+                      <td>
+                        <strong>{customer.full_name}</strong>
+                        <span className="customer-directory-email">
+                          {customer.email}
+                          {customer.email_verified && (
+                            <>
+                              <svg className="customer-directory-verified-icon" viewBox="0 0 20 20" aria-hidden="true">
+                                <path d="m5 10 3.2 3.2L15.5 6" />
+                              </svg>
+                              <span className="visually-hidden">Email verified</span>
+                            </>
+                          )}
+                        </span>
+                      </td>
                       <td>{customer.phone}</td>
                       <td>{customer.address || <span className="customer-management-muted">Not provided</span>}</td>
                       <td>{formatDateTime(customer.created_at)}</td>
@@ -509,6 +571,8 @@ export default function CustomerManagement() {
         </div>
       </details>
 
+      <CustomerReviewsQueue />
+      <ConfirmDialog {...dialogProps} />
       <section className="customer-management-section" aria-labelledby="customer-orders-admin-title">
         <div className="customer-management-section-heading customer-order-checkout-heading">
           <div className="customer-order-checkout-title">
@@ -656,8 +720,17 @@ export default function CustomerManagement() {
                           </select>
                         </label>
                         {updatingOrderIds.includes(order.id) && <span className="customer-order-admin-saving">Saving…</span>}
+                        <button
+                          className="customer-order-admin-delete"
+                          type="button"
+                          disabled={updatingOrderIds.includes(order.id) || deletingOrderIds.includes(order.id)}
+                          onClick={() => deleteOrder(order)}
+                        >
+                          {deletingOrderIds.includes(order.id) ? "Deleting…" : "Delete order"}
+                        </button>
                       </div>
                       {statusErrors[order.id] && <p className="customer-management-error" role="alert">{statusErrors[order.id]}</p>}
+                      {deleteErrors[order.id] && <p className="customer-management-error" role="alert">{deleteErrors[order.id]}</p>}
                     </article>
                   ))}
                 </div>

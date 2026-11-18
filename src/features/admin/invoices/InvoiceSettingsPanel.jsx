@@ -77,10 +77,6 @@ export default function InvoiceSettingsPanel({
         setError("Enter a review heading of 1 to 80 characters.");
         return;
       }
-      if (!reviewInvitation.message.trim() || reviewInvitation.message.length > 240) {
-        setError("Enter a review message of 1 to 240 characters.");
-        return;
-      }
       if (!reviewInvitation.linkText.trim() || reviewInvitation.linkText.length > 40) {
         setError("Enter a review link label of 1 to 40 characters.");
         return;
@@ -391,7 +387,7 @@ export default function InvoiceSettingsPanel({
               />
               <span>
                 <strong>Add a review invitation to invoices</strong>
-                <small>Show an editable review message at the bottom of printed and shared invoices.</small>
+                <small>Show a review link at the bottom of printed and shared invoices, including saved invoices.</small>
               </span>
             </label>
             {businessDetails.reviewInvitation.enabled && (
@@ -403,15 +399,6 @@ export default function InvoiceSettingsPanel({
                     maxLength={80}
                     value={businessDetails.reviewInvitation.heading}
                     onChange={(event) => updateReviewInvitation("heading", event.target.value)}
-                  />
-                </label>
-                <label>
-                  Message
-                  <textarea
-                    rows="2"
-                    maxLength={240}
-                    value={businessDetails.reviewInvitation.message}
-                    onChange={(event) => updateReviewInvitation("message", event.target.value)}
                   />
                 </label>
                 <label>

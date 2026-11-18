@@ -1,6 +1,5 @@
 import { formatProductPrice } from "../../../lib/productPricing.js";
 import { formatDate } from "../../../lib/formatters.js";
-import { invoiceStatus } from "./invoiceStatus.js";
 
 const headerFields = [
   ["businessName", "Business name"],
@@ -39,7 +38,6 @@ export default function InvoicePreview({ invoice, totals, storefrontTagline, lin
     ...selectedCustomerDetails(invoice.customerDetails),
   };
   const tagline = values.tagline || storefrontTagline;
-  const status = invoiceStatus(invoice);
   const customerFields = [
     ["Name", customer.name],
     ["Company", customer.companyName],
@@ -59,7 +57,11 @@ export default function InvoicePreview({ invoice, totals, storefrontTagline, lin
         <div className="invoice-paper-business">
           {visible.logo && values.logoUrl && (
             <span className={`invoice-paper-logo-wrap${invoice.businessDetails.logoBlueBackground ? " has-blue-background" : ""}`}>
-              <img className="invoice-paper-logo" src={values.logoUrl} alt="" />
+              <img
+                className={`invoice-paper-logo${invoice.businessDetails.logoBlueBackground ? " has-blue-background" : ""}`}
+                src={values.logoUrl}
+                alt=""
+              />
             </span>
           )}
           {visible.tagline && tagline && <p className="invoice-paper-tagline">{tagline}</p>}
@@ -69,7 +71,6 @@ export default function InvoicePreview({ invoice, totals, storefrontTagline, lin
         </div>
         <div className="invoice-paper-meta">
           <h2>Invoice</h2>
-          <span className={`invoice-paper-status is-${status}`}>{status}</span>
           <p className="invoice-paper-meta-number"><strong>No.</strong> {invoice.invoiceNumber || "—"}</p>
           <p><strong>Issued</strong> {formatInvoiceDate(invoice.issueDate)}</p>
           {invoice.dueDate && <p><strong>Due</strong> {formatInvoiceDate(invoice.dueDate)}</p>}
@@ -121,10 +122,8 @@ export default function InvoicePreview({ invoice, totals, storefrontTagline, lin
       {invoice.notes && <section className="invoice-paper-notes"><h3>Notes</h3><p>{invoice.notes}</p></section>}
       {reviewInvitation?.enabled && reviewInvitationUrl && (
         <section className="invoice-paper-review-invitation" aria-label="Review invitation">
-          <h3>{reviewInvitation.heading}</h3>
-          <p>{reviewInvitation.message}</p>
+          <span>{reviewInvitation.heading} </span>
           <a href={reviewInvitationUrl}>{reviewInvitation.linkText}</a>
-          <p className="invoice-paper-review-url">{reviewInvitationUrl}</p>
         </section>
       )}
     </article>

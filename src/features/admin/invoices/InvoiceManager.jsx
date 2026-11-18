@@ -37,7 +37,6 @@ const headerFields = [
 const defaultReviewInvitation = {
   enabled: false,
   heading: "Enjoying your Petify experience?",
-  message: "We'd love to hear what you think.",
   linkText: "Leave a review",
   url: "https://petifyshopping.vercel.app/#review-here",
 };
@@ -46,7 +45,6 @@ function invoiceReviewInvitation(value) {
   return {
     enabled: value?.enabled === true,
     heading: typeof value?.heading === "string" ? value.heading : defaultReviewInvitation.heading,
-    message: typeof value?.message === "string" ? value.message : defaultReviewInvitation.message,
     linkText: typeof value?.linkText === "string" ? value.linkText : defaultReviewInvitation.linkText,
     url: typeof value?.url === "string" ? value.url : defaultReviewInvitation.url,
   };
@@ -150,7 +148,7 @@ function newInvoice(storefrontBrand, headerDefaults, invoiceNumber, issueDate) {
   };
 }
 
-function editableInvoice(invoice, storefrontTagline = "") {
+function editableInvoice(invoice, storefrontTagline = "", headerDefaults = null) {
   const customerDetails = invoice.customerDetails ?? {};
   const hasSeparateCustomerData = customerDetails.savedCustomer || customerDetails.manualCustomer;
   const legacyCustomer = hasSeparateCustomerData
@@ -169,7 +167,9 @@ function editableInvoice(invoice, storefrontTagline = "") {
     status: ["draft", "saved", "sent", "paid"].includes(invoice.status) ? invoice.status : "draft",
     businessDetails: {
       logoBlueBackground: invoice.businessDetails?.logoBlueBackground === true,
-      reviewInvitation: invoiceReviewInvitation(invoice.businessDetails?.reviewInvitation),
+      reviewInvitation: invoiceReviewInvitation(
+        headerDefaults?.reviewInvitation ?? invoice.businessDetails?.reviewInvitation,
+      ),
       values: {
         ...Object.fromEntries(headerFields.map(([key]) => [key, invoice.businessDetails?.values?.[key] ?? ""])),
         logoUrl: invoice.businessDetails?.values?.logoUrl ?? "",
@@ -661,7 +661,16 @@ export default function InvoiceManager({ products, storefrontBrand }) {
         freeDelivery: record.freeDelivery,
         total: record.total,
       };
-      const blob = await createInvoiceImage(record, savedTotals);
+      const currentInvoice = {
+        ...record,
+        businessDetails: {
+          ...record.businessDetails,
+          reviewInvitation: invoiceReviewInvitation(
+            invoiceHeaderDefaults?.reviewInvitation ?? record.businessDetails?.reviewInvitation,
+          ),
+        },
+      };
+      const blob = await createInvoiceImage(currentInvoice, savedTotals);
       const file = new File([blob], `${record.invoiceNumber.replace(/[^a-z0-9_-]/gi, "-") || "invoice"}.png`, { type: "image/png" });
       const shareLabel = invoiceCustomerName(record.customerDetails) || record.invoiceNumber;
       const shareData = { files: [file], title: shareLabel, text: shareLabel };
@@ -681,7 +690,7 @@ export default function InvoiceManager({ products, storefrontBrand }) {
   }
 
   function printSavedInvoice(record) {
-    const printableInvoice = editableInvoice(record, storefrontBrand?.tagline || "");
+    const printableInvoice = editableInvoice(record, storefrontBrand?.tagline || "", invoiceHeaderDefaults);
     setInvoice(printableInvoice);
     setInvoiceMode("view");
     const previousTitle = document.title;
@@ -984,13 +993,13 @@ export default function InvoiceManager({ products, storefrontBrand }) {
           onTabChange={setInvoiceTab}
           onCreate={startNewInvoice}
           onView={(record) => {
-            setInvoice(editableInvoice(record, storefrontBrand?.tagline || ""));
+            setInvoice(editableInvoice(record, storefrontBrand?.tagline || "", invoiceHeaderDefaults));
             setInvoiceMode("view");
             setError("");
             setNotice("");
           }}
           onEdit={(record) => {
-            setInvoice(editableInvoice(record, storefrontBrand?.tagline || ""));
+            setInvoice(editableInvoice(record, storefrontBrand?.tagline || "", invoiceHeaderDefaults));
             setInvoiceMode("edit");
             setError("");
             setNotice("");

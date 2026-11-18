@@ -44,11 +44,22 @@ function drawWrappedText(context, lines, x, y, { color, font, line = lineHeight 
   return y + lines.length * line;
 }
 
-function drawContainedImage(context, image, x, y, width, height) {
+function drawContainedImage(context, image, x, y, width, height, backgroundColor = "", backgroundPadding = 0) {
   const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight);
   const drawnWidth = image.naturalWidth * scale;
   const drawnHeight = image.naturalHeight * scale;
-  context.drawImage(image, x + (width - drawnWidth) / 2, y + (height - drawnHeight) / 2, drawnWidth, drawnHeight);
+  const imageX = x + (width - drawnWidth) / 2;
+  const imageY = y + (height - drawnHeight) / 2;
+  if (backgroundColor) {
+    context.fillStyle = backgroundColor;
+    context.fillRect(
+      imageX - backgroundPadding,
+      imageY - backgroundPadding,
+      drawnWidth + backgroundPadding * 2,
+      drawnHeight + backgroundPadding * 2,
+    );
+  }
+  context.drawImage(image, imageX, imageY, drawnWidth, drawnHeight);
 }
 
 export async function createInvoiceImage(invoice, totals) {
@@ -95,17 +106,14 @@ export async function createInvoiceImage(invoice, totals) {
   const reviewInvitationLines = reviewInvitation?.enabled
     ? {
       heading: wrapText(measureContext, reviewInvitation.heading, contentWidth - 48),
-      message: wrapText(measureContext, reviewInvitation.message, contentWidth - 48),
       linkText: wrapText(measureContext, reviewInvitation.linkText, contentWidth - 48),
-      url: wrapText(measureContext, reviewInvitation.url, contentWidth - 48),
     }
     : null;
   const reviewBlockHeight = reviewInvitationLines
-    ? 44
-      + reviewInvitationLines.heading.length * 30
-      + reviewInvitationLines.message.length * 28
-      + reviewInvitationLines.linkText.length * 27
-      + reviewInvitationLines.url.length * 24
+    ? Math.max(
+      reviewInvitationLines.heading.length * 30,
+      reviewInvitationLines.linkText.length * 27,
+    ) + 24
     : 0;
   const headerHeight = Math.max(
     175,
@@ -115,7 +123,7 @@ export async function createInvoiceImage(invoice, totals) {
   const plannedHeight = pageMargin * 2 + headerHeight + customerBlockHeight + 68
     + itemRows.reduce((height, row) => height + row.height, 0)
     + 230 + (notesLines.length ? 110 + notesLines.length * 32 : 0)
-    + (reviewInvitationLines ? 50 + reviewBlockHeight : 0);
+    + (reviewInvitationLines ? pageMargin + reviewBlockHeight : 0);
   const canvas = document.createElement("canvas");
   canvas.width = pageWidth * imageScale;
   canvas.height = Math.max(1754, plannedHeight) * imageScale;
@@ -129,11 +137,16 @@ export async function createInvoiceImage(invoice, totals) {
   const business = invoice.businessDetails;
   let businessY = pageMargin + 24;
   if (logo) {
-    if (business.logoBlueBackground === true) {
-      context.fillStyle = "#173f67";
-      context.fillRect(pageMargin, pageMargin, 284, 130);
-    }
-    drawContainedImage(context, logo, pageMargin + 14, pageMargin + 14, 256, 102);
+    drawContainedImage(
+      context,
+      logo,
+      pageMargin + 14,
+      pageMargin + 14,
+      256,
+      102,
+      business.logoBlueBackground === true ? "#173f67" : "",
+      business.logoBlueBackground === true ? 6 : 0,
+    );
     businessY = pageMargin + 162;
   }
   if (mottoLines.length) {
@@ -259,36 +272,26 @@ export async function createInvoiceImage(invoice, totals) {
     y = drawWrappedText(context, notesLines, pageMargin, y + 36);
   }
   if (reviewInvitationLines) {
-    y += 50;
-    context.fillStyle = "#f3f7fc";
-    context.fillRect(pageMargin, y, contentWidth, reviewBlockHeight);
-    y += 24;
-    y = drawWrappedText(context, reviewInvitationLines.heading, pageMargin + 24, y, {
-      color: "#163b5c",
-      font: "bold 24px Arial, sans-serif",
-      line: 30,
-    });
-    y = drawWrappedText(context, reviewInvitationLines.message, pageMargin + 24, y, {
-      color: "#526579",
-      font: "20px Arial, sans-serif",
-      line: 28,
-    });
-    y = drawWrappedText(context, reviewInvitationLines.linkText, pageMargin + 24, y, {
-      color: "#174f84",
-      font: "bold 19px Arial, sans-serif",
-      line: 27,
-    });
-    y = drawWrappedText(context, reviewInvitationLines.url, pageMargin + 24, y, {
-      color: "#526579",
-      font: "17px Arial, sans-serif",
-      line: 24,
-    });
-    y += 20;
+    const pageHeight = Math.max(1754, plannedHeight) / imageScale;
+    const contentBottom = y;
+    const footerTop = Math.max(contentBottom + 36, pageHeight - pageMargin - reviewBlockHeight);
+    const baseline = footerTop + reviewBlockHeight - 12;
+    context.font = "20px Arial, sans-serif";
+    context.fillStyle = "#172b3e";
+    context.textAlign = "left";
+    context.fillText(reviewInvitation.heading, pageMargin, baseline);
+    const headingWidth = context.measureText(reviewInvitation.heading).width;
+    context.font = "bold 20px Arial, sans-serif";
+    context.fillStyle = "#174f84";
+    context.fillText(reviewInvitation.linkText, pageMargin + headingWidth + 8, baseline);
   }
 
   const outputCanvas = document.createElement("canvas");
   outputCanvas.width = pageWidth * imageScale;
-  outputCanvas.height = Math.max(1754, y + pageMargin) * imageScale;
+  outputCanvas.height = Math.max(
+    1754,
+    y + pageMargin + (reviewInvitationLines ? reviewBlockHeight : 0),
+  ) * imageScale;
   const outputContext = outputCanvas.getContext("2d");
   if (!outputContext) throw new Error("This browser could not export the invoice image.");
   outputContext.fillStyle = "#ffffff";
